@@ -35,6 +35,7 @@ import subprocess
 import sys
 import threading
 import time
+from collections import deque
 from ivy.std_api import IvyInit, IvyStart, IvyStop, IvyBindMsg
 
 PPRZ    = "/workspace/paparazzi"
@@ -110,6 +111,9 @@ state = {
     "t":   0.0,
     "cmd": "",
 }
+
+# Ring buffer for printf output captured from simsitl stdout
+debug_log: deque = deque(maxlen=20)
 
 # ── Ivy callbacks ────────────────────────────────────────────────────────────
 def on_rate_attitude(agent, msg):
@@ -207,6 +211,13 @@ def on_rotorcraft_cmd(agent, msg):
     state["rc_yaw"],  state["rc_thrust"] = int(float(parts[4])), int(float(parts[5]))
 
 
+# ── simsitl stdout reader ────────────────────────────────────────────────────
+def sim_stdout_reader(proc):
+    """Read lines from simsitl stdout into debug_log (daemon thread)."""
+    for line in proc.stdout:
+        debug_log.append(line.rstrip())
+
+
 # ── display ──────────────────────────────────────────────────────────────────
 def bar(val, lo, hi, width=18, unit=""):
     frac = max(0.0, min(1.0, (val - lo) / (hi - lo)))
@@ -263,6 +274,8 @@ def render():
         f"    WLS v (cmd):   φ {s['wls_v0']:+8.2f}  θ {s['wls_v1']:+8.2f}  ψ {s['wls_v2']:+8.2f}  T {s['wls_v3']:+8.2f}",
         f"    WLS u (pprz):  NE {s['mfc_u0']:+7.0f}  SE {s['mfc_u1']:+7.0f}  SW {s['mfc_u2']:+7.0f}  NW {s['mfc_u3']:+7.0f}",
         "",
+        f"  {BOLD}DEBUG (printf from firmware){RESET}",
+        *[f"    {GREY}{line}{RESET}" for line in list(debug_log)[-8:]],
         f"{'─' * 58}",
         f"  {GREY}Log → {LOG_FILE}   Ctrl-C to stop{RESET}",
     ]
@@ -317,7 +330,8 @@ def main():
     print("Starting ANTON NPS sim …")
     sim = subprocess.Popen(
         [SIMSITL, "--norc"],
-        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        text=True, bufsize=1,
     )
 
     # UDP socket for sending binary pprz commands to the sim's primary datalink
@@ -359,6 +373,7 @@ def main():
     IvyBindMsg(on_rotorcraft_cmd, r"(\d+ ROTORCRAFT_CMD .*)")
 
     state["t"] = time.monotonic()
+    threading.Thread(target=sim_stdout_reader, args=(sim,), daemon=True).start()
     threading.Thread(target=takeoff_sequence, args=(sock,), daemon=True).start()
     threading.Thread(target=log_writer, daemon=True).start()
     print(f"Logging to {LOG_FILE}")
