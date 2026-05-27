@@ -95,6 +95,9 @@ state = {
     "mfc_cmd_phi":   0.0, "mfc_cmd_theta":   0.0, "mfc_cmd_psi":   0.0,
     "mfc_u0":        0.0, "mfc_u1":          0.0,
     "mfc_u2":        0.0, "mfc_u3":          0.0,
+    # Layer 1 — WLS virtual control inputs (WLS_V, v before allocation)
+    "wls_v0":        0.0, "wls_v1":          0.0,
+    "wls_v2":        0.0, "wls_v3":          0.0,
     # Layer 1 — INDI stabilizer state (STAB_ATTITUDE)
     "sa_att_phi":  0.0, "sa_att_theta":  0.0, "sa_att_psi":  0.0,  # rad
     "sa_ref_phi":  0.0, "sa_ref_theta":  0.0, "sa_ref_psi":  0.0,  # rad
@@ -165,6 +168,16 @@ def on_stab_mfc(agent, msg):
     state["mfc_cmd_phi"],  state["mfc_cmd_theta"], state["mfc_cmd_psi"]  = float(parts[i+12]),float(parts[i+13]),float(parts[i+14])
     state["mfc_u0"],       state["mfc_u1"]  = float(parts[i+15]), float(parts[i+16])
     state["mfc_u2"],       state["mfc_u3"]  = float(parts[i+17]), float(parts[i+18])
+
+def on_wls_v_stab(agent, msg):
+    # WLS_V layout: AC_ID WLS_V loop gamma iter v[,...] Wv[,...]
+    parts = msg.split()
+    if len(parts) < 6:
+        return
+    v = [float(x) for x in parts[5].split(',')]
+    if len(v) >= 4:
+        state["wls_v0"], state["wls_v1"] = v[0], v[1]
+        state["wls_v2"], state["wls_v3"] = v[2], v[3]
 
 def on_stab_attitude(agent, msg):
     # Link broadcasts float[] fields as comma-separated tokens (no spaces within array).
@@ -240,12 +253,14 @@ def render():
         f"    {'roll':6s}  {math.degrees(s['sa_att_phi']):+9.3f}  {math.degrees(s['sa_ref_phi']):+9.3f}  {math.degrees(s['sa_att_phi']-s['sa_ref_phi']):+9.3f}  {math.degrees(s['sa_rate_p']):+9.3f}  {math.degrees(s['sa_rref_p']):+9.3f}  {math.degrees(s['sa_aref_p']):+9.3f}",
         f"    {'pitch':6s}  {math.degrees(s['sa_att_theta']):+9.3f}  {math.degrees(s['sa_ref_theta']):+9.3f}  {math.degrees(s['sa_att_theta']-s['sa_ref_theta']):+9.3f}  {math.degrees(s['sa_rate_q']):+9.3f}  {math.degrees(s['sa_rref_q']):+9.3f}  {math.degrees(s['sa_aref_q']):+9.3f}",
         f"    {'yaw':6s}  {math.degrees(s['sa_att_psi']):+9.3f}  {math.degrees(s['sa_ref_psi']):+9.3f}  {math.degrees(s['sa_att_psi']-s['sa_ref_psi']):+9.3f}  {math.degrees(s['sa_rate_r']):+9.3f}  {math.degrees(s['sa_rref_r']):+9.3f}  {math.degrees(s['sa_aref_r']):+9.3f}",
+        f"    WLS v (cmd):   φ {s['wls_v0']:+8.2f}  θ {s['wls_v1']:+8.2f}  ψ {s['wls_v2']:+8.2f}  T {s['wls_v3']:+8.2f}",
         "",
         f"  {BOLD}{BLUE}LAYER 1 — MFC controller  (STAB_MFC){RESET}",
         f"    {'':6s}  {'sp(°)':>10s}  {'meas(°)':>10s}  {'err(°)':>10s}  {'F_k':>12s}  {'cmd':>10s}",
         f"    {'roll':6s}  {math.degrees(s['mfc_sp_phi']):+10.3f}  {math.degrees(s['mfc_me_phi']):+10.3f}  {math.degrees(s['mfc_err_phi']):+10.4f}  {s['mfc_fk_phi']:+12.4f}  {s['mfc_cmd_phi']:+10.4f}",
         f"    {'pitch':6s}  {math.degrees(s['mfc_sp_theta']):+10.3f}  {math.degrees(s['mfc_me_theta']):+10.3f}  {math.degrees(s['mfc_err_theta']):+10.4f}  {s['mfc_fk_theta']:+12.4f}  {s['mfc_cmd_theta']:+10.4f}",
         f"    {'yaw':6s}  {math.degrees(s['mfc_sp_psi']):+10.3f}  {math.degrees(s['mfc_me_psi']):+10.3f}  {math.degrees(s['mfc_err_psi']):+10.4f}  {s['mfc_fk_psi']:+12.4f}  {s['mfc_cmd_psi']:+10.4f}",
+        f"    WLS v (cmd):   φ {s['wls_v0']:+8.2f}  θ {s['wls_v1']:+8.2f}  ψ {s['wls_v2']:+8.2f}  T {s['wls_v3']:+8.2f}",
         f"    WLS u (pprz):  NE {s['mfc_u0']:+7.0f}  SE {s['mfc_u1']:+7.0f}  SW {s['mfc_u2']:+7.0f}  NW {s['mfc_u3']:+7.0f}",
         "",
         f"{'─' * 58}",
@@ -340,6 +355,7 @@ def main():
     # Layer 1 — Firmware PPRZ telemetry (bridged from UDP by pprz_server)
     IvyBindMsg(on_stab_attitude,  r"(\d+ STAB_ATTITUDE .*)")
     IvyBindMsg(on_stab_mfc,       r"(\d+ STAB_MFC .*)")
+    IvyBindMsg(on_wls_v_stab,     r"(\d+ WLS_V .*)")
     IvyBindMsg(on_rotorcraft_cmd, r"(\d+ ROTORCRAFT_CMD .*)")
 
     state["t"] = time.monotonic()
