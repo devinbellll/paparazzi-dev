@@ -1,0 +1,21 @@
+# Paparazzi Control System — Knowledge Base
+
+Index of all notes. Designed for Obsidian; internal links use `[[Note Name]]` style.
+
+## Structure
+
+| Note | What it covers |
+|------|---------------|
+| [[01 - Control System Architecture]] | The full signal chain: Nav → Guidance → Stab → Actuators |
+| [[02 - INDI Stabilization Deep Dive]] | How INDI works, all source files, key variables |
+| [[03 - INDI Guidance Deep Dive]] | How guidance_indi sits above stabilization |
+| [[04 - Airframe XML Configuration]] | XML knobs that drive both systems |
+| [[05 - Module System]] | How modules.xml → Makefile → compiled firmware |
+| [[06 - Modifying ANTON Stabilization]] | Practical walkthrough for ANTON |
+| [[07 - All Touch Points Cheatsheet]] | Quick reference: every file to touch per change type |
+
+## Quick-start question
+
+> "I want to change ANTON's stabilization — where do I start?"
+
+→ Go to [[06 - Modifying ANTON Stabilization]] for the worked example, then use [[07 - All Touch Points Cheatsheet]] as a checklist.

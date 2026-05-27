@@ -1,0 +1,80 @@
+{
+  // ── Claude Code Devcontainer ────────────────────────────────────────────────
+  // Supports: VS Code (Dev Containers extension), Cursor, GitHub Codespaces,
+  //           JetBrains IDEs with dev container support
+  //
+  // Quick start:
+  //   1. Install "Dev Containers" extension in VS Code or Cursor
+  //   2. Open this repo → Command Palette → "Reopen in Container"
+  //   3. Run `claude` in the integrated terminal to authenticate
+  // ───────────────────────────────────────────────────────────────────────────
+
+  "name": "Claude Code Sandbox",
+
+  // Reference the compose file so VS Code manages the full stack
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "claude",
+  "workspaceFolder": "/workspace",
+
+  // ── Claude Code devcontainer feature ──────────────────────────────────────
+  // This is Anthropic's official feature. It installs Claude Code and (in
+  // VS Code) the Claude Code extension. You can use this INSTEAD of the
+  // Dockerfile install if you prefer a simpler setup — or keep both for
+  // explicit version control via the Dockerfile.
+  //
+  // To use only the feature (no Dockerfile layer), swap "dockerComposeFile"
+  // above for "image": "mcr.microsoft.com/devcontainers/base:ubuntu"
+  // and uncomment the block below:
+  //
+  // "features": {
+  //   "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  // },
+
+  // ── Editor extensions ──────────────────────────────────────────────────────
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Claude Code panel (official Anthropic extension)
+        "anthropic.claude-code",
+
+        // Remote development quality of life
+        "ms-vscode-remote.remote-containers",
+
+        // Git
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github",
+
+        // General dev tools — add your stack-specific extensions below
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy"
+      ],
+      "settings": {
+        // Use the container's Python / Node by default
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "terminal.integrated.defaultProfile.linux": "zsh"
+        // Optional: run Claude Code in auto-accept mode inside the safe container
+        // "claude-code.autoAcceptEdits": true
+      }
+    }
+  },
+
+  // ── Port forwarding ────────────────────────────────────────────────────────
+  // Add ports your project's dev server runs on
+  // "forwardPorts": [
+  //   3000,   // common React / Next.js dev server
+  //   8000,   // common Python / Django / FastAPI dev server
+  //   5432    // Postgres (if using the db service in compose)
+  // ],
+  // "portsAttributes": {
+  //   "3000": { "label": "Frontend dev server", "onAutoForward": "notify" },
+  //   "8000": { "label": "Backend dev server",  "onAutoForward": "notify" },
+  //   "5432": { "label": "Postgres",            "onAutoForward": "silent"  }
+  // },
+
+  // ── Lifecycle hooks ────────────────────────────────────────────────────────
+  "postCreateCommand": "echo '✅ Claude Code container ready. Run: claude' && claude --version",
+
+  // Run as the non-root user defined in the Dockerfile
+  "remoteUser": "vscode"
+}

@@ -1,0 +1,108 @@
+# ── Claude Code Devcontainer — Compose ────────────────────────────────────────
+#
+# Usage:
+#   docker compose up -d              # start the dev container
+#   docker compose exec claude bash   # open a shell
+#   docker compose exec claude claude # start Claude Code directly
+#
+# For VS Code / Cursor devcontainer support, this file is referenced by
+# devcontainer.json and the editor manages container lifecycle.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Main dev container ──────────────────────────────────────────────────────
+  claude:
+    build:
+      context: ..
+      dockerfile: Dockerfile.paparazzi
+    platform: linux/amd64
+
+    # Run as the non-root vscode user defined in the Dockerfile
+    user: vscode
+
+    # Keep the container alive when used without an IDE
+    command: sleep infinity
+
+    volumes:
+      # ── Project workspace ──────────────────────────────────────────────────
+      # Mount your project repo into /workspace. Claude Code operates here.
+      # Change ../ to whatever path your repo root is relative to this file.
+      - ../:/workspace:cached
+
+      # ── Claude credentials & settings (persists across rebuilds) ──────────
+      # This named volume means you only authenticate once; auth survives
+      # `docker compose down && docker compose up`.
+      - claude-config:/home/vscode/.claude
+
+      # ── Git config (read-only, so commits have the right author) ──────────
+      - ~/.gitconfig:/home/vscode/.gitconfig:ro
+
+      # ── Optional: SSH agent socket (for private repos) ────────────────────
+      # Prefer this over mounting ~/.ssh directly — the socket gives access
+      # to host keys without copying private key material into the container.
+      # Uncomment if needed:
+      # - ${SSH_AUTH_SOCK}:/ssh-agent:ro
+
+      # ── Optional: Docker socket (for projects that shell out to docker) ───
+      # WARNING: mounting the Docker socket gives container-root access to
+      # your host Docker daemon. Only use for trusted repos.
+      # - /var/run/docker.sock:/var/run/docker.sock
+
+    environment:
+      # Workspace root
+      - WORKSPACE=/workspace
+
+      # Pass your Anthropic API key from host env (if using API key auth).
+      # Alternatively, run `claude` interactively to do OAuth browser auth.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+
+      # SSH agent socket path (if using the socket mount above)
+      # - SSH_AUTH_SOCK=/ssh-agent
+
+      # Disable Claude Code auto-update if you want to pin the version
+      # - CLAUDE_CODE_DISABLE_AUTO_UPDATE=1
+
+    working_dir: /workspace
+
+    # ── Resource limits ────────────────────────────────────────────────────
+    # Tune for your machine. Claude Code benefits from generous RAM for
+    # large codebases; 8 GB is a comfortable floor.
+    deploy:
+      resources:
+        limits:
+          memory: 8g
+        reservations:
+          memory: 2g
+
+    # stdin + tty needed for interactive Claude Code sessions in terminal
+    stdin_open: true
+    tty: true
+
+    networks:
+      - devnet
+
+  # ── Optional: add project services here ────────────────────────────────────
+  # e.g., a Postgres DB your project needs. Claude Code can talk to these
+  # via the devnet network using their service name as hostname.
+  #
+  # db:
+  #   image: postgres:16
+  #   environment:
+  #     POSTGRES_DB: myapp
+  #     POSTGRES_USER: dev
+  #     POSTGRES_PASSWORD: dev
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   networks:
+  #     - devnet
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  claude-config:   # persists ~/.claude (auth tokens, settings, history)
+  # pgdata:        # uncomment if using the db service above
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  devnet:
+    driver: bridge

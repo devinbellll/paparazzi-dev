@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git ls-files *)",
+      "Bash(git blame *)",
+      "Bash(git shortlog *)",
+      "Bash(git describe *)",
+      "Bash(git tag)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ]
+  }
+}
