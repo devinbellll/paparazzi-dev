@@ -14,27 +14,43 @@ Command delivery:
   Commands are sent as pprz binary BLOCK messages over UDP to port 4243
   (the sim's primary datalink input — DOWNLINK_DEVICE=udp0, UDP0_PORT_IN=4243).
   pprz_dl_event() parses them and calls nav_goto_block() directly.
+
+Observability layers:
+  Layer 0 — JSBSim truth:   NPS_RATE_ATTITUDE, NPS_POS_LLH, NPS_SPEED_POS,
+                             NPS_GYRO_BIAS, NPS_SENSORS_SCALED, NPS_WIND
+  Layer 1 — Firmware state: STAB_ATTITUDE (INDI att/rate/angular-accel),
+                             STAB_MFC (MFC estimator, errors, commands),
+                             ROTORCRAFT_CMD (roll/pitch/yaw/thrust ints)
+  Logging: CSV file written to /tmp/mfc_sim_<timestamp>.csv
 """
 
+import csv
+import datetime
+import math
 import os
-import sys
 import signal
 import socket
+import struct
 import subprocess
+import sys
 import threading
 import time
-import math
-import struct
 from ivy.std_api import IvyInit, IvyStart, IvyStop, IvyBindMsg
 
 PPRZ    = "/workspace/paparazzi"
-SIMSITL = f"{PPRZ}/var/aircrafts/ANTON_MFC/nps/simsitl"
 SERVER  = f"{PPRZ}/sw/ground_segment/tmtc/server"
+LINK    = f"{PPRZ}/sw/ground_segment/tmtc/link"
 IVY_BUS = "127.255.255.255:2010"
-AC_ID   = 218
+
+_USE_MFC = "--mfc" in sys.argv
+AC_NAME  = "ANTON_MFC" if _USE_MFC else "ANTON"
+AC_ID    = 218         if _USE_MFC else 217
+SIMSITL  = f"{PPRZ}/var/aircrafts/{AC_NAME}/nps/simsitl"
 R2D     = math.degrees(1)
 SIM_HOST = "127.0.0.1"
 SIM_PORT = 4243          # UDP0_PORT_IN — sim's primary datalink receive port
+
+LOG_FILE = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
 
 # ── pprz binary encoding ─────────────────────────────────────────────────────
 STX              = 0x99
@@ -62,12 +78,32 @@ def pprz_block_frame(block_id: int) -> bytes:
 
 # ── shared state ────────────────────────────────────────────────────────────
 state = {
-    "phi": 0.0, "theta": 0.0, "psi": 0.0,   # deg
+    # Layer 0 — JSBSim truth (NPS_*)
+    "phi": 0.0, "theta": 0.0, "psi": 0.0,   # deg (NPS_RATE_ATTITUDE)
     "p":   0.0, "q":     0.0, "r":   0.0,   # deg/s
-    "lat": 0.0, "lon":   0.0,                # deg
+    "lat": 0.0, "lon":   0.0,               # deg (NPS_POS_LLH)
     "alt": 0.0, "agl":   0.0,               # m MSL, m AGL
-    "vx":  0.0, "vy":    0.0, "vz":  0.0,   # m/s NED
-    "ax":  0.0, "ay":    0.0, "az":  0.0,   # m/s² body
+    "vx":  0.0, "vy":    0.0, "vz":  0.0,   # m/s NED (NPS_SPEED_POS)
+    "ax":  0.0, "ay":    0.0, "az":  0.0,   # m/s² body (NPS_SENSORS_SCALED)
+    "bias_p": 0.0, "bias_q": 0.0, "bias_r": 0.0,  # deg/s (NPS_GYRO_BIAS)
+    "wind_n": 0.0, "wind_e": 0.0, "wind_d": 0.0,  # m/s NED (NPS_WIND)
+    # Layer 1 — Firmware MFC state (STAB_MFC)
+    "mfc_sp_phi":    0.0, "mfc_sp_theta":    0.0, "mfc_sp_psi":    0.0,
+    "mfc_me_phi":    0.0, "mfc_me_theta":    0.0, "mfc_me_psi":    0.0,
+    "mfc_err_phi":   0.0, "mfc_err_theta":   0.0, "mfc_err_psi":   0.0,
+    "mfc_fk_phi":    0.0, "mfc_fk_theta":    0.0, "mfc_fk_psi":    0.0,
+    "mfc_cmd_phi":   0.0, "mfc_cmd_theta":   0.0, "mfc_cmd_psi":   0.0,
+    "mfc_u0":        0.0, "mfc_u1":          0.0,
+    "mfc_u2":        0.0, "mfc_u3":          0.0,
+    # Layer 1 — INDI stabilizer state (STAB_ATTITUDE)
+    "sa_att_phi":  0.0, "sa_att_theta":  0.0, "sa_att_psi":  0.0,  # rad
+    "sa_ref_phi":  0.0, "sa_ref_theta":  0.0, "sa_ref_psi":  0.0,  # rad
+    "sa_rate_p":   0.0, "sa_rate_q":     0.0, "sa_rate_r":   0.0,  # rad/s
+    "sa_rref_p":   0.0, "sa_rref_q":     0.0, "sa_rref_r":   0.0,  # rad/s
+    "sa_dacc_p":   0.0, "sa_dacc_q":     0.0, "sa_dacc_r":   0.0,  # rad/s² measured
+    "sa_aref_p":   0.0, "sa_aref_q":     0.0, "sa_aref_r":   0.0,  # rad/s² INDI virtual cmd
+    # Layer 1 — Firmware cmd ints (ROTORCRAFT_CMD)
+    "rc_roll": 0, "rc_pitch": 0, "rc_yaw": 0, "rc_thrust": 0,
     "t":   0.0,
     "cmd": "",
 }
@@ -102,9 +138,64 @@ def on_sensors(agent, msg):
         return
     state["ax"], state["ay"], state["az"] = float(parts[2]), float(parts[3]), float(parts[4])
 
+def on_gyro_bias(agent, msg):
+    parts = msg.split()
+    if len(parts) < 5:
+        return
+    state["bias_p"], state["bias_q"], state["bias_r"] = float(parts[2]), float(parts[3]), float(parts[4])
+
+def on_wind(agent, msg):
+    parts = msg.split()
+    if len(parts) < 5:
+        return
+    state["wind_n"], state["wind_e"], state["wind_d"] = float(parts[2]), float(parts[3]), float(parts[4])
+
+def on_stab_mfc(agent, msg):
+    # Format: AC_ID STAB_MFC sp_phi sp_theta sp_psi me_phi me_theta me_psi
+    #         err_phi err_theta err_psi fk_phi fk_theta fk_psi
+    #         cmd_phi cmd_theta cmd_psi u0 u1 u2 u3   (21 tokens total)
+    parts = msg.split()
+    if len(parts) < 21:
+        return
+    i = 2
+    state["mfc_sp_phi"],   state["mfc_sp_theta"],  state["mfc_sp_psi"]   = float(parts[i]),   float(parts[i+1]), float(parts[i+2])
+    state["mfc_me_phi"],   state["mfc_me_theta"],  state["mfc_me_psi"]   = float(parts[i+3]), float(parts[i+4]), float(parts[i+5])
+    state["mfc_err_phi"],  state["mfc_err_theta"], state["mfc_err_psi"]  = float(parts[i+6]), float(parts[i+7]), float(parts[i+8])
+    state["mfc_fk_phi"],   state["mfc_fk_theta"],  state["mfc_fk_psi"]   = float(parts[i+9]), float(parts[i+10]),float(parts[i+11])
+    state["mfc_cmd_phi"],  state["mfc_cmd_theta"], state["mfc_cmd_psi"]  = float(parts[i+12]),float(parts[i+13]),float(parts[i+14])
+    state["mfc_u0"],       state["mfc_u1"]  = float(parts[i+15]), float(parts[i+16])
+    state["mfc_u2"],       state["mfc_u3"]  = float(parts[i+17]), float(parts[i+18])
+
+def on_stab_attitude(agent, msg):
+    # Link broadcasts float[] fields as comma-separated tokens (no spaces within array).
+    # Layout: AC_ID STAB_ATTITUDE att_des att[3] att_ref[3] rate[3] rate_ref[3] ang_acc[3] ang_acc_ref[3] jerk u
+    # parts:  [0]   [1]           [2]     [3]    [4]        [5]     [6]         [7]        [8]            [9]  [10]
+    parts = msg.split()
+    if len(parts) < 9:
+        return
+    att   = [float(x) for x in parts[3].split(',')]
+    ref   = [float(x) for x in parts[4].split(',')]
+    rate  = [float(x) for x in parts[5].split(',')]
+    rref  = [float(x) for x in parts[6].split(',')]
+    dacc  = [float(x) for x in parts[7].split(',')]
+    aref  = [float(x) for x in parts[8].split(',')]
+    state["sa_att_phi"],  state["sa_att_theta"], state["sa_att_psi"]  = att[0],  att[1],  att[2]
+    state["sa_ref_phi"],  state["sa_ref_theta"], state["sa_ref_psi"]  = ref[0],  ref[1],  ref[2]
+    state["sa_rate_p"],   state["sa_rate_q"],    state["sa_rate_r"]   = rate[0], rate[1], rate[2]
+    state["sa_rref_p"],   state["sa_rref_q"],    state["sa_rref_r"]   = rref[0], rref[1], rref[2]
+    state["sa_dacc_p"],   state["sa_dacc_q"],    state["sa_dacc_r"]   = dacc[0], dacc[1], dacc[2]
+    state["sa_aref_p"],   state["sa_aref_q"],    state["sa_aref_r"]   = aref[0], aref[1], aref[2]
+
+def on_rotorcraft_cmd(agent, msg):
+    parts = msg.split()
+    if len(parts) < 6:
+        return
+    state["rc_roll"], state["rc_pitch"] = int(float(parts[2])), int(float(parts[3]))
+    state["rc_yaw"],  state["rc_thrust"] = int(float(parts[4])), int(float(parts[5]))
+
 
 # ── display ──────────────────────────────────────────────────────────────────
-def bar(val, lo, hi, width=20, unit=""):
+def bar(val, lo, hi, width=18, unit=""):
     frac = max(0.0, min(1.0, (val - lo) / (hi - lo)))
     filled = int(frac * width)
     return f"[{'█' * filled}{'░' * (width - filled)}] {val:+8.2f}{unit}"
@@ -116,6 +207,7 @@ CYAN   = "\033[36m"
 GREEN  = "\033[32m"
 YELLOW = "\033[33m"
 GREY   = "\033[90m"
+BLUE   = "\033[34m"
 
 def render():
     s = state
@@ -125,39 +217,56 @@ def render():
     cmd_line = f"  {YELLOW}CMD:{RESET} {s['cmd']}" if s["cmd"] else f"  {GREY}no command sent yet{RESET}"
 
     lines = [
-        f"{BOLD}{'─' * 52}{RESET}",
-        f"  {BOLD}{CYAN}ANTON NPS Simulation{RESET}   {status}",
+        f"{BOLD}{'─' * 58}{RESET}",
+        f"  {BOLD}{CYAN}ANTON NPS  —  {AC_NAME} (ac_id {AC_ID}){RESET}   {status}",
         cmd_line,
-        f"{'─' * 52}",
+        f"{'─' * 58}",
         "",
-        f"  {BOLD}POSITION{RESET}",
-        f"    Lat   {s['lat']:+12.6f} °",
-        f"    Lon   {s['lon']:+12.6f} °",
-        f"    Alt   {s['alt']:+10.2f} m MSL",
-        f"    AGL   {s['agl']:+10.2f} m",
-        "",
-        f"  {BOLD}ATTITUDE{RESET}",
+        f"  {BOLD}LAYER 0 — JSBSim truth{RESET}",
+        f"    Lat {s['lat']:+12.6f}°   Lon {s['lon']:+12.6f}°",
+        f"    Alt {s['alt']:+10.2f} m MSL   AGL {s['agl']:+8.2f} m",
         f"    Roll  {bar(s['phi'],   -45, 45, unit='°')}",
         f"    Pitch {bar(s['theta'], -45, 45, unit='°')}",
-        f"    Yaw   {s['psi']:+8.2f} °",
+        f"    Yaw   {s['psi']:+8.2f}°",
+        f"    p {bar(s['p'], -60, 60, unit='°/s')}",
+        f"    q {bar(s['q'], -60, 60, unit='°/s')}",
+        f"    r {bar(s['r'], -60, 60, unit='°/s')}",
+        f"    Vn {s['vx']:+7.3f} m/s  Ve {s['vy']:+7.3f} m/s  Vd {s['vz']:+7.3f} m/s",
+        f"    Wind N {s['wind_n']:+6.2f}  E {s['wind_e']:+6.2f}  D {s['wind_d']:+6.2f} m/s",
+        f"    Gyro bias p {s['bias_p']:+6.3f}  q {s['bias_q']:+6.3f}  r {s['bias_r']:+6.3f} °/s",
         "",
-        f"  {BOLD}RATES  (body){RESET}",
-        f"    p     {bar(s['p'], -60, 60, unit='°/s')}",
-        f"    q     {bar(s['q'], -60, 60, unit='°/s')}",
-        f"    r     {bar(s['r'], -60, 60, unit='°/s')}",
+        f"  {BOLD}{BLUE}LAYER 1 — INDI stabilizer  (STAB_ATTITUDE){RESET}",
+        f"    {'':6s}  {'att(°)':>9s}  {'ref(°)':>9s}  {'Δatt(°)':>9s}  {'rate(°/s)':>9s}  {'rref(°/s)':>9s}  {'acc_ref':>9s}",
+        f"    {'roll':6s}  {math.degrees(s['sa_att_phi']):+9.3f}  {math.degrees(s['sa_ref_phi']):+9.3f}  {math.degrees(s['sa_att_phi']-s['sa_ref_phi']):+9.3f}  {math.degrees(s['sa_rate_p']):+9.3f}  {math.degrees(s['sa_rref_p']):+9.3f}  {math.degrees(s['sa_aref_p']):+9.3f}",
+        f"    {'pitch':6s}  {math.degrees(s['sa_att_theta']):+9.3f}  {math.degrees(s['sa_ref_theta']):+9.3f}  {math.degrees(s['sa_att_theta']-s['sa_ref_theta']):+9.3f}  {math.degrees(s['sa_rate_q']):+9.3f}  {math.degrees(s['sa_rref_q']):+9.3f}  {math.degrees(s['sa_aref_q']):+9.3f}",
+        f"    {'yaw':6s}  {math.degrees(s['sa_att_psi']):+9.3f}  {math.degrees(s['sa_ref_psi']):+9.3f}  {math.degrees(s['sa_att_psi']-s['sa_ref_psi']):+9.3f}  {math.degrees(s['sa_rate_r']):+9.3f}  {math.degrees(s['sa_rref_r']):+9.3f}  {math.degrees(s['sa_aref_r']):+9.3f}",
         "",
-        f"  {BOLD}VELOCITY  (NED){RESET}",
-        f"    Vn  {s['vx']:+8.3f} m/s   Ve  {s['vy']:+8.3f} m/s",
-        f"    Vd  {s['vz']:+8.3f} m/s   |V| {math.hypot(s['vx'], s['vy']):.3f} m/s",
+        f"  {BOLD}{BLUE}LAYER 1 — MFC controller  (STAB_MFC){RESET}",
+        f"    {'':6s}  {'sp(°)':>10s}  {'meas(°)':>10s}  {'err(°)':>10s}  {'F_k':>12s}  {'cmd':>10s}",
+        f"    {'roll':6s}  {math.degrees(s['mfc_sp_phi']):+10.3f}  {math.degrees(s['mfc_me_phi']):+10.3f}  {math.degrees(s['mfc_err_phi']):+10.4f}  {s['mfc_fk_phi']:+12.4f}  {s['mfc_cmd_phi']:+10.4f}",
+        f"    {'pitch':6s}  {math.degrees(s['mfc_sp_theta']):+10.3f}  {math.degrees(s['mfc_me_theta']):+10.3f}  {math.degrees(s['mfc_err_theta']):+10.4f}  {s['mfc_fk_theta']:+12.4f}  {s['mfc_cmd_theta']:+10.4f}",
+        f"    {'yaw':6s}  {math.degrees(s['mfc_sp_psi']):+10.3f}  {math.degrees(s['mfc_me_psi']):+10.3f}  {math.degrees(s['mfc_err_psi']):+10.4f}  {s['mfc_fk_psi']:+12.4f}  {s['mfc_cmd_psi']:+10.4f}",
+        f"    WLS u (pprz):  NE {s['mfc_u0']:+7.0f}  SE {s['mfc_u1']:+7.0f}  SW {s['mfc_u2']:+7.0f}  NW {s['mfc_u3']:+7.0f}",
         "",
-        f"  {BOLD}ACCEL  (body){RESET}",
-        f"    X {s['ax']:+8.3f} m/s²   Y {s['ay']:+8.3f} m/s²   Z {s['az']:+8.3f} m/s²",
-        "",
-        f"{'─' * 52}",
-        f"  {GREY}Ctrl-C to stop{RESET}",
+        f"{'─' * 58}",
+        f"  {GREY}Log → {LOG_FILE}   Ctrl-C to stop{RESET}",
     ]
     sys.stdout.write(CLEAR + "\n".join(lines) + "\n")
     sys.stdout.flush()
+
+
+# ── CSV logger ───────────────────────────────────────────────────────────────
+def log_writer():
+    with open(LOG_FILE, "w", newline="") as f:
+        writer = None
+        while True:
+            row = {**state, "wall": time.time()}
+            if writer is None:
+                writer = csv.DictWriter(f, fieldnames=list(row.keys()))
+                writer.writeheader()
+            writer.writerow(row)
+            f.flush()
+            time.sleep(0.1)
 
 
 # ── command sender ───────────────────────────────────────────────────────────
@@ -184,6 +293,12 @@ def main():
         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
 
+    print("Starting Paparazzi link (UDP 4242) …")
+    link = subprocess.Popen(
+        [LINK, "-b", IVY_BUS, "-udp"],
+        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+
     print("Starting ANTON NPS sim …")
     sim = subprocess.Popen(
         [SIMSITL, "--norc"],
@@ -196,6 +311,7 @@ def main():
     def shutdown(sig=None, frame=None):
         print("\n\nShutting down …")
         sim.terminate()
+        link.terminate()
         server.terminate()
         sock.close()
         try:
@@ -212,13 +328,24 @@ def main():
 
     IvyInit("anton_monitor", "READY", None, None, None)
     IvyStart(IVY_BUS)
+
+    # Layer 0 — JSBSim truth (direct NPS Ivy messages)
     IvyBindMsg(on_rate_attitude, r"(\d+ NPS_RATE_ATTITUDE .*)")
     IvyBindMsg(on_pos_llh,       r"(\d+ NPS_POS_LLH .*)")
     IvyBindMsg(on_speed_pos,     r"(\d+ NPS_SPEED_POS .*)")
     IvyBindMsg(on_sensors,       r"(\d+ NPS_SENSORS_SCALED .*)")
+    IvyBindMsg(on_gyro_bias,     r"(\d+ NPS_GYRO_BIAS .*)")
+    IvyBindMsg(on_wind,          r"(\d+ NPS_WIND .*)")
+
+    # Layer 1 — Firmware PPRZ telemetry (bridged from UDP by pprz_server)
+    IvyBindMsg(on_stab_attitude,  r"(\d+ STAB_ATTITUDE .*)")
+    IvyBindMsg(on_stab_mfc,       r"(\d+ STAB_MFC .*)")
+    IvyBindMsg(on_rotorcraft_cmd, r"(\d+ ROTORCRAFT_CMD .*)")
 
     state["t"] = time.monotonic()
     threading.Thread(target=takeoff_sequence, args=(sock,), daemon=True).start()
+    threading.Thread(target=log_writer, daemon=True).start()
+    print(f"Logging to {LOG_FILE}")
 
     while True:
         render()
