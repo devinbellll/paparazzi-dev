@@ -40,6 +40,46 @@
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": []
+        },
+        {
+            "label": "build: ANTON_MFC nps",
+            "type": "shell",
+            "command": "${workspaceFolder}/build_fw.sh",
+            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],q
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": { "kind": "build", "isDefault": false },
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
+            "label": "build: ANTON_MFC ap",
+            "type": "shell",
+            "command": "${workspaceFolder}/build_fw.sh",
+            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
+            "label": "build: ANTON nps",
+            "type": "shell",
+            "command": "${workspaceFolder}/build_fw.sh",
+            "args": ["ANTON", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
+            "label": "build: ANTON ap",
+            "type": "shell",
+            "command": "${workspaceFolder}/build_fw.sh",
+            "args": ["ANTON", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
         }
     ]
 }

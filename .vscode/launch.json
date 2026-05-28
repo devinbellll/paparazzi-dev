@@ -1,0 +1,43 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ANTON_MFC (nps)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/sim_anton.py",
+            "args": ["--mfc"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "build: ANTON_MFC nps"
+        },
+        {
+            "name": "ANTON_MFC (nps) — no rebuild",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/sim_anton.py",
+            "args": ["--mfc"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "ANTON (nps)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/sim_anton.py",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "build: ANTON nps"
+        },
+        {
+            "name": "ANTON (nps) — no rebuild",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/sim_anton.py",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ]
+}
