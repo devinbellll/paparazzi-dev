@@ -6,6 +6,7 @@
   "makefile.makefilePath": "${workspaceFolder}/paparazzi/Makefile.ac",
   "makefile.makeDirectory": "${workspaceFolder}/paparazzi",
   "makefile.launchConfigurations": [],
+  "makefile.defaultConfiguration": "ANTON_MFC (ap)",
   "makefile.configurations": [
     {
       "name": "ANTON_MFC (ap)",
@@ -16,7 +17,7 @@
         "USE_LTO=no",
         "ap.compile"
       ],
-      "preLaunchTask": "codegen: ANTON_MFC ap"
+      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC/ap/build.log"
     },
     {
       "name": "ANTON_MFC (nps)",
@@ -26,7 +27,7 @@
         "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
         "nps.compile"
       ],
-      "preLaunchTask": "codegen: ANTON_MFC nps"
+      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC/nps/build.log"
     },
     {
       "name": "ANTON (ap)",
@@ -37,7 +38,7 @@
         "USE_LTO=no",
         "ap.compile"
       ],
-      "preLaunchTask": "codegen: ANTON ap"
+      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON/ap/build.log"
     },
     {
       "name": "ANTON (nps)",
@@ -47,8 +48,7 @@
         "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
         "nps.compile"
       ],
-      "preLaunchTask": "codegen: ANTON nps"
+      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON/nps/build.log"
     }
-  ],
-  "makefile.defaultConfiguration": "ANTON_MFC (ap)"
+  ]
 }

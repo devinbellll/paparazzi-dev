@@ -51,7 +51,8 @@ R2D     = math.degrees(1)
 SIM_HOST = "127.0.0.1"
 SIM_PORT = 4243          # UDP0_PORT_IN — sim's primary datalink receive port
 
-LOG_FILE = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
+LOG_FILE       = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
+DEBUG_LOG_FILE = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}_debug.log"
 
 # ── pprz binary encoding ─────────────────────────────────────────────────────
 STX              = 0x99
@@ -214,8 +215,11 @@ def on_rotorcraft_cmd(agent, msg):
 # ── simsitl stdout reader ────────────────────────────────────────────────────
 def sim_stdout_reader(proc):
     """Read lines from simsitl stdout into debug_log (daemon thread)."""
-    for line in proc.stdout:
-        debug_log.append(line.rstrip())
+    with open(DEBUG_LOG_FILE, "w", buffering=1) as f:
+        for line in proc.stdout:
+            stripped = line.rstrip()
+            debug_log.append(stripped)
+            f.write(stripped + "\n")
 
 
 # ── display ──────────────────────────────────────────────────────────────────
@@ -277,7 +281,7 @@ def render():
         f"  {BOLD}DEBUG (printf from firmware){RESET}",
         *[f"    {GREY}{line}{RESET}" for line in list(debug_log)[-8:]],
         f"{'─' * 58}",
-        f"  {GREY}Log → {LOG_FILE}   Ctrl-C to stop{RESET}",
+        f"  {GREY}Log → {LOG_FILE}   Debug → {DEBUG_LOG_FILE}   Ctrl-C to stop{RESET}",
     ]
     sys.stdout.write(CLEAR + "\n".join(lines) + "\n")
     sys.stdout.flush()
@@ -377,6 +381,7 @@ def main():
     threading.Thread(target=takeoff_sequence, args=(sock,), daemon=True).start()
     threading.Thread(target=log_writer, daemon=True).start()
     print(f"Logging to {LOG_FILE}")
+    print(f"Debug log → {DEBUG_LOG_FILE}")
 
     while True:
         render()

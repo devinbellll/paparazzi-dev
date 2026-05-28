@@ -2,6 +2,39 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "build: active config (full)",
+            "type": "shell",
+            "command": "${workspaceFolder}/build_active.sh",
+            "args": ["${command:cpptools.activeConfigName}"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "build: active config (fast)",
+            "type": "shell",
+            "command": "${workspaceFolder}/build_active.sh",
+            "args": ["${command:cpptools.activeConfigName}", "fast"],
+            "options": { "cwd": "${workspaceFolder}" },            
+            "group": { "kind": "build", "isDefault": true },
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "db: regenerate for active config",
+            "type": "shell",
+            "command": "${workspaceFolder}/gen_compile_db.sh",
+            "args": [
+                "${command:cpptools.activeConfigName}"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        },
+
+        {
             "label": "codegen: ANTON_MFC ap",
             "type": "shell",
             "command": "${workspaceFolder}/gen_vscode.sh",
@@ -41,15 +74,16 @@
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": []
         },
+
         {
             "label": "build: ANTON_MFC nps",
             "type": "shell",
             "command": "${workspaceFolder}/build_fw.sh",
-            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],q
+            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
             "options": { "cwd": "${workspaceFolder}" },
-            "group": { "kind": "build", "isDefault": false },
+            "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": []
+            "problemMatcher": ["$gcc"]
         },
         {
             "label": "build: ANTON_MFC ap",
@@ -59,7 +93,7 @@
             "options": { "cwd": "${workspaceFolder}" },
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": []
+            "problemMatcher": ["$gcc"]
         },
         {
             "label": "build: ANTON nps",
@@ -69,7 +103,7 @@
             "options": { "cwd": "${workspaceFolder}" },
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": []
+            "problemMatcher": ["$gcc"]
         },
         {
             "label": "build: ANTON ap",
@@ -79,7 +113,7 @@
             "options": { "cwd": "${workspaceFolder}" },
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": []
+            "problemMatcher": ["$gcc"]
         }
     ]
 }

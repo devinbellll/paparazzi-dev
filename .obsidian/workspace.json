@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Knowledge/05 - Module System.md",
+                "file": "Knowledge/03 - INDI Guidance Deep Dive.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "05 - Module System"
+              "title": "03 - INDI Guidance Deep Dive"
             }
           }
         ]
@@ -78,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 292.5024719238281
+    "width": 410.5024719238281
   },
   "right": {
     "id": "54e0299f3f9c1b03",
@@ -182,6 +182,8 @@
   },
   "active": "7011133beaff6e15",
   "lastOpenFiles": [
+    "Knowledge/02 - INDI Stabilization Deep Dive.md",
+    "Knowledge/05 - Module System.md",
     "Knowledge/08 - NPS Simulation Telemetry.md",
     "sim_anton.py.tmp.6917.6c2c4e27aa7e",
     "sim_anton.py.tmp.6917.d53392d2f7a9",
@@ -197,7 +199,6 @@
     "Knowledge/00 - Index.md",
     "Knowledge/04 - Airframe XML Configuration.md",
     "Knowledge/03 - INDI Guidance Deep Dive.md",
-    "Knowledge/02 - INDI Stabilization Deep Dive.md",
     "Knowledge/01 - Control System Architecture.md"
   ]
 }
