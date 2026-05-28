@@ -1,5 +1,54 @@
 {
   "workbench.editorAssociations": {
     "*.md": "vscode.markdown.preview.editor"
-  }
+  },
+  "makefile.makePath": "make",
+  "makefile.makefilePath": "${workspaceFolder}/paparazzi/Makefile.ac",
+  "makefile.makeDirectory": "${workspaceFolder}/paparazzi",
+  "makefile.launchConfigurations": [],
+  "makefile.configurations": [
+    {
+      "name": "ANTON_MFC (ap)",
+      "makeArgs": [
+        "-f", "Makefile.ac",
+        "AIRCRAFT=ANTON_MFC",
+        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
+        "USE_LTO=no",
+        "ap.compile"
+      ],
+      "preLaunchTask": "codegen: ANTON_MFC ap"
+    },
+    {
+      "name": "ANTON_MFC (nps)",
+      "makeArgs": [
+        "-f", "Makefile.ac",
+        "AIRCRAFT=ANTON_MFC",
+        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
+        "nps.compile"
+      ],
+      "preLaunchTask": "codegen: ANTON_MFC nps"
+    },
+    {
+      "name": "ANTON (ap)",
+      "makeArgs": [
+        "-f", "Makefile.ac",
+        "AIRCRAFT=ANTON",
+        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
+        "USE_LTO=no",
+        "ap.compile"
+      ],
+      "preLaunchTask": "codegen: ANTON ap"
+    },
+    {
+      "name": "ANTON (nps)",
+      "makeArgs": [
+        "-f", "Makefile.ac",
+        "AIRCRAFT=ANTON",
+        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
+        "nps.compile"
+      ],
+      "preLaunchTask": "codegen: ANTON nps"
+    }
+  ],
+  "makefile.defaultConfiguration": "ANTON_MFC (ap)"
 }

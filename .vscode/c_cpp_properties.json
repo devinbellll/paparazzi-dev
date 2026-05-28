@@ -1,0 +1,21 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "ANTON_MFC (ap)",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        },
+        {
+            "name": "ANTON_MFC (nps)",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        },
+        {
+            "name": "ANTON (ap)",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        },
+        {
+            "name": "ANTON (nps)",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        }
+    ]
+}

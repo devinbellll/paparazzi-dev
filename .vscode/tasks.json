@@ -1,0 +1,45 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "codegen: ANTON_MFC ap",
+            "type": "shell",
+            "command": "${workspaceFolder}/gen_vscode.sh",
+            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
+            "label": "codegen: ANTON_MFC nps",
+            "type": "shell",
+            "command": "${workspaceFolder}/gen_vscode.sh",
+            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
+            "label": "codegen: ANTON ap",
+            "type": "shell",
+            "command": "${workspaceFolder}/gen_vscode.sh",
+            "args": ["ANTON", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
+            "label": "codegen: ANTON nps",
+            "type": "shell",
+            "command": "${workspaceFolder}/gen_vscode.sh",
+            "args": ["ANTON", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        }
+    ]
+}
