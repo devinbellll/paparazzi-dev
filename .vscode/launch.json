@@ -38,6 +38,21 @@
             "args": [],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Remote C: simsitl via QEMU :1234  (Rosetta fallback)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC/nps/simsitl",
+            "miDebuggerServerAddress": "localhost:1234",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb-multiarch",
+            "cwd": "${workspaceFolder}/paparazzi",
+            "stopAtConnect": true,
+            "setupCommands": [
+                { "text": "set architecture i386:x86-64", "ignoreFailures": true },
+                { "text": "-enable-pretty-printing", "ignoreFailures": true }
+            ]
         }
     ]
 }

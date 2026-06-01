@@ -44,6 +44,7 @@ LINK    = f"{PPRZ}/sw/ground_segment/tmtc/link"
 IVY_BUS = "127.255.255.255:2010"
 
 _USE_MFC = "--mfc" in sys.argv
+_GDB     = "--gdb" in sys.argv
 AC_NAME  = "ANTON_MFC" if _USE_MFC else "ANTON"
 AC_ID    = 218         if _USE_MFC else 217
 SIMSITL  = f"{PPRZ}/var/aircrafts/{AC_NAME}/nps/simsitl"
@@ -332,8 +333,12 @@ def main():
     )
 
     print("Starting ANTON NPS sim …")
+    _sim_cmd = [SIMSITL, "--norc"]
+    if _GDB:
+        _sim_cmd = ["qemu-x86_64", "-g", "1234"] + _sim_cmd
+    print("Starting ANTON NPS sim …" + (" (QEMU gdbstub :1234, waiting for debugger)" if _GDB else ""))
     sim = subprocess.Popen(
-        [SIMSITL, "--norc"],
+        _sim_cmd,
         env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         text=True, bufsize=1,
     )
