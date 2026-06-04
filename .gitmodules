@@ -1,0 +1,6 @@
+[submodule "paparazzi"]
+	path = paparazzi
+	url = https://github.com/paparazzi/paparazzi.git
+[submodule "enac_paparazzi"]
+	path = enac_paparazzi
+	url = https://github.com/enacuavlab/paparazzi.git

@@ -30,6 +30,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     ripgrep \
     build-essential \
+    zsh \
+    iptables \
+    ipset \
+    dnsutils \
+    aggregate \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Layer 2: Language Runtime ─────────────────────────────────────────────────
@@ -73,6 +78,22 @@ RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
 
 # Install Claude Code globally
 RUN npm install -g @anthropic-ai/claude-code
+
+# OpenWolf — token-discipline harness (per-repo .wolf/ map + lifecycle hooks).
+# Baked into the image so it is present on every container start. See
+# Knowledge/TOKEN_DISCIPLINE.md.
+RUN npm install -g openwolf
+
+# ── Firewall script ───────────────────────────────────────────────────────────
+# Copy before switching to the non-root user; sudoers entry lets vscode run
+# it with elevated privileges without a password. The Anthropic devcontainer
+# feature (ghcr.io/anthropics/devcontainer-features/claude-code) would
+# overwrite this path — we install Claude Code directly above to avoid that.
+COPY init-firewall.sh /usr/local/bin/init-firewall.sh
+RUN chmod +x /usr/local/bin/init-firewall.sh \
+  && echo 'vscode ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh' \
+       > /etc/sudoers.d/init-firewall \
+  && chmod 0440 /etc/sudoers.d/init-firewall
 
 # ── User setup ────────────────────────────────────────────────────────────────
 # The base image provides a non-root "vscode" user. We use that for Claude Code

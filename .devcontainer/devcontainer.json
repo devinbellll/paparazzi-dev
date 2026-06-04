@@ -12,7 +12,7 @@
   "name": "Claude Code Sandbox",
 
   // Reference the compose file so VS Code manages the full stack
-  "dockerComposeFile": "docker-compose.yml",
+  "dockerComposeFile": ["docker-compose.yml", "docker-compose.override.yml"],
   "service": "claude",
   "workspaceFolder": "/workspace",
 
@@ -72,7 +72,23 @@
   //   "5432": { "label": "Postgres",            "onAutoForward": "silent"  }
   // },
 
+  // ── Container env ─────────────────────────────────────────────────────────
+  // Neutralise VS Code IPC sockets so Claude Code cannot reach the host IDE
+  // process. NPM_CONFIG_MINIMUM_RELEASE_AGE blocks same-day package hijacks
+  // (packages must be ≥ 24 h old before npm will install them).
+  "containerEnv": {
+    "VSCODE_IPC_HOOK_CLI": "",
+    "VSCODE_GIT_IPC_HANDLE": "",
+    "GIT_ASKPASS": "",
+    "NPM_CONFIG_MINIMUM_RELEASE_AGE": "1440"
+  },
+
   // ── Lifecycle hooks ────────────────────────────────────────────────────────
+  // postStartCommand runs on every container start (not just creation) so the
+  // firewall is always active. waitFor blocks IDE attachment until it completes.
+  // "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
+  // "waitFor": "postStartCommand",
+
   "postCreateCommand": "echo '✅ Claude Code container ready. Run: claude' && claude --version",
 
   // Run as the non-root user defined in the Dockerfile

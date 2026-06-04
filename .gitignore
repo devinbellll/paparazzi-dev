@@ -1,8 +1,13 @@
-# Python cache
-__pycache__/
+.env
+.claude/cache
+.claude/tmp
+**/.wolf/token-ledger.json
+**/.wolf/memory.md
+**/.wolf/cron-state.json
+**/.wolf/designqc-report.json
+**/.wolf/suggestions.json
+**/.wolf/hooks/_session.json
 
-# OS files
-.DS_Store
-
-paparazzi
-enac_paparazzi
+# Misc
+**/.DS_store
+**/__pychache__/
