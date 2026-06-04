@@ -1,3 +1,10 @@
+# OpenWolf
+
+@.wolf/OPENWOLF.md
+
+This project uses OpenWolf for context management. Read and follow .wolf/OPENWOLF.md every session. Check .wolf/cerebrum.md before generating code. Check .wolf/anatomy.md before reading files.
+
+
 # ENAC Paparazzi Firmware Workspace
 
 Headless ARM Cortex-M firmware development environment for ENAC UAV Lab aircraft using the Paparazzi autopilot framework. Primary focus: **control system development** — INDI stabilization, INDI guidance, new control algorithms.
