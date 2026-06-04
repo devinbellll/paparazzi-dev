@@ -126,6 +126,15 @@ echo "  Host gateway: $HOST_IP"
 iptables -A INPUT  -s "$HOST_IP" -j ACCEPT
 iptables -A OUTPUT -d "$HOST_IP" -j ACCEPT
 
+# Allow outbound UDP to the Mac host (host.docker.internal) for FlightGear viz
+# host.docker.internal resolves to 192.168.65.x — different from the bridge gateway above
+FG_HOST_IP=$(getent hosts host.docker.internal 2>/dev/null | awk '{print $1}')
+if [[ -n "$FG_HOST_IP" ]]; then
+  echo "  Mac host (host.docker.internal): $FG_HOST_IP — allowing UDP 5501/5502"
+  iptables -A INPUT  -s "$FG_HOST_IP" -j ACCEPT
+  iptables -A OUTPUT -d "$FG_HOST_IP" -j ACCEPT
+fi
+
 # ── Phase 6: Set default DROP, then allow established + ipset ─────────────────
 iptables -P INPUT   DROP
 iptables -P FORWARD DROP

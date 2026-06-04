@@ -14,6 +14,7 @@ Index of all notes. Designed for Obsidian; internal links use `[[Note Name]]` st
 | [[06 - Modifying ANTON Stabilization]] | Practical walkthrough for ANTON |
 | [[07 - All Touch Points Cheatsheet]] | Quick reference: every file to touch per change type |
 | [[08 - NPS Simulation Telemetry]] | Firmware logs in Python: two message paths, adding new messages, format gotchas |
+| [[09 - FlightGear 3D Visualization]] | Live 3D view of NPS sim in FlightGear on Mac — setup, gotchas, verification |
 
 ## Quick-start question
 

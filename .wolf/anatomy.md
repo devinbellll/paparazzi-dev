@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-04T13:24:57.499Z
-> Files: 575 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-04T15:11:04.671Z
+> Files: 578 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -17,7 +17,8 @@
 - `gen_compile_db.sh` — Generate a per-config compile_commands.json for VS Code IntelliSense. (~623 tok)
 - `gen_vscode.sh` — Codegen prebuild step for VS Code / Makefile Tools. (~221 tok)
 - `README.md` — Project documentation (~1275 tok)
-- `sim_anton.py` — pprz_block_frame, on_rate_attitude, on_pos_llh, on_speed_pos + 10 more (~5125 tok)
+- `sim_anton.py` — Launch ANTON NPS sim + Ivy telemetry monitor. Flags: --mfc --gdb --fg (FlightGear 3D viz via host.docker.internal:5501). (~5414 tok)
+- `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 
 ## .claude/
 
@@ -41,7 +42,7 @@
 - `docker-compose.yml` — Docker Compose services (~1143 tok)
 - `Dockerfile` — Docker container definition (~1170 tok)
 - `Dockerfile.local` — ── Layer 5: Paparazzi UAV Toolchains ───────────────────────────────────────── (~636 tok)
-- `init-firewall.sh` (~1616 tok)
+- `init-firewall.sh` (~1631 tok)
 
 ## .devcontainer/scripts/
 
@@ -74,6 +75,11 @@
 - `appearance.json` (~1 tok)
 - `core-plugins.json` (~199 tok)
 - `workspace.json` (~1622 tok)
+
+## Knowledge/
+
+- `00 - Index.md` — Paparazzi Control System — Knowledge Base (~315 tok)
+- `09 - FlightGear 3D Visualization.md` — FlightGear 3D Visualization for NPS (~1076 tok)
 
 ## enac_paparazzi/
 
@@ -730,3 +736,7 @@
 - `rotorcraft_krooz.xml` (~1321 tok)
 - `rotorcraft_oa_avoid.xml` (~266 tok)
 - `slayer_training.xml` (~1106 tok)
+
+## paparazzi/conf/simulator/flightgear/
+
+- `bebop-set.xml` (~361 tok)

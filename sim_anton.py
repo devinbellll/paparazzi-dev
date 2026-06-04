@@ -3,8 +3,17 @@
 Launch ANTON NPS simulation and print live aircraft state to the terminal.
 Sends a takeoff command sequence 1 second after the sim is ready.
 
-Usage:  python3 sim_anton.py
+Usage:  python3 sim_anton.py [--mfc] [--gdb] [--fg]
         Ctrl-C to stop (kills child processes cleanly).
+
+Flags:
+  --fg   Stream NET_FDM pose to FlightGear on the Mac host (host.docker.internal:5501).
+         In FG Additional Settings add:
+           --fdm=null --native-fdm=socket,in,60,,5501,udp
+           --aircraft=bebop
+           --aircraft-dir="/path/to/paparazzi/conf/simulator/flightgear"
+           --disable-ai-models --disable-real-weather-fetch --disable-terrasync
+           --timeofday=noon --lat=43.56 --lon=1.48 --altitude=300 --heading=0
 
 Takeoff sequence (flight plan blocks):
   Block 3 "Start Engine" → NavResurrect() un-kills throttle
@@ -45,9 +54,16 @@ IVY_BUS = "127.255.255.255:2010"
 
 _USE_MFC = "--mfc" in sys.argv
 _GDB     = "--gdb" in sys.argv
+_USE_FG  = "--fg"  in sys.argv
 AC_NAME  = "ANTON_MFC" if _USE_MFC else "ANTON"
 AC_ID    = 218         if _USE_MFC else 217
 SIMSITL  = f"{PPRZ}/var/aircrafts/{AC_NAME}/nps/simsitl"
+FG_PORT  = 5501                     # NPS default; FG: --native-fdm=socket,in,60,,5501,udp
+# inet_addr() in nps_flightgear_init only accepts dotted-decimal — resolve here
+try:
+    FG_HOST = socket.gethostbyname("host.docker.internal")
+except OSError:
+    FG_HOST = "192.168.65.254"      # Docker Desktop Mac host fallback
 R2D     = math.degrees(1)
 SIM_HOST = "127.0.0.1"
 SIM_PORT = 4243          # UDP0_PORT_IN — sim's primary datalink receive port
@@ -334,9 +350,12 @@ def main():
 
     print("Starting ANTON NPS sim …")
     _sim_cmd = [SIMSITL, "--norc"]
+    if _USE_FG:
+        _sim_cmd += ["--fg_host", FG_HOST, "--fg_port", str(FG_PORT), "--fg_fdm"]
     if _GDB:
         _sim_cmd = ["qemu-x86_64", "-g", "1234"] + _sim_cmd
-    print("Starting ANTON NPS sim …" + (" (QEMU gdbstub :1234, waiting for debugger)" if _GDB else ""))
+    _fg_note = f"  FlightGear → {FG_HOST}:{FG_PORT}" if _USE_FG else ""
+    print("Starting ANTON NPS sim …" + (" (QEMU gdbstub :1234, waiting for debugger)" if _GDB else "") + _fg_note)
     sim = subprocess.Popen(
         _sim_cmd,
         env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
