@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+
+<PropertyList>
+  <sim>
+    <description>Bebop quadrotor (Paparazzi NPS external FDM)</description>
+    <author>Paparazzi UAV / ENAC</author>
+    <aircraft-version>1.0</aircraft-version>
+
+    <!-- Null FDM: position and attitude driven entirely by NPS via native-fdm socket -->
+    <flight-model>null</flight-model>
+
+    <model>
+      <path>../paparazzi/conf/simulator/flightgear/bebop.xml</path>
+    </model>
+
+    <!-- Chase-cam distance — negative = behind the aircraft -->
+    <chase-distance-m archive="y" type="double">-3.5</chase-distance-m>
+
+    <panel>
+      <visibility archive="n">false</visibility>
+    </panel>
+
+    <hud>
+      <enable3d>false</enable3d>
+    </hud>
+  </sim>
+</PropertyList>
