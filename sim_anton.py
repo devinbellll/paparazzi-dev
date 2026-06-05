@@ -3,7 +3,7 @@
 Launch ANTON NPS simulation and print live aircraft state to the terminal.
 Sends a takeoff command sequence 1 second after the sim is ready.
 
-Usage:  python3 sim_anton.py [--mfc] [--gdb] [--fg]
+Usage:  python3 sim_anton.py [--mfc] [--gdb] [--fg] [--scope]
         Ctrl-C to stop (kills child processes cleanly).
 
 Flags:
@@ -14,6 +14,10 @@ Flags:
            --aircraft-dir="/path/to/paparazzi/conf/simulator/flightgear"
            --disable-ai-models --disable-real-weather-fetch --disable-terrasync
            --timeofday=noon --lat=43.56 --lon=1.48 --altitude=300 --heading=0
+  --scope Stream a UDP/JSON snapshot of `state` to PlotJuggler on the Mac host
+         (host.docker.internal:9870, ~50 Hz) for live Simulink-scope plotting.
+         On the Mac: PlotJuggler -> Streaming -> Start -> UDP Server, port 9870,
+         protocol JSON, "use field as timestamp" = t. See scope_stream.py.
 
 Takeoff sequence (flight plan blocks):
   Block 3 "Start Engine" → NavResurrect() un-kills throttle
@@ -46,15 +50,17 @@ import threading
 import time
 from collections import deque
 from ivy.std_api import IvyInit, IvyStart, IvyStop, IvyBindMsg
+from scope_stream import ScopeStream
 
 PPRZ    = "/workspace/paparazzi"
 SERVER  = f"{PPRZ}/sw/ground_segment/tmtc/server"
 LINK    = f"{PPRZ}/sw/ground_segment/tmtc/link"
 IVY_BUS = "127.255.255.255:2010"
 
-_USE_MFC = "--mfc" in sys.argv
-_GDB     = "--gdb" in sys.argv
-_USE_FG  = "--fg"  in sys.argv
+_USE_MFC   = "--mfc"   in sys.argv
+_GDB       = "--gdb"   in sys.argv
+_USE_FG    = "--fg"    in sys.argv
+_USE_SCOPE = "--scope" in sys.argv
 AC_NAME  = "ANTON_MFC" if _USE_MFC else "ANTON"
 AC_ID    = 218         if _USE_MFC else 217
 SIMSITL  = f"{PPRZ}/var/aircrafts/{AC_NAME}/nps/simsitl"
@@ -67,6 +73,11 @@ except OSError:
 R2D     = math.degrees(1)
 SIM_HOST = "127.0.0.1"
 SIM_PORT = 4243          # UDP0_PORT_IN — sim's primary datalink receive port
+
+# PlotJuggler scope stream — UDP/JSON out to the Mac host (reuses FG_HOST egress)
+SCOPE_HOST = FG_HOST
+SCOPE_PORT = 9870        # PlotJuggler UDP Server (JSON) listen port on the Mac
+SCOPE_RATE = 50.0        # Hz — decoupled from the 10 Hz terminal render
 
 LOG_FILE       = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
 DEBUG_LOG_FILE = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}_debug.log"
@@ -318,6 +329,52 @@ def log_writer():
             time.sleep(0.1)
 
 
+# ── PlotJuggler scope stream ─────────────────────────────────────────────────
+def scope_snapshot():
+    """Map the flat `state` dict into a grouped JSON tree for PlotJuggler.
+    Nested keys become a '/'-separated series tree (e.g. truth/phi, mfc/err_phi).
+    `t` is wall-clock seconds so PlotJuggler can use it as the timestamp field."""
+    s = state
+    return {
+        "t": time.time(),
+        "truth": {  # Layer 0 — JSBSim truth
+            "phi": s["phi"], "theta": s["theta"], "psi": s["psi"],
+            "p": s["p"], "q": s["q"], "r": s["r"],
+            "alt": s["alt"], "agl": s["agl"],
+            "vx": s["vx"], "vy": s["vy"], "vz": s["vz"],
+            "wind_n": s["wind_n"], "wind_e": s["wind_e"], "wind_d": s["wind_d"],
+        },
+        "indi": {   # Layer 1 — INDI stabilizer (STAB_ATTITUDE), radians as received
+            "att_phi": s["sa_att_phi"], "att_theta": s["sa_att_theta"], "att_psi": s["sa_att_psi"],
+            "ref_phi": s["sa_ref_phi"], "ref_theta": s["sa_ref_theta"], "ref_psi": s["sa_ref_psi"],
+            "rate_p": s["sa_rate_p"], "rate_q": s["sa_rate_q"], "rate_r": s["sa_rate_r"],
+            "rref_p": s["sa_rref_p"], "rref_q": s["sa_rref_q"], "rref_r": s["sa_rref_r"],
+            "dacc_p": s["sa_dacc_p"], "dacc_q": s["sa_dacc_q"], "dacc_r": s["sa_dacc_r"],
+            "aref_p": s["sa_aref_p"], "aref_q": s["sa_aref_q"], "aref_r": s["sa_aref_r"],
+        },
+        "mfc": {    # Layer 1 — MFC controller (STAB_MFC)
+            "sp_phi": s["mfc_sp_phi"], "sp_theta": s["mfc_sp_theta"], "sp_psi": s["mfc_sp_psi"],
+            "me_phi": s["mfc_me_phi"], "me_theta": s["mfc_me_theta"], "me_psi": s["mfc_me_psi"],
+            "err_phi": s["mfc_err_phi"], "err_theta": s["mfc_err_theta"], "err_psi": s["mfc_err_psi"],
+            "fk_phi": s["mfc_fk_phi"], "fk_theta": s["mfc_fk_theta"], "fk_psi": s["mfc_fk_psi"],
+            "cmd_phi": s["mfc_cmd_phi"], "cmd_theta": s["mfc_cmd_theta"], "cmd_psi": s["mfc_cmd_psi"],
+            "u0": s["mfc_u0"], "u1": s["mfc_u1"], "u2": s["mfc_u2"], "u3": s["mfc_u3"],
+        },
+        "wls": {"v0": s["wls_v0"], "v1": s["wls_v1"], "v2": s["wls_v2"], "v3": s["wls_v3"]},
+        "cmd": {"roll": s["rc_roll"], "pitch": s["rc_pitch"],
+                "yaw": s["rc_yaw"], "thrust": s["rc_thrust"]},
+    }
+
+
+def scope_writer():
+    """Push a scope snapshot to PlotJuggler at SCOPE_RATE Hz (daemon thread)."""
+    scope = ScopeStream(SCOPE_HOST, SCOPE_PORT)
+    period = 1.0 / SCOPE_RATE
+    while True:
+        scope.send(scope_snapshot())
+        time.sleep(period)
+
+
 # ── command sender ───────────────────────────────────────────────────────────
 def send_block(sock: socket.socket, block_id: int, label: str):
     frame = pprz_block_frame(block_id)
@@ -404,6 +461,9 @@ def main():
     threading.Thread(target=sim_stdout_reader, args=(sim,), daemon=True).start()
     threading.Thread(target=takeoff_sequence, args=(sock,), daemon=True).start()
     threading.Thread(target=log_writer, daemon=True).start()
+    if _USE_SCOPE:
+        threading.Thread(target=scope_writer, daemon=True).start()
+        print(f"Scope → PlotJuggler at {SCOPE_HOST}:{SCOPE_PORT} (UDP/JSON, {SCOPE_RATE:.0f} Hz)")
     print(f"Logging to {LOG_FILE}")
     print(f"Debug log → {DEBUG_LOG_FILE}")
 
