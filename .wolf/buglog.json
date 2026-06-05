@@ -8,7 +8,11 @@
       "file": "sim_anton.py",
       "root_cause": "2 lines replaced/restructured",
       "fix": "Rewrote 3→6 lines (2 removed)",
-      "tags": ["auto-detected", "refactor", "py"],
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-04T14:32:51.157Z"
@@ -20,8 +24,16 @@
       "file": "sim_anton.py",
       "root_cause": "NPS defaults to GUI protocol (FGNetGUI, version 8). FlightGear --native-fdm expects FDM protocol (FGNetFDM, version 24). Without --fg_fdm flag, every packet is silently discarded by FG version check.",
       "fix": "Added --fg_fdm to simsitl command in sim_anton.py when --fg flag is used",
-      "tags": ["flightgear", "nps", "udp", "protocol"],
-      "related_bugs": ["bug-003", "bug-004"],
+      "tags": [
+        "flightgear",
+        "nps",
+        "udp",
+        "protocol"
+      ],
+      "related_bugs": [
+        "bug-003",
+        "bug-004"
+      ],
       "occurrences": 1,
       "last_seen": "2026-06-04T15:00:00.000Z"
     },
@@ -32,8 +44,15 @@
       "file": ".devcontainer/init-firewall.sh",
       "root_cause": "Devcontainer firewall has OUTPUT DROP default policy. HOST_IP is set to the Docker bridge gateway (172.24.0.1), not the Mac host (192.168.65.254). Traffic to host.docker.internal is blocked.",
       "fix": "Patched init-firewall.sh to resolve host.docker.internal at startup and add iptables rules to allow INPUT/OUTPUT for that IP. Temporary fix via sudo iptables for current session.",
-      "tags": ["firewall", "iptables", "docker", "networking"],
-      "related_bugs": ["bug-002"],
+      "tags": [
+        "firewall",
+        "iptables",
+        "docker",
+        "networking"
+      ],
+      "related_bugs": [
+        "bug-002"
+      ],
       "occurrences": 1,
       "last_seen": "2026-06-04T15:00:00.000Z"
     },
@@ -44,10 +63,34 @@
       "file": "sim_anton.py",
       "root_cause": "nps_flightgear_init() uses inet_addr() which only handles dotted-decimal IPs. Passing 'host.docker.internal' returns INADDR_NONE (broadcast address). NPS appeared to send but packets went nowhere useful.",
       "fix": "Resolve hostname to IP in Python with socket.gethostbyname() before passing to simsitl. Added try/except fallback to hardcoded 192.168.65.254.",
-      "tags": ["networking", "hostname", "inet_addr", "nps", "flightgear"],
-      "related_bugs": ["bug-002"],
+      "tags": [
+        "networking",
+        "hostname",
+        "inet_addr",
+        "nps",
+        "flightgear"
+      ],
+      "related_bugs": [
+        "bug-002"
+      ],
       "occurrences": 1,
       "last_seen": "2026-06-04T15:00:00.000Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-06-04T16:44:37.621Z",
+      "error_message": "Incorrect value in code",
+      "file": ".devcontainer/init-firewall.sh",
+      "root_cause": "Had '{print $1}'",
+      "fix": "Changed to '{print $1; exit}'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-04T16:44:37.622Z"
     }
   ]
 }

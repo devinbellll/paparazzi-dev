@@ -1,7 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-04T15:11:04.671Z
-> Files: 578 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-05T08:40:55.190Z
+> Files: 580 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../home/vscode/.claude/plans/
+
+- `assess-the-feasibility-of-dreamy-clover.md` — Live scope for the NPS sim → PlotJuggler on the Mac host (~1309 tok)
 
 ## ./
 
@@ -16,9 +20,9 @@
 - `gen_build_log.sh` — Capture a verbose build log for Makefile Tools buildLog IntelliSense. (~602 tok)
 - `gen_compile_db.sh` — Generate a per-config compile_commands.json for VS Code IntelliSense. (~623 tok)
 - `gen_vscode.sh` — Codegen prebuild step for VS Code / Makefile Tools. (~221 tok)
+- `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 - `README.md` — Project documentation (~1275 tok)
 - `sim_anton.py` — Launch ANTON NPS sim + Ivy telemetry monitor. Flags: --mfc --gdb --fg (FlightGear 3D viz via host.docker.internal:5501). (~5414 tok)
-- `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 
 ## .claude/
 
@@ -42,7 +46,7 @@
 - `docker-compose.yml` — Docker Compose services (~1143 tok)
 - `Dockerfile` — Docker container definition (~1170 tok)
 - `Dockerfile.local` — ── Layer 5: Paparazzi UAV Toolchains ───────────────────────────────────────── (~636 tok)
-- `init-firewall.sh` (~1631 tok)
+- `init-firewall.sh` (~1634 tok)
 
 ## .devcontainer/scripts/
 

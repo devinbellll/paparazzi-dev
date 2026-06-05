@@ -7,7 +7,9 @@
       "Bash(python3 -c \"import vispy; print\\('vispy ok'\\)\")",
       "Bash(python3 -c \"import http.server, socketserver, threading, json; print\\('stdlib http ok'\\)\")",
       "Bash(python3 -c \"import asyncio; print\\('asyncio ok'\\)\")",
-      "Bash(pip3 list *)"
+      "Bash(pip3 list *)",
+      "Bash(getent hosts *)",
+      "Bash(sudo iptables -L OUTPUT -n -v --line-numbers)"
     ]
   }
 }
