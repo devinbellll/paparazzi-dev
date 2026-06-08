@@ -49,6 +49,26 @@
         "nps.compile"
       ],
       "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON/nps/build.log"
-    }
+    },
+    {
+      "name": "ANTON_MFC_THRUST (ap)",
+      "makeArgs": [
+        "-f", "Makefile.ac",
+        "AIRCRAFT=ANTON_MFC_THRUST",
+        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
+        "USE_LTO=no",
+        "ap.compile"
+      ],
+      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC_THRUST/ap/build.log"
+    },
+    {
+      "name": "ANTON_MFC_THRUST (nps)",
+      "makeArgs": [
+        "-f", "Makefile.ac",
+        "AIRCRAFT=ANTON_MFC_THRUST",
+        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
+        "nps.compile"
+      ],
+      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC_THRUST/nps/build.log"
   ]
 }

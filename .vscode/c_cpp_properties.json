@@ -16,6 +16,14 @@
         {
             "name": "ANTON (nps)",
             "configurationProvider": "ms-vscode.makefile-tools"
-        }
+        },
+        {
+            "name": "ANTON_MFC_THRUST (ap)",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        },
+        {
+            "name": "ANTON_MFC_THRUST (nps)",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        },
     ]
 }

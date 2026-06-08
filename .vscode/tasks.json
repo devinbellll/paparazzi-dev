@@ -55,6 +55,26 @@
             "problemMatcher": []
         },
         {
+            "label": "codegen: ANTON_MFC_THRUST ap",
+            "type": "shell",
+            "command": "${workspaceFolder}/gen_vscode.sh",
+            "args": ["ANTON_MFC_THRUST", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
+            "label": "codegen: ANTON_MFC_THRUST nps",
+            "type": "shell",
+            "command": "${workspaceFolder}/gen_vscode.sh",
+            "args": ["ANTON_MFC_THRUST", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
             "label": "codegen: ANTON ap",
             "type": "shell",
             "command": "${workspaceFolder}/gen_vscode.sh",
@@ -90,6 +110,26 @@
             "type": "shell",
             "command": "${workspaceFolder}/build_fw.sh",
             "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "build: ANTON_MFC_THRUST nps",
+            "type": "shell",
+            "command": "${workspaceFolder}/build_fw.sh",
+            "args": ["ANTON_MFC_THRUST", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "build: ANTON_MFC_THRUST ap",
+            "type": "shell",
+            "command": "${workspaceFolder}/build_fw.sh",
+            "args": ["ANTON_MFC_THRUST", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
             "options": { "cwd": "${workspaceFolder}" },
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },

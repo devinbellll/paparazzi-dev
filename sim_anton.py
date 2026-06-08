@@ -64,13 +64,24 @@ SERVER  = f"{PPRZ}/sw/ground_segment/tmtc/server"
 LINK    = f"{PPRZ}/sw/ground_segment/tmtc/link"
 IVY_BUS = "127.255.255.255:2010"
 
-_USE_MFC   = "--mfc"   in sys.argv
-_GDB       = "--gdb"   in sys.argv
-_USE_FG    = "--fg"    in sys.argv
-_USE_SCOPE        = "--no-scope"     not in sys.argv   # in-sim emitter — ON by default
+_USE_MFC   = "--mfc" in sys.argv
+_USE_Z     = "--z" in sys.argv
+_GDB       = "--gdb" in sys.argv
+_USE_FG    = "--fg" in sys.argv
+_USE_SCOPE = "--no-scope" not in sys.argv   # in-sim emitter — ON by default
 _USE_LEGACY_SCOPE = "--debug-scope" in sys.argv       # old Python state resampler (debug)
-AC_NAME  = "ANTON_MFC" if _USE_MFC else "ANTON"
-AC_ID    = 218         if _USE_MFC else 217
+
+# Determine AC_NAME and AC_ID based on flags
+if _USE_MFC:
+    AC_NAME = "ANTON_MFC"
+    AC_ID = 218
+elif _USE_Z:
+    AC_NAME = "ANTON_MFC_THRUST"
+    AC_ID = 219
+else:
+    AC_NAME = "ANTON"
+    AC_ID = 217
+
 SIMSITL  = f"{PPRZ}/var/aircrafts/{AC_NAME}/nps/simsitl"
 FG_PORT  = 5501                     # NPS default; FG: --native-fdm=socket,in,60,,5501,udp
 # inet_addr() in nps_flightgear_init only accepts dotted-decimal — resolve here
