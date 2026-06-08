@@ -3,7 +3,7 @@
 Launch ANTON NPS simulation and print live aircraft state to the terminal.
 Sends a takeoff command sequence 1 second after the sim is ready.
 
-Usage:  python3 sim_anton.py [--mfc] [--gdb] [--fg] [--scope]
+Usage:  python3 sim_anton.py [--mfc] [--gdb] [--fg] [--no-scope] [--debug-scope]
         Ctrl-C to stop (kills child processes cleanly).
 
 Flags:
@@ -14,10 +14,17 @@ Flags:
            --aircraft-dir="/path/to/paparazzi/conf/simulator/flightgear"
            --disable-ai-models --disable-real-weather-fetch --disable-terrasync
            --timeofday=noon --lat=43.56 --lon=1.48 --altitude=300 --heading=0
-  --scope Stream a UDP/JSON snapshot of `state` to PlotJuggler on the Mac host
-         (host.docker.internal:9870, ~50 Hz) for live Simulink-scope plotting.
-         On the Mac: PlotJuggler -> Streaming -> Start -> UDP Server, port 9870,
-         protocol JSON, "use field as timestamp" = t. See scope_stream.py.
+
+Scope (live PlotJuggler plotting):
+  By DEFAULT the in-process NPS emitter (nps_scope.c) streams high-rate JSBSim
+  truth + MFC controller internals straight from the sim to PlotJuggler on the
+  Mac host (host.docker.internal:9870), sim-time stamped. On the Mac:
+  PlotJuggler -> Streaming -> Start -> UDP Server, port 9870, protocol JSON,
+  "use field as timestamp" = t.
+  --no-scope       Disable the default in-sim scope emitter.
+  --debug-scope   Also run the old Python `state` resampler (scope_stream.py),
+                   a lower-fidelity debugging stream (Ivy-derived, walltime
+                   stamps, ~50 Hz) on port 9871.
 
 Takeoff sequence (flight plan blocks):
   Block 3 "Start Engine" → NavResurrect() un-kills throttle
@@ -60,7 +67,8 @@ IVY_BUS = "127.255.255.255:2010"
 _USE_MFC   = "--mfc"   in sys.argv
 _GDB       = "--gdb"   in sys.argv
 _USE_FG    = "--fg"    in sys.argv
-_USE_SCOPE = "--scope" in sys.argv
+_USE_SCOPE        = "--no-scope"     not in sys.argv   # in-sim emitter — ON by default
+_USE_LEGACY_SCOPE = "--debug-scope" in sys.argv       # old Python state resampler (debug)
 AC_NAME  = "ANTON_MFC" if _USE_MFC else "ANTON"
 AC_ID    = 218         if _USE_MFC else 217
 SIMSITL  = f"{PPRZ}/var/aircrafts/{AC_NAME}/nps/simsitl"
@@ -74,10 +82,21 @@ R2D     = math.degrees(1)
 SIM_HOST = "127.0.0.1"
 SIM_PORT = 4243          # UDP0_PORT_IN — sim's primary datalink receive port
 
-# PlotJuggler scope stream — UDP/JSON out to the Mac host (reuses FG_HOST egress)
+# PlotJuggler scope — UDP/JSON out to the Mac host (reuses FG_HOST egress).
 SCOPE_HOST = FG_HOST
-SCOPE_PORT = 9870        # PlotJuggler UDP Server (JSON) listen port on the Mac
-SCOPE_RATE = 50.0        # Hz — decoupled from the 10 Hz terminal render
+
+# DEFAULT scope: the in-process NPS emitter (nps_scope.c) — high-rate JSBSim
+# truth + MFC internals, sim-time stamped, straight from the sim. Port 9870.
+SCOPE_PORT  = 9870       # PlotJuggler UDP Server (JSON) listen port on the Mac
+SCOPE_DECIM = 2          # emit every Nth sim step. Sim steps at SYS_TIME_FREQUENCY
+                         # (~1 kHz for ANTON_MFC), real-time paced: decim 1 -> ~1 kHz,
+                         # decim 2 -> ~500 Hz, decim 10 -> ~100 Hz.
+
+# OPTIONAL debug scope (--debug-scope): the Python scope_writer below resamples
+# the Ivy-derived `state` dict. Lower fidelity (Ivy-capped rates, walltime stamps);
+# a debugging tool. Runs on a separate port so it coexists with the default scope.
+LEGACY_SCOPE_PORT = 9871
+LEGACY_SCOPE_RATE = 50.0  # Hz — decoupled from the 10 Hz terminal render
 
 LOG_FILE       = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
 DEBUG_LOG_FILE = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}_debug.log"
@@ -367,9 +386,10 @@ def scope_snapshot():
 
 
 def scope_writer():
-    """Push a scope snapshot to PlotJuggler at SCOPE_RATE Hz (daemon thread)."""
-    scope = ScopeStream(SCOPE_HOST, SCOPE_PORT)
-    period = 1.0 / SCOPE_RATE
+    """Legacy debug stream: push a `state` snapshot to PlotJuggler at
+    LEGACY_SCOPE_RATE Hz (daemon thread)."""
+    scope = ScopeStream(SCOPE_HOST, LEGACY_SCOPE_PORT)
+    period = 1.0 / LEGACY_SCOPE_RATE
     while True:
         scope.send(scope_snapshot())
         time.sleep(period)
@@ -409,6 +429,11 @@ def main():
     _sim_cmd = [SIMSITL, "--norc"]
     if _USE_FG:
         _sim_cmd += ["--fg_host", FG_HOST, "--fg_port", str(FG_PORT), "--fg_fdm"]
+    if _USE_SCOPE:
+        # Default in-process emitter → PlotJuggler (truth + MFC internals, sim-time)
+        _sim_cmd += ["--scope_host", SCOPE_HOST,
+                     "--scope_port", str(SCOPE_PORT),
+                     "--scope_decim", str(SCOPE_DECIM)]
     if _GDB:
         _sim_cmd = ["qemu-x86_64", "-g", "1234"] + _sim_cmd
     _fg_note = f"  FlightGear → {FG_HOST}:{FG_PORT}" if _USE_FG else ""
@@ -462,8 +487,12 @@ def main():
     threading.Thread(target=takeoff_sequence, args=(sock,), daemon=True).start()
     threading.Thread(target=log_writer, daemon=True).start()
     if _USE_SCOPE:
+        print(f"Scope → PlotJuggler at {SCOPE_HOST}:{SCOPE_PORT} "
+              f"(in-sim truth+MFC, sim-time, decim {SCOPE_DECIM})")
+    if _USE_LEGACY_SCOPE:
         threading.Thread(target=scope_writer, daemon=True).start()
-        print(f"Scope → PlotJuggler at {SCOPE_HOST}:{SCOPE_PORT} (UDP/JSON, {SCOPE_RATE:.0f} Hz)")
+        print(f"Legacy scope → PlotJuggler at {SCOPE_HOST}:{LEGACY_SCOPE_PORT} "
+              f"(Ivy state resample, {LEGACY_SCOPE_RATE:.0f} Hz)")
     print(f"Logging to {LOG_FILE}")
     print(f"Debug log → {DEBUG_LOG_FILE}")
 

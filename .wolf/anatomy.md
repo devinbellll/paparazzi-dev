@@ -1,11 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-05T08:40:55.190Z
-> Files: 580 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-05T13:31:45.080Z
+> Files: 581 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
 
 - `assess-the-feasibility-of-dreamy-clover.md` — Live scope for the NPS sim → PlotJuggler on the Mac host (~1309 tok)
+- `velvet-sprouting-peach.md` — Assessment: Building this stack natively on macOS (NPS SITL, no container) (~1687 tok)
 
 ## ./
 
@@ -744,3 +745,14 @@
 ## paparazzi/conf/simulator/flightgear/
 
 - `bebop-set.xml` (~361 tok)
+
+## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
+
+- `nps_scope.h` — API for the in-process UDP/JSON scope emitter: `nps_scope_init(host,port,decim)`, `nps_scope_send(fdm)`. (~180 tok)
+- `nps_scope.c` — reads `fdm` truth + MFC controller globals, builds one JSON datagram per decimated sim step, `sendto` to PlotJuggler. MFC block guarded by `STABILIZATION_MFC_ROLL_ALPHA`; WLS by `!..._ALLOCATION_PSEUDO_INVERSE`. (~700 tok)
+
+## scope registry redesign (2026-06-05)
+
+- `sw/airborne/nps_scope_var.h` — firmware-facing shim (always-on include path). `NPS_SCOPE_VAR`/`NPS_SCOPE_VARN` macros register a global by address via `__attribute__((constructor))`; gated on `USE_NPS`, no-op on real targets. (~250 tok)
+- `sw/simulator/nps/nps_scope.c` — now controller-agnostic: fdm `truth` block + generic variable registry (`nps_scope_register`/`_array`), emits each registered var as a top-level JSON key. No MFC/controller references. (~900 tok)
+- `sw/simulator/nps/nps_scope.h` — adds `nps_scope_type_t` enum + register prototypes. (~250 tok)
