@@ -99,10 +99,47 @@
       "file": "build_fw.sh (usage)",
       "root_cause": "Passed CONF_XML as 'paparazzi/conf/...' per the workspace CLAUDE.md example, but build_fw.sh runs 'make -C /workspace/paparazzi' so the path resolves relative to paparazzi/ and became paparazzi/paparazzi/conf/...",
       "fix": "Pass CONF_XML relative to the paparazzi dir: 'conf/airframes/ENAC/conf_enac.xml' (matches build_fw.sh's own header example).",
-      "tags": ["build", "build_fw.sh", "conf-path", "paparazzi"],
+      "tags": [
+        "build",
+        "build_fw.sh",
+        "conf-path",
+        "paparazzi"
+      ],
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-05T00:00:00.000Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-06-08T15:13:27.587Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_indi.c",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→17 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-08T15:13:27.587Z"
+    },
+    {
+      "id": "bug-008",
+      "timestamp": "2026-06-09T08:57:45.127Z",
+      "error_message": "Significant refactor of ",
+      "file": "Knowledge/Sessions/2026-06-09-retroactive-retros.md",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 11→13 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T08:57:45.127Z"
     }
   ]
 }

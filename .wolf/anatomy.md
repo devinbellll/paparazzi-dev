@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-05T13:31:45.080Z
-> Files: 581 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T09:03:42.318Z
+> Files: 595 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
 
@@ -39,6 +39,10 @@
 ## .claude/rules/
 
 - `openwolf.md` (~313 tok)
+
+## .claude/worktrees/session-retros/Knowledge/Sessions/
+
+- `2026-06-09-retroactive-retros.md` — Session — 2026-06-09: Retroactive Session Retros (~624 tok)
 
 ## .devcontainer/
 
@@ -85,6 +89,16 @@
 
 - `00 - Index.md` — Paparazzi Control System — Knowledge Base (~315 tok)
 - `09 - FlightGear 3D Visualization.md` — FlightGear 3D Visualization for NPS (~1076 tok)
+
+## Knowledge/Sessions/
+
+- `2026-05-27-initial-workspace-setup.md` — Session — 2026-05-27: Initial Workspace Setup (~226 tok)
+- `2026-05-28-vscode-build-tasks.md` — Session — 2026-05-28: VSCode Build Tasks and IDE Integration (~234 tok)
+- `2026-06-01-devcontainer-freeze-debug.md` — Session — 2026-06-01: Devcontainer Freeze and VSCode Debugging (~266 tok)
+- `2026-06-04-flightgear-openwolf.md` — Session — 2026-06-04: FlightGear Integration and OpenWolf Initialization (~455 tok)
+- `2026-06-05-plotjuggler-scope.md` — Session — 2026-06-05: PlotJuggler Scope Emitter and Architecture Redesign (~574 tok)
+- `2026-06-08-indi-guidance-airframes.md` — Session — 2026-06-08: INDI Guidance and ANTON_MFC_THRUST Airframe Config (~354 tok)
+- `2026-06-09-retroactive-retros.md` — Session — 2026-06-09: Retroactive Session Retros (~961 tok)
 
 ## enac_paparazzi/
 
@@ -746,10 +760,14 @@
 
 - `bebop-set.xml` (~361 tok)
 
+## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
+
+- `guidance_indi.c` — Declares is (~5864 tok)
+
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
 
-- `nps_scope.h` — API for the in-process UDP/JSON scope emitter: `nps_scope_init(host,port,decim)`, `nps_scope_send(fdm)`. (~180 tok)
 - `nps_scope.c` — reads `fdm` truth + MFC controller globals, builds one JSON datagram per decimated sim step, `sendto` to PlotJuggler. MFC block guarded by `STABILIZATION_MFC_ROLL_ALPHA`; WLS by `!..._ALLOCATION_PSEUDO_INVERSE`. (~700 tok)
+- `nps_scope.h` — API for the in-process UDP/JSON scope emitter: `nps_scope_init(host,port,decim)`, `nps_scope_send(fdm)`. (~180 tok)
 
 ## scope registry redesign (2026-06-05)
 
