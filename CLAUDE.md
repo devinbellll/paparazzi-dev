@@ -50,6 +50,8 @@ Knowledge/
 └── 07 - All Touch Points Cheatsheet.md   # File checklist per change type
 ```
 
+Before ending any non-trivial session, ALWAYS write Knowledge/Sessions/<YYYY-MM-DD>-<topic>.md. Check if one exists for today before stopping.
+
 ## Building firmware
 
 ```bash
