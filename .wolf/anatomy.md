@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T11:57:44.208Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T12:05:32.553Z
 > Files: 598 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
@@ -29,7 +29,7 @@
 
 ## .claude/
 
-- `settings.json` (~565 tok)
+- `settings.json` (~628 tok)
 
 ## .claude/hooks/
 
