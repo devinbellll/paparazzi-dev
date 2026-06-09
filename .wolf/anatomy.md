@@ -1,11 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T12:05:32.553Z
-> Files: 598 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T14:27:02.837Z
+> Files: 600 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
 
 - `assess-the-feasibility-of-dreamy-clover.md` — Live scope for the NPS sim → PlotJuggler on the Mac host (~1309 tok)
+- `fizzy-gliding-backus.md` — Plan: Rebase onto upstream, extract NPS scope as feature-nps-datastream (~1061 tok)
 - `lets-move-on-from-floofy-scone.md` — Plan: Full MFC Guidance + Stabilization Stack (~1722 tok)
 - `re-assess-the-plan-home-vscode-claude-pl-composed-squid.md` — Plan: Transparent MFC Stack + Simple Autopilot for ANTON_MFC (~2988 tok)
 - `velvet-sprouting-peach.md` — Assessment: Building this stack natively on macOS (NPS SITL, no container) (~1687 tok)
@@ -104,6 +105,7 @@
 - `2026-06-04-flightgear-openwolf.md` — Session — 2026-06-04: FlightGear Integration and OpenWolf Initialization (~455 tok)
 - `2026-06-05-plotjuggler-scope.md` — Session — 2026-06-05: PlotJuggler Scope Emitter and Architecture Redesign (~574 tok)
 - `2026-06-08-indi-guidance-airframes.md` — Session — 2026-06-08: INDI Guidance and ANTON_MFC_THRUST Airframe Config (~354 tok)
+- `2026-06-09-planning-mfc-overhaul.md` — Session — 2026-06-09: Planning MFC Overhaul (~1249 tok)
 - `2026-06-09-retroactive-retros.md` — Session — 2026-06-09: Retroactive Session Retros (~961 tok)
 
 ## enac_paparazzi/

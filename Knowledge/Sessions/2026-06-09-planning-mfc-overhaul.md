@@ -49,3 +49,29 @@
   stage commits.
 - **Validate `accel_to_att_sp` sign convention** against ANTON's `BODY_TO_IMU_PSI=-45°` in NPS
   before any real flight.
+
+---
+
+## Later in this session — Git / remote restructure planning
+
+### What changed
+- **Executed remote re-wire and branch extraction** for the `paparazzi/` submodule. Plan was
+  written to `~/.claude/plans/fizzy-gliding-backus.md` and then fully implemented.
+
+### Changes made
+- **`origin` renamed → `upstream`** (public paparazzi/paparazzi); **private fork added as `origin`**
+  (`git@github:devinbellll/paparazzi.git`). Confirmed with `git remote -v`.
+- **`feature-nps-datastream`** created off `upstream/master` with a single clean commit:
+  - `3a300c574` — NPS in-process scope emitter with firmware-registered variable API
+  (The two original commits were squashed/rebased into one clean MFC-free commit.)
+- **`feature-mfc-thrust`** remains independent on its own branch off upstream; current HEAD is
+  `c6d13fdd1` ("feat: MFC THRUST is flying with z control").
+- **Both branches pushed** to `origin` (private fork): `origin/feature-nps-datastream` and
+  `origin/feature-mfc-thrust` confirmed in `git branch -a`.
+- **Submodule pointer** in parent `/workspace` repo updated (`paparazzi` shows "new commits"
+  in `git status`) — pending commit.
+
+### Key insight
+The `nps_scope_var.h` shim and `nps_scope.c/h` contain zero MFC symbols — they are already
+controller-agnostic. The only MFC coupling is in `stabilization_mfc.c` (which registers its
+own vars). The NPS infra stands alone on `feature-nps-datastream`.
