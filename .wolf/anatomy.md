@@ -1,11 +1,13 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T09:03:42.318Z
-> Files: 595 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T11:57:44.208Z
+> Files: 598 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
 
 - `assess-the-feasibility-of-dreamy-clover.md` — Live scope for the NPS sim → PlotJuggler on the Mac host (~1309 tok)
+- `lets-move-on-from-floofy-scone.md` — Plan: Full MFC Guidance + Stabilization Stack (~1722 tok)
+- `re-assess-the-plan-home-vscode-claude-pl-composed-squid.md` — Plan: Transparent MFC Stack + Simple Autopilot for ANTON_MFC (~2988 tok)
 - `velvet-sprouting-peach.md` — Assessment: Building this stack natively on macOS (NPS SITL, no container) (~1687 tok)
 
 ## ./
@@ -39,6 +41,10 @@
 ## .claude/rules/
 
 - `openwolf.md` (~313 tok)
+
+## .claude/worktrees/session-retro-mfc-plan/Knowledge/Sessions/
+
+- `2026-06-09-retroactive-retros.md` — Session — 2026-06-09: Retroactive Session Retros (~1400 tok)
 
 ## .claude/worktrees/session-retros/Knowledge/Sessions/
 
