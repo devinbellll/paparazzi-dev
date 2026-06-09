@@ -13,3 +13,4 @@ globs: **/*
 - If you edit a file more than twice in a session, that likely indicates a bug — log it to .wolf/buglog.json
 - When the user asks to check/evaluate UI design: run `openwolf designqc` to capture screenshots, then read them from .wolf/designqc-captures/
 - When the user asks to change/pick/migrate UI framework: read .wolf/reframe-frameworks.md, ask decision questions, recommend a framework, then execute with the framework's prompt
+- Before ending any non-trivial session, ALWAYS write Knowledge/Sessions/<YYYY-MM-DD>-<topic>.md covering what changed, what you learned, and what is next. Check whether one exists for today before stopping.
