@@ -43,3 +43,13 @@
 ## Decision Log
 
 <!-- Significant technical decisions with rationale. Why X was chosen over Y. -->
+
+- [2026-06-09] **MFC guidance stack design**: `guidance_mfc.c` runs three independent SISO loops (GX, GY, GZ) and converts the horizontal acceleration commands to a quaternion attitude setpoint via `accel_to_att_sp()` (same R_psi rotation as guidance_indi). Chosen over coupling GX/GY because the SISO independence matches the existing MFC stabilizer architecture.
+- [2026-06-09] **Stack-switch via `<control_block>`**: MFC vs INDI guidance is switched by swapping one `<call_block>` line in `anton_mfc_autopilot.xml` + rebuild. Chosen over runtime flag because it eliminates dead code paths in flight and makes the active stack explicit in source control.
+- [2026-06-09] **Makefile.ac caching bug (known limitation)**: `sw/lib/ocaml/aircraft.ml:478` sets `autopilot=true` only for the current `-target`; the file is only copied if newer than sources. After NPS build, AP build reuses the NPS Makefile.ac (which lacks `USE_GENERATED_AUTOPILOT=TRUE` in the AP block). Fix: delete `Makefile.ac` before switching targets. This is a Paparazzi upstream bug.
+
+## Do-Not-Repeat additions
+
+- [2026-06-09] **`Bound(val, lo, hi)` is a statement macro, not an expression.** Using `asinf(Bound(...))` fails. Always use an intermediate variable: `Bound(val, lo, hi); result = asinf(val);`
+- [2026-06-09] **Use `&&` not `&amp;&amp;` in autopilot XML `cond=` attributes.** The autopilot code generator copies the attribute value verbatim to C. XML entities like `&amp;&amp;` produce `&amp;&amp;` in generated C — a parse error.
+- [2026-06-09] **Always delete `Makefile.ac` when switching from NPS→AP build on a fresh aircraft.** See Makefile.ac caching bug above. `rm paparazzi/var/aircrafts/<AC>/Makefile.ac` before `./build_fw.sh ... ap`.

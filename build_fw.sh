@@ -36,6 +36,16 @@ echo "==> Building host tools..."
 make -j1 -C "$PPRZ"
 
 # ── Firmware ──────────────────────────────────────────────────────────────────
+# The generator stamps USE_GENERATED_AUTOPILOT=TRUE only for the current
+# target's block in Makefile.ac.  An AP build followed by an NPS build (or
+# vice versa) would reuse the stale file and compile the wrong autopilot
+# source.  Always delete it so the generator regenerates it fresh for THIS
+# target.
+MAKEFILE_AC="$PPRZ/var/aircrafts/$AIRCRAFT/Makefile.ac"
+if [[ -f "$MAKEFILE_AC" ]]; then
+  rm -f "$MAKEFILE_AC"
+fi
+
 if [[ "$CLEAN" == true ]]; then
   echo "==> Cleaning previous aircraft build..."
   make -C "$PPRZ" -f Makefile.ac AIRCRAFT="$AIRCRAFT" clean_ac

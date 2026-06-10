@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T14:27:02.837Z
-> Files: 600 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T20:24:36.148Z
+> Files: 613 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
 
@@ -18,7 +18,7 @@
 - `.gitignore` — Git ignore rules (~60 tok)
 - `.gitmodules` (~52 tok)
 - `build_active.sh` — Build whatever C/C++ configuration is currently selected in VS Code. (~588 tok)
-- `build_fw.sh` — Paparazzi firmware build script (~474 tok)
+- `build_fw.sh` — Paparazzi firmware build script (~555 tok)
 - `CLAUDE.md` — OpenWolf (~2076 tok)
 - `Dockerfile.paparazzi` — ── Layer 5: Paparazzi UAV Toolchains ───────────────────────────────────────── (~636 tok)
 - `gen_build_log.sh` — Capture a verbose build log for Makefile Tools buildLog IntelliSense. (~602 tok)
@@ -42,6 +42,32 @@
 ## .claude/rules/
 
 - `openwolf.md` (~313 tok)
+
+## .claude/worktrees/mfc-guidance-stack/paparazzi/conf/airframes/ENAC/
+
+- `conf_enac.xml` (~2000 tok)
+
+## .claude/worktrees/mfc-guidance-stack/paparazzi/conf/airframes/ENAC/quadrotor/
+
+- `anton_mfc.xml` (~3175 tok)
+
+## .claude/worktrees/mfc-guidance-stack/paparazzi/conf/autopilot/
+
+- `anton_mfc_autopilot.xml` (~1642 tok)
+
+## .claude/worktrees/mfc-guidance-stack/paparazzi/conf/modules/
+
+- `guidance_mfc.xml` (~1482 tok)
+
+## .claude/worktrees/mfc-guidance-stack/paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
+
+- `guidance_mfc.c` (~2416 tok)
+- `guidance_mfc.h` (~591 tok)
+
+## .claude/worktrees/mfc-guidance-stack/paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
+
+- `mfc_core.h` (~542 tok)
+- `stabilization_mfc.c` (~12872 tok)
 
 ## .claude/worktrees/session-retro-mfc-plan/Knowledge/Sessions/
 
@@ -96,6 +122,7 @@
 
 - `00 - Index.md` — Paparazzi Control System — Knowledge Base (~315 tok)
 - `09 - FlightGear 3D Visualization.md` — FlightGear 3D Visualization for NPS (~1076 tok)
+- `10 - Simplified Autopilots & Flight Modes.md` — 10 - Simplified Autopilots & Flight Modes (~2108 tok)
 
 ## Knowledge/Sessions/
 
@@ -105,6 +132,7 @@
 - `2026-06-04-flightgear-openwolf.md` — Session — 2026-06-04: FlightGear Integration and OpenWolf Initialization (~455 tok)
 - `2026-06-05-plotjuggler-scope.md` — Session — 2026-06-05: PlotJuggler Scope Emitter and Architecture Redesign (~574 tok)
 - `2026-06-08-indi-guidance-airframes.md` — Session — 2026-06-08: INDI Guidance and ANTON_MFC_THRUST Airframe Config (~354 tok)
+- `2026-06-09-mfc-guidance-stack.md` — Session: MFC Guidance Stack Implementation (2026-06-09) (~1462 tok)
 - `2026-06-09-planning-mfc-overhaul.md` — Session — 2026-06-09: Planning MFC Overhaul (~1249 tok)
 - `2026-06-09-retroactive-retros.md` — Session — 2026-06-09: Retroactive Session Retros (~961 tok)
 
@@ -764,6 +792,14 @@
 - `rotorcraft_oa_avoid.xml` (~266 tok)
 - `slayer_training.xml` (~1106 tok)
 
+## paparazzi/conf/airframes/ENAC/quadrotor/
+
+- `anton_mfc.xml` (~3175 tok)
+
+## paparazzi/conf/autopilot/
+
+- `anton_mfc_autopilot.xml` (~1640 tok)
+
 ## paparazzi/conf/simulator/flightgear/
 
 - `bebop-set.xml` (~361 tok)
@@ -771,6 +807,7 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~5864 tok)
+- `guidance_mfc.c` (~2447 tok)
 
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
 

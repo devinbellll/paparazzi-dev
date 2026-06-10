@@ -156,6 +156,104 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-09T11:16:18.919Z"
+    },
+    {
+      "id": "bug-010",
+      "timestamp": "2026-06-09T17:12:43.728Z",
+      "error_message": "Incorrect value in code",
+      "file": ".claude/worktrees/mfc-guidance-stack/paparazzi/conf/airframes/ENAC/conf_enac.xml",
+      "root_cause": "Had \"modules/air_data.xml modules/electrical.xml modul",
+      "fix": "Changed to \"modules/air_data.xml modules/electrical.xml modul",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T17:12:43.728Z"
+    },
+    {
+      "id": "bug-011",
+      "timestamp": "2026-06-09T17:20:21.707Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→10 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T17:20:21.708Z"
+    },
+    {
+      "id": "bug-012",
+      "timestamp": "2026-06-09T17:21:55.874Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/autopilot/anton_mfc_autopilot.xml",
+      "root_cause": "Had \"GpsIsLost() &amp;&amp; autopilot_in_flight()\"",
+      "fix": "Changed to \"GpsIsLost() && autopilot_in_flight()\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T17:21:55.874Z"
+    },
+    {
+      "id": "bug-013",
+      "timestamp": "2026-06-09T17:40:00.000Z",
+      "error_message": "AP build: duplicate case values in autopilot_static.c (AP_MODE_RATE_DIRECT==3 clashes with AP_MODE_KILL==3 from generated header)",
+      "file": "paparazzi/var/aircrafts/ANTON_MFC/Makefile.ac",
+      "root_cause": "Makefile.ac generation caches by mtime: generator only overwrites Makefile.ac if it is older than source XMLs. After an NPS build, Makefile.ac has USE_GENERATED_AUTOPILOT=TRUE only in the NPS block. AP build reuses this stale file, so autopilot_static.c is compiled alongside the generated autopilot header, causing duplicate case value errors.",
+      "fix": "build_fw.sh now always deletes var/aircrafts/<AC>/Makefile.ac before each build, forcing the generator to regenerate it for the current target. This ensures USE_GENERATED_AUTOPILOT=TRUE appears in the correct target block regardless of which target was built last.",
+      "tags": [
+        "build",
+        "makefile",
+        "autopilot",
+        "generated-autopilot",
+        "caching"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-09T18:30:00.000Z"
+    },
+    {
+      "id": "bug-014",
+      "timestamp": "2026-06-09T17:40:34.496Z",
+      "error_message": "Significant refactor of ",
+      "file": "Knowledge/Sessions/2026-06-09-mfc-guidance-stack.md",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 5→10 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T17:40:34.497Z"
+    },
+    {
+      "id": "bug-015",
+      "timestamp": "2026-06-09T20:24:36.193Z",
+      "error_message": "Significant refactor of ",
+      "file": "Knowledge/Sessions/2026-06-09-mfc-guidance-stack.md",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 10→16 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T20:24:36.193Z"
     }
   ]
 }
