@@ -254,6 +254,91 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-09T20:24:36.193Z"
+    },
+    {
+      "id": "bug-016",
+      "timestamp": "2026-06-10T09:45:29.207Z",
+      "error_message": "Incorrect value in code",
+      "file": "sim_anton.py",
+      "root_cause": "Had \"--mfc\"",
+      "fix": "Changed to \"--render\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-10T09:45:29.207Z"
+    },
+    {
+      "id": "bug-017",
+      "timestamp": "2026-06-10T09:48:29.874Z",
+      "error_message": "Significant refactor of ",
+      "file": "sim_anton.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 10→9 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-10T09:48:29.874Z"
+    },
+    {
+      "id": "bug-018",
+      "timestamp": "2026-06-10T09:59:18.379Z",
+      "error_message": "Significant refactor of ",
+      "file": "sim_anton.py",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 9→3 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-10T09:59:18.379Z"
+    },
+    {
+      "id": "bug-019",
+      "timestamp": "2026-06-10T11:03:57.272Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/sw/airborne/paparazzi.h",
+      "root_cause": "Had \"\\n\"",
+      "fix": "Changed to \"[%s:%d] \"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "h"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-10T11:03:57.272Z"
+    },
+    {
+      "id": "bug-020",
+      "timestamp": "2026-06-10T12:00:00.000Z",
+      "error_message": "pprz_version.h:58 error: invalid type argument of unary '*' (have 'int') in PPRZ_VERSION_INT, when compiling autopilot.c during `build_active.sh ... fast`. Intermittent: only when autopilot.o is actually recompiled.",
+      "file": "build_active.sh",
+      "root_cause": "The fast path runs `make -C paparazzi/sw/airborne all` directly, bypassing Makefile.ac which computes/exports GIT_DESC, PPRZ_VER, PPRZ_VER_MAJOR/MINOR/PATCH. sw/airborne/Makefile:59-64 then emits -DPPRZ_VER_MAJOR= (empty) into CFLAGS, so PPRZ_VERSION_INT expands to ( * 10000 + * 100 + ). Only autopilot.c expands that macro, so the error is latent until an edit forces autopilot.o to rebuild ('when more files are affected').",
+      "fix": "build_active.sh fast block now recreates the version vars (mirroring Makefile.ac, including the PPRZ_VER_PATCH=0 guard since v7.0_unstable has no patch field) and passes GIT_SHA1/GIT_DESC/PPRZ_VER/PPRZ_VER_MAJOR/MINOR/PATCH on the make command line.",
+      "tags": [
+        "build",
+        "makefile",
+        "fast-build",
+        "pprz_version",
+        "autopilot",
+        "version-macro"
+      ],
+      "related_bugs": [
+        "bug-013"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-10T12:00:00.000Z"
     }
   ]
 }

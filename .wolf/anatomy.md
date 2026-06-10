@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T20:24:36.148Z
-> Files: 613 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-10T13:23:19.639Z
+> Files: 615 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
 
@@ -17,7 +17,7 @@
 - `.DS_Store` (~2186 tok)
 - `.gitignore` — Git ignore rules (~60 tok)
 - `.gitmodules` (~52 tok)
-- `build_active.sh` — Build whatever C/C++ configuration is currently selected in VS Code. (~588 tok)
+- `build_active.sh` — Build whatever C/C++ configuration is currently selected in VS Code. (~832 tok)
 - `build_fw.sh` — Paparazzi firmware build script (~555 tok)
 - `CLAUDE.md` — OpenWolf (~2076 tok)
 - `Dockerfile.paparazzi` — ── Layer 5: Paparazzi UAV Toolchains ───────────────────────────────────────── (~636 tok)
@@ -26,7 +26,7 @@
 - `gen_vscode.sh` — Codegen prebuild step for VS Code / Makefile Tools. (~221 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 - `README.md` — Project documentation (~1275 tok)
-- `sim_anton.py` — Launch ANTON NPS sim + Ivy telemetry monitor. Flags: --mfc --gdb --fg (FlightGear 3D viz via host.docker.internal:5501). (~5414 tok)
+- `sim_anton.py` — pprz_block_frame, on_rate_attitude, on_pos_llh, on_speed_pos (~7011 tok)
 
 ## .claude/
 
@@ -135,6 +135,7 @@
 - `2026-06-09-mfc-guidance-stack.md` — Session: MFC Guidance Stack Implementation (2026-06-09) (~1462 tok)
 - `2026-06-09-planning-mfc-overhaul.md` — Session — 2026-06-09: Planning MFC Overhaul (~1249 tok)
 - `2026-06-09-retroactive-retros.md` — Session — 2026-06-09: Retroactive Session Retros (~961 tok)
+- `2026-06-10-render-flag.md` — Session: 2026-06-10 — sim_anton render flag (~1291 tok)
 
 ## enac_paparazzi/
 
@@ -803,6 +804,10 @@
 ## paparazzi/conf/simulator/flightgear/
 
 - `bebop-set.xml` (~361 tok)
+
+## paparazzi/sw/airborne/
+
+- `paparazzi.h` — ifndef PAPARAZZI_H (~278 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 

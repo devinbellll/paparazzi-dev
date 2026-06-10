@@ -3,10 +3,11 @@
 Launch ANTON NPS simulation and print live aircraft state to the terminal.
 Sends a takeoff command sequence 1 second after the sim is ready.
 
-Usage:  python3 sim_anton.py [--mfc] [--gdb] [--fg] [--no-scope] [--debug-scope]
+Usage:  python3 sim_anton.py [--mfc] [--gdb] [--fg] [--render] [--no-scope] [--debug-scope]
         Ctrl-C to stop (kills child processes cleanly).
 
 Flags:
+  --render  Enable the live TUI dashboard (default: plain debug log to stdout).
   --fg   Stream NET_FDM pose to FlightGear on the Mac host (host.docker.internal:5501).
          In FG Additional Settings add:
            --fdm=null --native-fdm=socket,in,60,,5501,udp
@@ -64,6 +65,7 @@ SERVER  = f"{PPRZ}/sw/ground_segment/tmtc/server"
 LINK    = f"{PPRZ}/sw/ground_segment/tmtc/link"
 IVY_BUS = "127.255.255.255:2010"
 
+_USE_RENDER = "--render" in sys.argv
 _USE_MFC   = "--mfc" in sys.argv
 _USE_Z     = "--z" in sys.argv
 _GDB       = "--gdb" in sys.argv
@@ -272,12 +274,15 @@ def on_rotorcraft_cmd(agent, msg):
 
 # ── simsitl stdout reader ────────────────────────────────────────────────────
 def sim_stdout_reader(proc):
-    """Read lines from simsitl stdout into debug_log (daemon thread)."""
+    """Read lines from simsitl stdout into debug_log (daemon thread).
+    In non-render mode also prints each line immediately as it arrives."""
     with open(DEBUG_LOG_FILE, "w", buffering=1) as f:
         for line in proc.stdout:
             stripped = line.rstrip()
             debug_log.append(stripped)
             f.write(stripped + "\n")
+            if not _USE_RENDER:
+                print(stripped, flush=True)
 
 
 # ── display ──────────────────────────────────────────────────────────────────
@@ -476,7 +481,7 @@ def main():
     print("Waiting for sim to start …")
     time.sleep(3)
 
-    IvyInit("anton_monitor", "READY", None, None, None)
+    IvyInit("anton_monitor", "READY", None, lambda a, b: None, lambda a, b: None)
     IvyStart(IVY_BUS)
 
     # Layer 0 — JSBSim truth (direct NPS Ivy messages)
@@ -507,9 +512,13 @@ def main():
     print(f"Logging to {LOG_FILE}")
     print(f"Debug log → {DEBUG_LOG_FILE}")
 
-    while True:
-        render()
-        time.sleep(0.1)
+    if _USE_RENDER:
+        while True:
+            render()
+            time.sleep(0.1)
+    else:
+        while True:
+            time.sleep(1)
 
 
 if __name__ == "__main__":

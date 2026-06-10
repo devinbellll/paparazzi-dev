@@ -42,10 +42,30 @@ echo ""
 if [[ "$MODE" == "fast" ]]; then
   LTO_ARG=()
   [[ "$TARGET" == "ap" ]] && LTO_ARG=(USE_LTO=no)
+
+  # The fast path invokes sw/airborne/Makefile directly, bypassing Makefile.ac
+  # which normally computes and exports the PPRZ version vars. Without them,
+  # sw/airborne/Makefile emits -DPPRZ_VER_MAJOR= (empty), which breaks the
+  # PPRZ_VERSION_INT macro in autopilot.c whenever that TU is recompiled.
+  # Recreate the vars here, mirroring Makefile.ac exactly.
+  GIT_SHA1=$(cd "$PPRZ" && git log -1 --pretty=format:%H 2>/dev/null || echo UNKNOWN)
+  GIT_DESC=$(cd "$PPRZ" && ./paparazzi_version)
+  PPRZ_VER=$(echo "$GIT_DESC" | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
+  PPRZ_VER_MAJOR=$(echo "$GIT_DESC" | sed 's/v\([0-9]*\).*/\1/')
+  PPRZ_VER_MINOR=$(echo "$GIT_DESC" | sed 's/v[0-9]*.\([0-9]*\).*/\1/')
+  PPRZ_VER_PATCH=$(echo "$GIT_DESC" | sed 's/v[0-9]*.[0-9]*.\([0-9]*\).*/\1/')
+  [[ $(echo "$PPRZ_VER_PATCH" | wc -w) -eq 1 ]] || PPRZ_VER_PATCH=0
+
   echo "==> Fast incremental compile (airborne only)..."
   exec make -C "${PPRZ}/sw/airborne" \
       AIRCRAFT="$AIRCRAFT" \
       TARGET="$TARGET" \
+      GIT_SHA1="$GIT_SHA1" \
+      GIT_DESC="$GIT_DESC" \
+      PPRZ_VER="$PPRZ_VER" \
+      PPRZ_VER_MAJOR="$PPRZ_VER_MAJOR" \
+      PPRZ_VER_MINOR="$PPRZ_VER_MINOR" \
+      PPRZ_VER_PATCH="$PPRZ_VER_PATCH" \
       "${LTO_ARG[@]}" \
       -j"$(nproc)" \
       all
