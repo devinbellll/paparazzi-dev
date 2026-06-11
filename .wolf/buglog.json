@@ -673,8 +673,18 @@
       "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_indi.c, guidance_mfc.c, stabilization_mfc.c",
       "root_cause": "guidance_mfc emits the vertical thrust in physical indi_v[3]-space units (~-17 at hover). To make it work, stock INDI's Bwls thrust line was bypassed. That edit is downstream-specific and should live in guidance, not in the shared stabilizer.",
       "fix": "Reverted stabilization_indi.c to stock (v_thrust.z += th_cmd.z*Bwls[3][i]*act_thrust_mat[2][i]). Added GUIDANCE_MFC_THRUST_TO_PPRZ (+ GUIDANCE_MFC_THRUST_PPRZ_SCALE = 1/sum(Bwls[3][i])) in guidance_mfc.c: when TRUE, convert physical thrust to a paparazzi-scaled (0:MAX_PPRZ) int via th_sp_from_thrust_i so the stock INDI Bwls path round-trips exactly (scale=-166.67 for ANTON: G1 thrust row -1.5 x4 / INDI_G_SCALING 1000). Default FALSE emits raw float for stabilization_mfc.c, which now reads thrust->sp.thrust_f[Z] directly into its pseudo-inverse. ANTON_MFC airframe sets THRUST_TO_PPRZ=TRUE.",
-      "tags": ["mfc", "thrust", "guidance", "indi", "units", "pseudo-inverse", "config"],
-      "related_bugs": ["bug-037"],
+      "tags": [
+        "mfc",
+        "thrust",
+        "guidance",
+        "indi",
+        "units",
+        "pseudo-inverse",
+        "config"
+      ],
+      "related_bugs": [
+        "bug-037"
+      ],
       "occurrences": 1,
       "last_seen": "2026-06-11T00:00:00.000Z"
     },
@@ -685,10 +695,35 @@
       "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_indi.h (extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT])",
       "root_cause": "PRE-EXISTING (not introduced by this change). wls_alloc.h -> stabilization_indi.h unconditionally references INDI_* macros that only exist when the INDI stabilizer is compiled; an MFC-only build leaves them undefined. Blocks the entire INDI->MFC / MFC->MFC stack at compile.",
       "fix": "NOT FIXED — out of scope for the surgical thrust-link task. Documented only. The active ANTON_MFC stack is MFC->INDI (stab=indi) and builds cleanly. To enable a stab=mfc build later, decouple stabilization_indi.h's g1g2 extern from wls_alloc.h or guard it.",
-      "tags": ["mfc", "build", "pre-existing", "stabilization_indi.h", "wls", "out-of-scope"],
-      "related_bugs": ["bug-038"],
+      "tags": [
+        "mfc",
+        "build",
+        "pre-existing",
+        "stabilization_indi.h",
+        "wls",
+        "out-of-scope"
+      ],
+      "related_bugs": [
+        "bug-038"
+      ],
       "occurrences": 1,
       "last_seen": "2026-06-11T00:00:00.000Z"
+    },
+    {
+      "id": "bug-040",
+      "timestamp": "2026-06-11T10:41:39.331Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_mfc.c",
+      "root_cause": "14 lines replaced/restructured",
+      "fix": "Rewrote 28→6 lines (14 removed) | Also: struct FloatRates angular_accel_ref = {0., 0., 0.}; struct FloatRates angular_rate_ref = {0., 0., 0.}; | Also: static struct Int32Eulers stab_att_sp_euler;; static struct Int32Quat   stab_att_sp_quat; | Also: #if STABILIZATION_MFC_FILTER_RATES_SECOND_ORDER; Butterworth2LowPass rates_filt_so[3]; | Also: static void send_ahrs_ref_quat(struct transport_tx; struct Int32Quat *quat = stateGetNedToBodyQuat_i() | Also: void stabilization_mfc_update_filt_freq(float freq; { | Also: #if STABILIZATION_MFC_FILTER_RATES_SECOND_ORDER; tau = 1.0 / (2.0 * M_PI * STABILIZATION_MFC_FILT_C",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 7,
+      "last_seen": "2026-06-11T10:42:47.846Z"
     }
   ]
 }

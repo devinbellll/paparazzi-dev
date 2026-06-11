@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-11T10:24:19.324Z
-> Files: 626 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-11T11:00:21.960Z
+> Files: 627 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
 
@@ -810,7 +810,7 @@
 ## paparazzi/conf/modules/
 
 - `guidance_mfc.xml` (~1762 tok)
-- `stabilization_mfc.xml` (~2777 tok)
+- `stabilization_mfc.xml` (~2727 tok)
 
 ## paparazzi/conf/simulator/flightgear/
 
@@ -829,7 +829,8 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
 - `stabilization_indi.c` (~11699 tok)
-- `stabilization_mfc.c` (~12990 tok)
+- `stabilization_mfc.c` (~11174 tok)
+- `stabilization_mfc.h` — PPRZ command to each actuator (~591 tok)
 
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
 
