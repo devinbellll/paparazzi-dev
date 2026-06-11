@@ -1,135 +1,162 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <root>
  <tabbed_widget name="Main Window" parent="main_window">
-  <Tab containers="1" tab_name="MFC_z">
+  <Tab tab_name="MFC_z" containers="1">
    <Container>
-    <DockSplitter orientation="|" sizes="0.681597;0.318403" count="2">
-     <DockSplitter orientation="-" sizes="0.500626;0.499374" count="2">
-      <DockArea name="...">
-       <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
-        <range top="2.451089" right="175.629000" left="170.629000" bottom="-3.294469"/>
-        <limitY/>
-        <curve name="/mfc/z_cmd" color="#1f77b4"/>
-        <curve name="/mfc/z_fk" color="#d62728"/>
-       </plot>
-      </DockArea>
-      <DockArea name="...">
-       <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
-        <range top="0.217058" right="175.629000" left="170.629000" bottom="-7.051286"/>
-        <limitY/>
-        <curve name="/mfc/z_sp" color="#1ac938"/>
-        <curve name="/mfc/z_meas" color="#ff7f0e"/>
-        <curve name="/mfc/z_err" color="#f14cc1"/>
-       </plot>
-      </DockArea>
-     </DockSplitter>
-     <DockArea name="...">
-      <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
-       <range top="6.566175" right="175.629000" left="170.629000" bottom="-0.875175"/>
-       <limitY/>
-       <curve name="/truth/vz" color="#9467bd"/>
-       <curve name="/truth/agl" color="#17becf"/>
-      </plot>
-     </DockArea>
-    </DockSplitter>
-   </Container>
-  </Tab>
-  <Tab containers="1" tab_name="WLS">
-   <Container>
-    <DockSplitter orientation="-" sizes="0.500626;0.499374" count="2">
-     <DockArea name="...">
-      <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
-       <range top="9840.000000" right="175.629000" left="170.629000" bottom="-240.000000"/>
-       <limitY/>
-       <curve name="/wls/u0" color="#bcbd22"/>
-       <curve name="/wls/u1" color="#1f77b4"/>
-       <curve name="/wls/u2" color="#d62728"/>
-       <curve name="/wls/u3" color="#1ac938"/>
-      </plot>
-     </DockArea>
-     <DockArea name="...">
-      <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
-       <range top="42.083337" right="175.629000" left="170.629000" bottom="-60.977837"/>
-       <limitY/>
-       <curve name="/wls/v0" color="#ff7f0e"/>
-       <curve name="/wls/v1" color="#f14cc1"/>
-       <curve name="/wls/v2" color="#9467bd"/>
-       <curve name="/wls/v3" color="#17becf"/>
-      </plot>
-     </DockArea>
-    </DockSplitter>
-   </Container>
-  </Tab>
-  <Tab containers="1" tab_name="States">
-   <Container>
-    <DockSplitter orientation="-" sizes="1" count="1">
-     <DockSplitter orientation="|" sizes="0.500487;0.499513" count="2">
-      <DockSplitter orientation="-" sizes="0.500626;0.499374" count="2">
+    <DockSplitter sizes="1" count="1" orientation="-">
+     <DockSplitter sizes="0.683036;0.316964" count="2" orientation="|">
+      <DockSplitter sizes="0.501149;0.498851" count="2" orientation="-">
        <DockArea name="...">
         <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
-         <range top="18.292271" right="175.629000" left="170.629000" bottom="-18.289771"/>
+         <range bottom="-13.117710" top="58.744710" left="103.777000" right="118.777000"/>
          <limitY/>
-         <curve name="/truth/phi" color="#bcbd22"/>
-         <curve name="/truth/theta" color="#d62728"/>
-         <curve name="/truth/psi" color="#1f77b4"/>
+         <curve color="#1ac938" name="/mfc_g/z/cmd"/>
+         <curve color="#ff7f0e" name="/mfc_g/z/fk"/>
         </plot>
        </DockArea>
        <DockArea name="...">
         <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
-         <range top="0.725930" right="175.629000" left="170.629000" bottom="-0.732730"/>
+         <range bottom="-6.828535" top="-6.811115" left="103.777000" right="118.777000"/>
          <limitY/>
-         <curve name="/truth/vx" color="#1f77b4"/>
-         <curve name="/truth/vy" color="#d62728"/>
-         <curve name="/truth/vz" color="#9467bd"/>
+         <curve color="#f14cc1" name="/mfc_g/z/meas"/>
+         <curve color="#9467bd" name="/mfc_g/z/sp"/>
         </plot>
        </DockArea>
       </DockSplitter>
-      <DockSplitter orientation="-" sizes="0.500626;0.499374" count="2">
-       <DockArea name="...">
-        <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
-         <range top="163.319523" right="175.629000" left="170.629000" bottom="-162.937422"/>
-         <limitY/>
-         <curve name="/truth/p" color="#1ac938"/>
-         <curve name="/truth/q" color="#ff7f0e"/>
-         <curve name="/truth/r" color="#f14cc1"/>
-        </plot>
-       </DockArea>
-       <DockArea name="...">
-        <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
-         <range top="0.810843" right="175.629000" left="170.629000" bottom="-27.078943"/>
-         <limitY/>
-         <curve name="/truth/ax" color="#9467bd"/>
-         <curve name="/truth/ay" color="#17becf"/>
-         <curve name="/truth/az" color="#bcbd22"/>
-        </plot>
-       </DockArea>
-      </DockSplitter>
+      <DockArea name="...">
+       <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
+        <range bottom="-0.179597" top="7.073697" left="103.777000" right="118.777000"/>
+        <limitY/>
+        <curve color="#9467bd" name="/truth/vz"/>
+        <curve color="#17becf" name="/truth/agl"/>
+       </plot>
+      </DockArea>
      </DockSplitter>
     </DockSplitter>
    </Container>
   </Tab>
-  <currentTabIndex index="2"/>
+  <Tab tab_name="WLS" containers="1">
+   <Container>
+    <DockSplitter sizes="0.501149;0.498851" count="2" orientation="-">
+     <DockArea name="...">
+      <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
+       <range bottom="1862.886750" top="1902.923250" left="103.777000" right="118.777000"/>
+       <limitY/>
+       <curve color="#bcbd22" name="/wls/u0"/>
+       <curve color="#1f77b4" name="/wls/u1"/>
+       <curve color="#d62728" name="/wls/u2"/>
+       <curve color="#1ac938" name="/wls/u3"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
+       <range bottom="-11.708405" top="0.963222" left="103.777000" right="118.777000"/>
+       <limitY/>
+       <curve color="#ff7f0e" name="/wls/v0"/>
+       <curve color="#f14cc1" name="/wls/v1"/>
+       <curve color="#9467bd" name="/wls/v2"/>
+       <curve color="#17becf" name="/wls/v3"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="INDI" containers="1">
+   <Container>
+    <DockSplitter sizes="0.501149;0.498851" count="2" orientation="-">
+     <DockArea name="...">
+      <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
+       <range bottom="1862.050000" top="1901.950000" left="103.777000" right="118.777000"/>
+       <limitY/>
+       <curve color="#17becf" name="/indi/act0"/>
+       <curve color="#bcbd22" name="/indi/act1"/>
+       <curve color="#1f77b4" name="/indi/act2"/>
+       <curve color="#d62728" name="/indi/act3"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
+       <range bottom="-11.708405" top="0.963222" left="103.777000" right="118.777000"/>
+       <limitY/>
+       <curve color="#1ac938" name="/indi/roll_cmd"/>
+       <curve color="#ff7f0e" name="/indi/pitch_cmd"/>
+       <curve color="#f14cc1" name="/indi/yaw_cmd"/>
+       <curve color="#9467bd" name="/indi/thrust_cmd"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="States" containers="1">
+   <Container>
+    <DockSplitter sizes="1" count="1" orientation="-">
+     <DockSplitter sizes="0.5;0.5" count="2" orientation="|">
+      <DockSplitter sizes="0.501149;0.498851" count="2" orientation="-">
+       <DockArea name="...">
+        <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
+         <range bottom="-1.355765" top="0.512175" left="103.777000" right="118.777000"/>
+         <limitY/>
+         <curve color="#bcbd22" name="/truth/phi"/>
+         <curve color="#d62728" name="/truth/theta"/>
+         <curve color="#1f77b4" name="/truth/psi"/>
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
+         <range bottom="-0.215495" top="0.246295" left="103.777000" right="118.777000"/>
+         <limitY/>
+         <curve color="#1f77b4" name="/truth/vx"/>
+         <curve color="#d62728" name="/truth/vy"/>
+         <curve color="#9467bd" name="/truth/vz"/>
+        </plot>
+       </DockArea>
+      </DockSplitter>
+      <DockSplitter sizes="0.5;0.5" count="2" orientation="-">
+       <DockArea name="...">
+        <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
+         <range bottom="-0.111920" top="0.136720" left="103.777000" right="118.777000"/>
+         <limitY/>
+         <curve color="#1ac938" name="/truth/p"/>
+         <curve color="#ff7f0e" name="/truth/q"/>
+         <curve color="#f14cc1" name="/truth/r"/>
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot flip_x="false" flip_y="false" mode="TimeSeries" line_width="1.0">
+         <range bottom="-10.103493" top="0.307993" left="103.777000" right="118.777000"/>
+         <limitY/>
+         <curve color="#9467bd" name="/truth/ax"/>
+         <curve color="#17becf" name="/truth/ay"/>
+         <curve color="#bcbd22" name="/truth/az"/>
+        </plot>
+       </DockArea>
+      </DockSplitter>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
  </tabbed_widget>
  <use_relative_time_offset enabled="0"/>
  <!-- - - - - - - - - - - - - - - -->
  <!-- - - - - - - - - - - - - - - -->
  <Plugins>
   <plugin ID="DataLoad CSV">
-   <parameters delimiter="0" time_axis=""/>
+   <parameters time_axis="" delimiter="0"/>
   </plugin>
   <plugin ID="DataLoad MCAP"/>
   <plugin ID="DataLoad Parquet">
-   <default radioIndexChecked="0" dateFromat="yyyy-MM-dd hh:mm:ss" parseDateTime="0" prevTimestamp=""/>
+   <default dateFromat="yyyy-MM-dd hh:mm:ss" radioIndexChecked="0" parseDateTime="0" prevTimestamp=""/>
   </plugin>
   <plugin ID="DataLoad ULog"/>
   <plugin ID="Foxglove ROS2 Bridge">
-   <foxglove_client address="127.0.0.1" port="8765" use_timestamp="0" clamp_large_arrays="0" max_array_size="500">
+   <foxglove_client max_array_size="500" address="127.0.0.1" port="8765" clamp_large_arrays="0" use_timestamp="0">
     <topics/>
    </foxglove_client>
   </plugin>
   <plugin ID="MQTT Subscriber (Mosquitto)"/>
   <plugin ID="PlotJuggler ROS2 Bridge">
-   <websocket_client address="127.0.0.1" port="9090" use_timestamp="0" clamp_large_arrays="0" max_array_size="500">
+   <websocket_client max_array_size="500" address="127.0.0.1" port="9090" clamp_large_arrays="0" use_timestamp="0">
     <topics/>
    </websocket_client>
   </plugin>
@@ -146,6 +173,7 @@
  </Plugins>
  <!-- - - - - - - - - - - - - - - -->
  <previouslyLoaded_Datafiles/>
+ <previouslyLoaded_Streamer name="UDP Server"/>
  <!-- - - - - - - - - - - - - - - -->
  <customMathEquations/>
  <snippets/>

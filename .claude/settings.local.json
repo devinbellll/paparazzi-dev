@@ -3,7 +3,11 @@
     "allow": [
       "Bash(pip3 list *)",
       "Bash(timeout 12 python3 sim_anton.py *)",
-      "Bash(timeout 15 python3 /workspace/sim_anton.py *)"
+      "Bash(timeout 15 python3 /workspace/sim_anton.py *)",
+      "Bash(timeout 30 python3 sim_anton.py --fg --mfc)",
+      "Bash(pkill -f \"sim_anton\\\\|sw_simulator\\\\|jsbsim\\\\|pprzsim\")",
+      "Bash(timeout 45 python3 sim_anton.py --fg --mfc)",
+      "Bash(python3 *)"
     ]
   }
 }
