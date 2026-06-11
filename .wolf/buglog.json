@@ -7,7 +7,7 @@
       "error_message": "Significant refactor of ",
       "file": "sim_anton.py",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 3\u21926 lines (2 removed)",
+      "fix": "Rewrote 3→6 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -40,7 +40,7 @@
     {
       "id": "bug-003",
       "timestamp": "2026-06-04T15:00:00.000Z",
-      "error_message": "PermissionError: [Errno 1] Operation not permitted \u2014 sending UDP to 192.168.65.254",
+      "error_message": "PermissionError: [Errno 1] Operation not permitted — sending UDP to 192.168.65.254",
       "file": ".devcontainer/init-firewall.sh",
       "root_cause": "Devcontainer firewall has OUTPUT DROP default policy. HOST_IP is set to the Docker bridge gateway (172.24.0.1), not the Mac host (192.168.65.254). Traffic to host.docker.internal is blocked.",
       "fix": "Patched init-firewall.sh to resolve host.docker.internal at startup and add iptables rules to allow INPUT/OUTPUT for that IP. Temporary fix via sudo iptables for current session.",
@@ -59,7 +59,7 @@
     {
       "id": "bug-004",
       "timestamp": "2026-06-04T15:00:00.000Z",
-      "error_message": "NPS FG packets sent to 255.255.255.255 (broadcast) instead of Mac host \u2014 no data arrives",
+      "error_message": "NPS FG packets sent to 255.255.255.255 (broadcast) instead of Mac host — no data arrives",
       "file": "sim_anton.py",
       "root_cause": "nps_flightgear_init() uses inet_addr() which only handles dotted-decimal IPs. Passing 'host.docker.internal' returns INADDR_NONE (broadcast address). NPS appeared to send but packets went nowhere useful.",
       "fix": "Resolve hostname to IP in Python with socket.gethostbyname() before passing to simsitl. Added try/except fallback to hardcoded 192.168.65.254.",
@@ -115,7 +115,7 @@
       "error_message": "Significant refactor of ",
       "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_indi.c",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 7\u219217 lines (2 removed)",
+      "fix": "Rewrote 7→17 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -131,7 +131,7 @@
       "error_message": "Significant refactor of ",
       "file": "Knowledge/Sessions/2026-06-09-retroactive-retros.md",
       "root_cause": "8 lines replaced/restructured",
-      "fix": "Rewrote 11\u219213 lines (8 removed)",
+      "fix": "Rewrote 11→13 lines (8 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -147,7 +147,7 @@
       "error_message": "Significant refactor of ",
       "file": "../home/vscode/.claude/plans/lets-move-on-from-floofy-scone.md",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 8\u219213 lines (4 removed)",
+      "fix": "Rewrote 8→13 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -179,7 +179,7 @@
       "error_message": "Significant refactor of ",
       "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 5\u219210 lines (2 removed)",
+      "fix": "Rewrote 5→10 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -229,7 +229,7 @@
       "error_message": "Significant refactor of ",
       "file": "Knowledge/Sessions/2026-06-09-mfc-guidance-stack.md",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 5\u219210 lines (3 removed)",
+      "fix": "Rewrote 5→10 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -245,7 +245,7 @@
       "error_message": "Significant refactor of ",
       "file": "Knowledge/Sessions/2026-06-09-mfc-guidance-stack.md",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 10\u219216 lines (3 removed)",
+      "fix": "Rewrote 10→16 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -277,7 +277,7 @@
       "error_message": "Significant refactor of ",
       "file": "sim_anton.py",
       "root_cause": "6 lines replaced/restructured",
-      "fix": "Rewrote 10\u21929 lines (6 removed)",
+      "fix": "Rewrote 10→9 lines (6 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -293,7 +293,7 @@
       "error_message": "Significant refactor of ",
       "file": "sim_anton.py",
       "root_cause": "7 lines replaced/restructured",
-      "fix": "Rewrote 9\u21923 lines (7 removed)",
+      "fix": "Rewrote 9→3 lines (7 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -346,7 +346,7 @@
       "error_message": "Significant refactor of ",
       "file": "Knowledge/Sessions/2026-06-10-inflight-stack-switching.md",
       "root_cause": "6 lines replaced/restructured",
-      "fix": "Rewrote 7\u219236 lines (6 removed)",
+      "fix": "Rewrote 7→36 lines (6 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -362,7 +362,7 @@
       "error_message": "Significant refactor of ",
       "file": "paparazzi/conf/autopilot/anton_mfc_autopilot.xml",
       "root_cause": "12 lines replaced/restructured",
-      "fix": "Rewrote 13\u21926 lines (12 removed) | Also: <call fun=\"guidance_mfc_enter()\"/>; <!-- *** swap the line below to run_indi_stack to  | Also: The active guidance stack is chosen by the <call_b; run_mfc_stack  \u2014 pure MFC guidance (gx/gy/gz) into",
+      "fix": "Rewrote 13→6 lines (12 removed) | Also: <call fun=\"guidance_mfc_enter()\"/>; <!-- *** swap the line below to run_indi_stack to  | Also: The active guidance stack is chosen by the <call_b; run_mfc_stack  — pure MFC guidance (gx/gy/gz) into",
       "tags": [
         "auto-detected",
         "refactor",
@@ -398,7 +398,7 @@
       "error_message": "Significant refactor of ",
       "file": "Knowledge/Sessions/2026-06-10-inflight-stack-switching.md",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 4\u219244 lines (3 removed)",
+      "fix": "Rewrote 4→44 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -414,7 +414,7 @@
       "error_message": "Significant refactor of ",
       "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
       "root_cause": "8 lines replaced/restructured",
-      "fix": "Rewrote 56\u2192112 lines (8 removed)",
+      "fix": "Rewrote 56→112 lines (8 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -430,7 +430,7 @@
       "error_message": "Significant refactor of ",
       "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.h",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 6\u21929 lines (3 removed) | Also: /** Called on mode entry; latches start time for M; extern void guidance_mfc_enter(void);",
+      "fix": "Rewrote 6→9 lines (3 removed) | Also: /** Called on mode entry; latches start time for M; extern void guidance_mfc_enter(void);",
       "tags": [
         "auto-detected",
         "refactor",
@@ -446,7 +446,7 @@
       "error_message": "Significant refactor of ",
       "file": "paparazzi/conf/autopilot/anton_mfc_autopilot.xml",
       "root_cause": "5 lines replaced/restructured",
-      "fix": "Rewrote 9\u21924 lines (5 removed) | Also: <!-- Guidance is selected at compile time by STACK; auto-derived from the compiled stabilizer (see the | Also: <!-- Full autonomous: flight plan drives nav setpo; <call fun=\"guidance_mfc_enter()\" cond=\"STACK_USE_M",
+      "fix": "Rewrote 9→4 lines (5 removed) | Also: <!-- Guidance is selected at compile time by STACK; auto-derived from the compiled stabilizer (see the | Also: <!-- Full autonomous: flight plan drives nav setpo; <call fun=\"guidance_mfc_enter()\" cond=\"STACK_USE_M",
       "tags": [
         "auto-detected",
         "refactor",
@@ -461,7 +461,7 @@
       "timestamp": "2026-06-10T18:00:00.000Z",
       "error_message": "guidance_mfc SITL_PRINT z_sp printed 0.000 forever in NAV mode (MFC->INDI stack); throttle stuck, no altitude tracking",
       "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
-      "root_cause": "Bespoke guidance_mfc_run_vert read gv->z_ref, but z_ref/z_sp are only populated as a side-effect of guidance_v_run()/guidance_v_from_nav() (which copies nav.nav_altitude -> z_sp -> z_ref). The MFC stack replaced guidance_v_run with the bespoke entry point, so z_ref was never updated and stayed 0. NAV mode WAS entering (the print fired) \u2014 not a mode problem.",
+      "root_cause": "Bespoke guidance_mfc_run_vert read gv->z_ref, but z_ref/z_sp are only populated as a side-effect of guidance_v_run()/guidance_v_from_nav() (which copies nav.nav_altitude -> z_sp -> z_ref). The MFC stack replaced guidance_v_run with the bespoke entry point, so z_ref was never updated and stayed 0. NAV mode WAS entering (the print fired) — not a mode problem.",
       "fix": "Refactored guidance_mfc into a standard mutually-exclusive guidance variant providing the generic plug functions guidance_v_run_pos/speed/accel + guidance_h_run_pos/speed/accel + _run_enter. The generic guidance_v/guidance_h drivers now fill gv->z_ref / gh->ref.pos from nav before calling us, so the reference is valid. Verified in NPS: z_sp ramps 0 -> -2.0 m.",
       "tags": [
         "mfc",
@@ -483,7 +483,7 @@
       "error_message": "MFC vertical throttle command = -nan in NPS once z_sp was correctly populated (MFC->INDI stack)",
       "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
       "root_cause": "mfc_core's shared mfc.sample_time was 0, so mfc_siso_run() divided by sample_time (and sample_time^2) -> inf/NaN. mfc_core_init() is only called by stabilization_mfc_init() (and guidance_indi_init when GUIDANCE_INDI_THRUST_MFC). In the MFC->INDI stack the MFC side is the GUIDANCE, so neither ran and the core was never initialised. Masked before because z_sp==0 kept the estimator inputs trivially zero.",
-      "fix": "guidance_mfc_init() now calls mfc_core_init(1.f / PERIODIC_FREQUENCY), mirroring guidance_indi.c:250. Verified: throttle is finite. NOTE: throttle is still noisy/oscillating at startup \u2014 that is the untuned MFC estimator transient (GZ gains are starting points), a tuning task, not a code bug.",
+      "fix": "guidance_mfc_init() now calls mfc_core_init(1.f / PERIODIC_FREQUENCY), mirroring guidance_indi.c:250. Verified: throttle is finite. NOTE: throttle is still noisy/oscillating at startup — that is the untuned MFC estimator transient (GZ gains are starting points), a tuning task, not a code bug.",
       "tags": [
         "mfc",
         "mfc_core",
@@ -601,7 +601,7 @@
       "error_message": "Significant refactor of ",
       "file": "paparazzi/conf/airframes/ENAC/quadrotor/anton_mfc.xml",
       "root_cause": "6 lines replaced/restructured",
-      "fix": "Rewrote 27\u219234 lines (6 removed)",
+      "fix": "Rewrote 27→34 lines (6 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -649,6 +649,46 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-06-11"
+    },
+    {
+      "id": "bug-037",
+      "timestamp": "2026-06-11T10:12:26.102Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_indi.c",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 5→3 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-11T10:12:26.102Z"
+    },
+    {
+      "id": "bug-038",
+      "timestamp": "2026-06-11T00:00:00.000Z",
+      "error_message": "stabilization_indi.c thrust path hacked (v_thrust.z = thrust->sp.thrust_f[Z]) to consume guidance_mfc's physical thrust, corrupting the generic INDI stabilizer for non-MFC users",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_indi.c, guidance_mfc.c, stabilization_mfc.c",
+      "root_cause": "guidance_mfc emits the vertical thrust in physical indi_v[3]-space units (~-17 at hover). To make it work, stock INDI's Bwls thrust line was bypassed. That edit is downstream-specific and should live in guidance, not in the shared stabilizer.",
+      "fix": "Reverted stabilization_indi.c to stock (v_thrust.z += th_cmd.z*Bwls[3][i]*act_thrust_mat[2][i]). Added GUIDANCE_MFC_THRUST_TO_PPRZ (+ GUIDANCE_MFC_THRUST_PPRZ_SCALE = 1/sum(Bwls[3][i])) in guidance_mfc.c: when TRUE, convert physical thrust to a paparazzi-scaled (0:MAX_PPRZ) int via th_sp_from_thrust_i so the stock INDI Bwls path round-trips exactly (scale=-166.67 for ANTON: G1 thrust row -1.5 x4 / INDI_G_SCALING 1000). Default FALSE emits raw float for stabilization_mfc.c, which now reads thrust->sp.thrust_f[Z] directly into its pseudo-inverse. ANTON_MFC airframe sets THRUST_TO_PPRZ=TRUE.",
+      "tags": ["mfc", "thrust", "guidance", "indi", "units", "pseudo-inverse", "config"],
+      "related_bugs": ["bug-037"],
+      "occurrences": 1,
+      "last_seen": "2026-06-11T00:00:00.000Z"
+    },
+    {
+      "id": "bug-039",
+      "timestamp": "2026-06-11T00:00:00.000Z",
+      "error_message": "INDI_OUTPUTS / INDI_NUM_ACT undeclared in stabilization_indi.h:33 when building the stabilization type=\"mfc\" stack (wls_alloc.c and stabilization_mfc.c both include stabilization_indi.h)",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_indi.h (extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT])",
+      "root_cause": "PRE-EXISTING (not introduced by this change). wls_alloc.h -> stabilization_indi.h unconditionally references INDI_* macros that only exist when the INDI stabilizer is compiled; an MFC-only build leaves them undefined. Blocks the entire INDI->MFC / MFC->MFC stack at compile.",
+      "fix": "NOT FIXED — out of scope for the surgical thrust-link task. Documented only. The active ANTON_MFC stack is MFC->INDI (stab=indi) and builds cleanly. To enable a stab=mfc build later, decouple stabilization_indi.h's g1g2 extern from wls_alloc.h or guard it.",
+      "tags": ["mfc", "build", "pre-existing", "stabilization_indi.h", "wls", "out-of-scope"],
+      "related_bugs": ["bug-038"],
+      "occurrences": 1,
+      "last_seen": "2026-06-11T00:00:00.000Z"
     }
   ]
 }

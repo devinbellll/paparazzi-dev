@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-11T09:58:18.913Z
-> Files: 623 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-11T10:24:19.324Z
+> Files: 626 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
 
@@ -141,6 +141,7 @@
 - `2026-06-10-inflight-stack-switching.md` — Session: 2026-06-10 — In-flight control-stack switching design (~5624 tok)
 - `2026-06-10-render-flag.md` — Session: 2026-06-10 — sim_anton render flag (~1291 tok)
 - `2026-06-11-mfc-per-axis-timing.md` — Session: 2026-06-11 — MFC per-axis timing refactor + workaround removal; Z guidance flies (~1500 tok)
+- `2026-06-11-mfc-thrust-unit-link.md` — Session: 2026-06-11 — MFC thrust-unit link between guidance and stabilizers (~990 tok)
 
 ## enac_paparazzi/
 
@@ -800,7 +801,7 @@
 
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
-- `anton_mfc.xml` (~4054 tok)
+- `anton_mfc.xml` (~4187 tok)
 
 ## paparazzi/conf/autopilot/
 
@@ -808,7 +809,7 @@
 
 ## paparazzi/conf/modules/
 
-- `guidance_mfc.xml` (~1614 tok)
+- `guidance_mfc.xml` (~1762 tok)
 - `stabilization_mfc.xml` (~2777 tok)
 
 ## paparazzi/conf/simulator/flightgear/
@@ -822,8 +823,13 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6056 tok)
-- `guidance_mfc.c` (~3220 tok)
+- `guidance_mfc.c` (~3754 tok)
 - `guidance_mfc.h` (~432 tok)
+
+## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
+
+- `stabilization_indi.c` (~11699 tok)
+- `stabilization_mfc.c` (~12990 tok)
 
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
 
