@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-10T21:37:48.220Z
-> Files: 619 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-11T09:58:18.913Z
+> Files: 623 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../home/vscode/.claude/plans/
 
@@ -9,6 +9,8 @@
 - `fizzy-gliding-backus.md` — Plan: Rebase onto upstream, extract NPS scope as feature-nps-datastream (~1061 tok)
 - `lets-move-on-from-floofy-scone.md` — Plan: Full MFC Guidance + Stabilization Stack (~1722 tok)
 - `re-assess-the-plan-home-vscode-claude-pl-composed-squid.md` — Plan: Transparent MFC Stack + Simple Autopilot for ANTON_MFC (~2988 tok)
+- `strip-old-remenants-of-piped-yeti.md` — Plan: Strip INDI Remnants from stabilization_mfc.c (~1215 tok)
+- `the-current-passing-of-delegated-ritchie.md` — Plan: Unit-correct thrust link between guidance_mfc and downstream stabilizers (~1834 tok)
 - `velvet-sprouting-peach.md` — Assessment: Building this stack natively on macOS (NPS SITL, no container) (~1687 tok)
 
 ## ./
@@ -138,6 +140,7 @@
 - `2026-06-10-autopilot-stack-binding.md` — Session: 2026-06-10 — Autopilot ↔ stabilization/guidance binding (Q&A) (~864 tok)
 - `2026-06-10-inflight-stack-switching.md` — Session: 2026-06-10 — In-flight control-stack switching design (~5624 tok)
 - `2026-06-10-render-flag.md` — Session: 2026-06-10 — sim_anton render flag (~1291 tok)
+- `2026-06-11-mfc-per-axis-timing.md` — Session: 2026-06-11 — MFC per-axis timing refactor + workaround removal; Z guidance flies (~1500 tok)
 
 ## enac_paparazzi/
 
@@ -797,7 +800,7 @@
 
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
-- `anton_mfc.xml` (~3920 tok)
+- `anton_mfc.xml` (~4054 tok)
 
 ## paparazzi/conf/autopilot/
 
@@ -805,7 +808,8 @@
 
 ## paparazzi/conf/modules/
 
-- `guidance_mfc.xml` (~1561 tok)
+- `guidance_mfc.xml` (~1614 tok)
+- `stabilization_mfc.xml` (~2777 tok)
 
 ## paparazzi/conf/simulator/flightgear/
 
@@ -817,8 +821,8 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
-- `guidance_indi.c` — Declares is (~5864 tok)
-- `guidance_mfc.c` (~3583 tok)
+- `guidance_indi.c` — Declares is (~6056 tok)
+- `guidance_mfc.c` (~3220 tok)
 - `guidance_mfc.h` (~432 tok)
 
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)

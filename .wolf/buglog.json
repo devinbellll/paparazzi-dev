@@ -496,7 +496,8 @@
         "bug-028"
       ],
       "occurrences": 1,
-      "last_seen": "2026-06-10T18:05:00.000Z"
+      "last_seen": "2026-06-11",
+      "resolution_note": "API since renamed (2026-06-11): the per-module timing refactor replaced mfc_core_init() with per-axis mfc_siso_init(); guidance_mfc_init() now calls mfc_siso_init(&mfc_gx/gy/gz, 1/PERIODIC_FREQUENCY). Root cause (uninitialised sample_time -> divide-by-zero) and fix intent are unchanged."
     },
     {
       "id": "bug-030",
@@ -519,7 +520,9 @@
         "bug-029"
       ],
       "occurrences": 1,
-      "last_seen": "2026-06-10T19:00:00.000Z"
+      "last_seen": "2026-06-11",
+      "resolution_note": "SUPERSEDED by bug-033 (2026-06-11). The v-only-starts / h-no-op split was a workaround for the GLOBAL shared clock. After timing moved into each SISO module, the split was removed: guidance_v_run_enter() resets gz, guidance_h_run_enter() resets gx/gy.",
+      "status": "superseded"
     },
     {
       "id": "bug-031",
@@ -540,7 +543,9 @@
         "bug-030"
       ],
       "occurrences": 1,
-      "last_seen": "2026-06-10T19:10:00.000Z"
+      "last_seen": "2026-06-11",
+      "resolution_note": "SUPERSEDED by bug-033 (2026-06-11). The in_flight ground-gating + per-cycle clock re-latch was removed; guidance_mfc_vert() now runs raw MFC every cycle whenever gz is enabled. Ground windup protection intentionally dropped per user request.",
+      "status": "superseded"
     },
     {
       "id": "bug-032",
@@ -562,7 +567,9 @@
         "bug-031"
       ],
       "occurrences": 1,
-      "last_seen": "2026-06-10T19:20:00.000Z"
+      "last_seen": "2026-06-11",
+      "resolution_note": "RESOLVED 2026-06-11 (user-confirmed: MFC Z guidance flies perfectly smooth in NPS). The absolute-thrust edit (stabilization_indi.c:741 v_thrust.z = thrust_f) was RETAINED, i.e. option (2) from the diagnosis: guidance outputs an indi_v[3]-space thrust and GZ was retuned so it enters the WLS objective at the correct scale. Not reverted to stock.",
+      "status": "resolved"
     },
     {
       "id": "bug-033",
@@ -584,6 +591,61 @@
         "bug-030",
         "bug-031",
         "bug-026"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-11"
+    },
+    {
+      "id": "bug-034",
+      "timestamp": "2026-06-11T09:34:39.360Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/conf/airframes/ENAC/quadrotor/anton_mfc.xml",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 27\u219234 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-11T09:34:39.360Z"
+    },
+    {
+      "id": "bug-035",
+      "timestamp": "2026-06-11T09:46:36.138Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/modules/guidance_mfc.xml",
+      "root_cause": "Had \"0.1\"",
+      "fix": "Changed to \"1.\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-11T09:47:48.124Z"
+    },
+    {
+      "id": "bug-036",
+      "timestamp": "2026-06-11",
+      "error_message": "guidance_mfc_init() hardcoded gz gains (alpha=5,kp=4,time_trajec=250,int_window=5), ignoring the GUIDANCE_MFC_GZ_* airframe defines; the airframe XML value GZ_TIME_TRAJECTORY=2 was never applied (250 was what actually flew)",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
+      "root_cause": "Bring-up debugging left literal gz values in init with the defines commented out (e.g. `mfc_gz.alpha = 5;//GUIDANCE_MFC_GZ_ALPHA`). So airframe/module XML and GCS persistent settings did not control the initial gz config.",
+      "fix": "Wired gz init to the GUIDANCE_MFC_GZ_* macros. To preserve the flying behavior, set anton_mfc.xml GZ_TIME_TRAJECTORY 2->250 (the value that flew) and aligned the guidance_mfc.xml + guidance_mfc.c #ifndef defaults with the real ANTON values. Also bumped guidance_mfc.xml time_trajec dl_setting max 10->1000 (sliders couldn't reach 600/250) and fixed misleading comments (GZ_ALPHA was wrongly described as g/hover_throttle; it is hand-tuned ~1/mass).",
+      "tags": [
+        "mfc",
+        "guidance",
+        "init",
+        "defines",
+        "tuning",
+        "settings",
+        "comments"
+      ],
+      "related_bugs": [
+        "bug-032",
+        "bug-033"
       ],
       "occurrences": 1,
       "last_seen": "2026-06-11"

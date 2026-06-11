@@ -329,6 +329,15 @@ MFC->INDI config.
 
 ## FOLLOW-UP 2 — F_k=0, estimator windup, and an INDI thrust-units mismatch (2026-06-10)
 
+> **⚠️ TIMING MODEL SUPERSEDED (2026-06-11).** The bug-030/031 fixes below operate on a
+> *global shared* MFC clock (`mfc.time`, `mfc_core_start()`, the v-only-starts /
+> h-no-op split, the per-cycle re-latch). On 2026-06-11 the clock was moved *into each
+> SISO module* (`struct MfcParameters.{sample_time,time,start_time}` +
+> `mfc_siso_init()` / `mfc_siso_reset()`) and the bug-030/031 workarounds were removed
+> (bug-033). bug-032 is now RESOLVED — MFC Z guidance flies smoothly. See
+> `2026-06-11-mfc-per-axis-timing.md` for the current design. The account below is
+> retained as the historical record of the 2026-06-10 state.
+
 After the refactor, user moved to the MFC->INDI vertical-throttle path and added a
 debug edit in `stabilization_indi.c` (rate_run, else/absolute-thrust branch):
 `v_thrust.z = (float)thrust->sp.thrust_f[THRUST_AXIS_Z];` (replacing the stock
