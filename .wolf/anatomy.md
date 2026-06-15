@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-12T13:08:08.120Z
-> Files: 634 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-15T14:59:15.533Z
+> Files: 639 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -13,6 +13,8 @@
 - `assess-the-feasibility-of-dreamy-clover.md` — Live scope for the NPS sim → PlotJuggler on the Mac host (~1309 tok)
 - `fizzy-gliding-backus.md` — Plan: Rebase onto upstream, extract NPS scope as feature-nps-datastream (~1061 tok)
 - `lets-move-on-from-floofy-scone.md` — Plan: Full MFC Guidance + Stabilization Stack (~1722 tok)
+- `nifty-orbiting-hummingbird.md` — Token-efficient build + run harness for Claude Code (~1581 tok)
+- `paparazzi-is-on-a-zany-hedgehog.md` — Yaw Oscillation Diagnosis: `66c560591` → `565029354` (feature-mfc-thrust) (~1280 tok)
 - `re-assess-the-plan-home-vscode-claude-pl-composed-squid.md` — Plan: Transparent MFC Stack + Simple Autopilot for ANTON_MFC (~2988 tok)
 - `strip-old-remenants-of-piped-yeti.md` — Plan: Strip INDI Remnants from stabilization_mfc.c (~1215 tok)
 - `the-current-passing-of-delegated-ritchie.md` — Plan: Unit-correct thrust link between guidance_mfc and downstream stabilizers (~1834 tok)
@@ -128,6 +130,7 @@
 ## Knowledge/
 
 - `00 - Index.md` — Paparazzi Control System — Knowledge Base (~315 tok)
+- `02 - INDI Stabilization Deep Dive.md` — INDI Stabilization Deep Dive (~1765 tok)
 - `09 - FlightGear 3D Visualization.md` — FlightGear 3D Visualization for NPS (~1076 tok)
 - `10 - Simplified Autopilots & Flight Modes.md` — 10 - Simplified Autopilots & Flight Modes (~2108 tok)
 
@@ -138,6 +141,7 @@
 - `2026-06-09.md` — Today (~845 tok)
 - `2026-06-10.md` — Today (~1004 tok)
 - `2026-06-11.md` — Today (~427 tok)
+- `2026-06-15.md` — Today (~610 tok)
 
 ## Knowledge/Sessions/
 
@@ -155,6 +159,7 @@
 - `2026-06-10-render-flag.md` — Session: 2026-06-10 — sim_anton render flag (~1291 tok)
 - `2026-06-11-mfc-per-axis-timing.md` — Session: 2026-06-11 — MFC per-axis timing refactor + workaround removal; Z guidance flies (~1500 tok)
 - `2026-06-11-mfc-thrust-unit-link.md` — Session: 2026-06-11 — MFC thrust-unit link between guidance and stabilizers (~990 tok)
+- `2026-06-15-yaw-oscillation-mfc-indi.md` — 2026-06-15 — Yaw oscillation: MFC guidance + INDI stabilization (~715 tok)
 
 ## enac_paparazzi/
 
@@ -836,7 +841,7 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6056 tok)
-- `guidance_mfc.c` (~4292 tok)
+- `guidance_mfc.c` (~4476 tok)
 - `guidance_mfc.h` (~432 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/

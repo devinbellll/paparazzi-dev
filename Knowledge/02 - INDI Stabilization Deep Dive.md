@@ -96,6 +96,35 @@ In the GCS you can change live:
 
 When `USE_ADAPTIVE=TRUE`, the `lms_estimation()` function runs every cycle and slowly adjusts `g1_est`/`g2_est` using LMS gradient descent, bounded by `INDI_ALLOWED_G_FACTOR = 2.0` of the initial values.
 
+## PERIODIC_FREQUENCY is part of the INDI tuning — especially for yaw (G2)
+
+`PERIODIC_FREQUENCY` (the main AP/control loop rate, set via `<configure>` in the
+airframe) is **not** a free implementation detail for INDI — the discrete-time
+INDI math bakes it in. A set of INDI gains is only valid at the frequency it was
+tuned at. Key dependencies in `stabilization_indi.c`:
+
+- **Actuator dynamics model** (`:457`):
+  `act_dyn_discrete[i] = 1 - exp(-ACT_FREQ[i] / PERIODIC_FREQUENCY)`.
+  With `ACT_FREQ=30.5`: `0.0300` @ 1000 Hz vs `0.0592` @ 500 Hz — **~2×** off if
+  the rate changes but `ACT_FREQ` doesn't.
+- **Actuator-rate / angular-acceleration estimates** (`:642,643,670,675,676`):
+  all derivatives are computed as `Δ × PERIODIC_FREQUENCY`.
+- **Filter sample time** (`:532,552`): `1 / PERIODIC_FREQUENCY` for the
+  measurement / actuator / estimation low-pass filters.
+
+**Why yaw breaks first.** The yaw axis is driven almost entirely by the **G2**
+spin-up-torque compensation (`g2_times_u = G2·indi_u/INDI_G_SCALING`, added to the
+yaw objective `indi_v[2]`), and has weak direct effectiveness (`G1` yaw row ≈ ±5
+vs ±40 for roll/pitch). G2 works by *predicting the actuator rate-of-change* —
+exactly the quantity governed by `act_dyn_discrete` and the
+`PERIODIC_FREQUENCY`-scaled derivatives. Run the loop at half the tuned rate and
+that prediction is ~2× wrong; the low-authority, G2-dependent yaw axis
+limit-cycles while roll/pitch (high direct authority, no G2 reliance) still look
+fine. Net rule: **if you change `PERIODIC_FREQUENCY`, you must re-tune G2 /
+ACT_FREQ / REF_RATE and the filter cutoffs — or expect a yaw oscillation.**
+
+See [[Sessions/2026-06-15-yaw-oscillation-mfc-indi]] for the debugging story.
+
 ## See Also
 
 - [[04 - Airframe XML Configuration]] for the full section syntax

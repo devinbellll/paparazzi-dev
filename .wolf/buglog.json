@@ -788,6 +788,74 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-12T12:51:17.431Z"
+    },
+    {
+      "id": "bug-045",
+      "timestamp": "2026-06-15T13:29:35.730Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
+      "root_cause": "Had \"math/pprz_algebra_float.h\"",
+      "fix": "Changed to \"firmwares/rotorcraft/navigation.h\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T13:29:35.730Z"
+    },
+    {
+      "id": "bug-046",
+      "timestamp": "2026-06-15T13:29:45.175Z",
+      "error_message": "Wrong return value",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
+      "root_cause": "Was returning: accel_to_att_sp(acc_x, acc_y, psi, 0.0);",
+      "fix": "Now returns: accel_to_att_sp(acc_x, acc_y, psi, gh->sp.heading)",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T13:29:45.175Z"
+    },
+    {
+      "id": "bug-mfc-yaw-period",
+      "timestamp": "2026-06-15T15:10:00.000Z",
+      "error_message": "ANTON_MFC (guidance=mfc, stab=indi) yaw oscillation in NPS even with RPY setpoint {0,0,0} and constant thrust; ANTON (guidance=indi) does not oscillate, same INDI gains.",
+      "file": "conf/airframes/ENAC/quadrotor/anton_mfc.xml",
+      "root_cause": "Two issues. (1) guidance_mfc never seeded nav.heading on entry and hardcoded yaw sp to 0.0. (2) DOMINANT: PERIODIC_FREQUENCY was 500 Hz in anton_mfc.xml vs 1000 Hz in anton_indi_aruco.xml. INDI discrete math (act_dyn_discrete, rate/accel estimates, filter sample times) is frequency-dependent; the yaw axis is driven by the rate-sensitive, low-authority G2 spin-up compensation, so gains proven at 1000 Hz limit-cycle yaw at 500 Hz.",
+      "fix": "(1) guidance_mfc.c: set nav.heading=stateGetNedToBodyEulers_f()->psi in guidance_h_run_enter and pass gh->sp.heading into accel_to_att_sp. (2) Set PERIODIC_FREQUENCY back to 1000 in anton_mfc.xml (or re-tune G2/ACT_FREQ/REF_RATE/filters for 500 Hz).",
+      "tags": [
+        "indi",
+        "yaw",
+        "oscillation",
+        "PERIODIC_FREQUENCY",
+        "G2",
+        "mfc",
+        "nav-heading"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T15:10:00.000Z"
+    },
+    {
+      "id": "bug-048",
+      "timestamp": "2026-06-15T14:59:15.590Z",
+      "error_message": "Wrong reference: backlog should be Debug",
+      "file": "Knowledge/Daily Notes/2026-06-15.md",
+      "root_cause": "Used \"backlog\" instead of \"Debug\"",
+      "fix": "Changed backlog → Debug",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T14:59:15.591Z"
     }
   ]
 }
