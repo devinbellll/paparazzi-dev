@@ -1,7 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-11T11:00:21.960Z
-> Files: 627 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-12T13:08:08.120Z
+> Files: 634 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
+
+- `2026-06-01.proposed.md` — Today (~349 tok)
+- `2026-06-04.proposed.md` — Today (~713 tok)
 
 ## ../home/vscode/.claude/plans/
 
@@ -125,6 +130,14 @@
 - `00 - Index.md` — Paparazzi Control System — Knowledge Base (~315 tok)
 - `09 - FlightGear 3D Visualization.md` — FlightGear 3D Visualization for NPS (~1076 tok)
 - `10 - Simplified Autopilots & Flight Modes.md` — 10 - Simplified Autopilots & Flight Modes (~2108 tok)
+
+## Knowledge/Daily Notes/
+
+- `2026-06-05.md` — Today (~550 tok)
+- `2026-06-08.md` — Today (~439 tok)
+- `2026-06-09.md` — Today (~845 tok)
+- `2026-06-10.md` — Today (~1004 tok)
+- `2026-06-11.md` — Today (~427 tok)
 
 ## Knowledge/Sessions/
 
@@ -801,7 +814,7 @@
 
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
-- `anton_mfc.xml` (~4187 tok)
+- `anton_mfc.xml` (~4207 tok)
 
 ## paparazzi/conf/autopilot/
 
@@ -823,7 +836,7 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6056 tok)
-- `guidance_mfc.c` (~3754 tok)
+- `guidance_mfc.c` (~4292 tok)
 - `guidance_mfc.h` (~432 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
