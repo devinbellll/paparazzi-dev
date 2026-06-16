@@ -64,3 +64,13 @@
 - [2026-06-11] **`build_fw.sh` CONF_XML is relative to `paparazzi/`, not `/workspace`.** Use `conf/airframes/ENAC/conf_enac.xml` (the script's own header is right; the root CLAUDE.md example `paparazzi/conf/...` fails with `Xml_light_errors.File_not_found`).
 - [2026-06-15] **For an INDI yaw oscillation, diff `PERIODIC_FREQUENCY` between airframes FIRST — don't chase thrust scaling/WLS/setpoint paths.** Wasted a long pass on thrust→WLS magnitude, WLS priorities, incremental-vs-absolute thrust, and flat-attitude coupling — all dead ends. The cause was a 500 vs 1000 Hz loop-rate mismatch (yaw is the most rate-sensitive INDI axis via G2). Whole-XML `diff` of the two airframes surfaced it immediately. See bug-mfc-yaw-period.
 - [2026-06-11] **The `stabilization type="mfc"` stack does not currently compile** (pre-existing, bug-039): `wls_alloc.h`/`stabilization_mfc.c` include `stabilization_indi.h`, whose `extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT]` needs INDI macros undefined in an MFC-only build. Don't assume a stab=mfc airframe builds; the active ANTON_MFC stack is MFC->INDI (stab=indi).
+
+## Key Learnings additions
+
+- [2026-06-15] **A Paparazzi module's source must live under `sw/airborne/modules/<dir>/`.** Setting `dir="firmwares/rotorcraft"` on a `<module>` does NOT make the build find a file there — you get `No rule to make target .../modules/firmwares/rotorcraft/<file>.c`. Put module .c/.h under `modules/<name>/` (dir defaults to module name).
+- [2026-06-15] **A module that declares a generated `<periodic>`/`<event>`/`<init>` call needs a `<header><file name="x.h"/></header>` element**, or the generated `modules.h` calls the function with no prototype (implicit-declaration warning, and confusing failures).
+- [2026-06-15] **NPS scope architecture: truth/* is hardcoded in `sw/simulator/nps/nps_scope.c` (universal); everything else is firmware globals registered via `NPS_SCOPE_VAR`/`NPS_SCOPE_VARN` (no-op off-sim).** For clean SI/deg + fixed-point/union conversion, register a static float mirror refreshed by a sim-only module `<periodic>` (see `modules/nps_scope/nps_scope_state.c`) rather than raw addresses.
+
+## Do-Not-Repeat additions
+
+- [2026-06-15] **`ap` build is broken on daily-notes branch (bug-050, pre-existing): `nps_v_thrust` used unguarded at stabilization_indi.c:751 but declared only under `#ifdef SITL`.** Don't attribute this to NPS/sim work. Fix is to `#ifdef SITL`-guard line 751.

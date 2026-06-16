@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-15T14:59:15.533Z
-> Files: 639 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-15T16:07:52.296Z
+> Files: 653 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -12,6 +12,7 @@
 
 - `assess-the-feasibility-of-dreamy-clover.md` — Live scope for the NPS sim → PlotJuggler on the Mac host (~1309 tok)
 - `fizzy-gliding-backus.md` — Plan: Rebase onto upstream, extract NPS scope as feature-nps-datastream (~1061 tok)
+- `improve-the-nps-scope-humble-platypus.md` — Improve the NPS scope: truth NED + est/sensors/setpoints/modes folders (~1717 tok)
 - `lets-move-on-from-floofy-scone.md` — Plan: Full MFC Guidance + Stabilization Stack (~1722 tok)
 - `nifty-orbiting-hummingbird.md` — Token-efficient build + run harness for Claude Code (~1581 tok)
 - `paparazzi-is-on-a-zany-hedgehog.md` — Yaw Oscillation Diagnosis: `66c560591` → `565029354` (feature-mfc-thrust) (~1280 tok)
@@ -159,6 +160,7 @@
 - `2026-06-10-render-flag.md` — Session: 2026-06-10 — sim_anton render flag (~1291 tok)
 - `2026-06-11-mfc-per-axis-timing.md` — Session: 2026-06-11 — MFC per-axis timing refactor + workaround removal; Z guidance flies (~1500 tok)
 - `2026-06-11-mfc-thrust-unit-link.md` — Session: 2026-06-11 — MFC thrust-unit link between guidance and stabilizers (~990 tok)
+- `2026-06-15-nps-scope-state-folders.md` — Session — 2026-06-15: NPS scope est/sensors/setpoints/modes folders (~766 tok)
 - `2026-06-15-yaw-oscillation-mfc-indi.md` — 2026-06-15 — Yaw oscillation: MFC guidance + INDI stabilization (~715 tok)
 
 ## enac_paparazzi/
@@ -817,9 +819,20 @@
 - `rotorcraft_oa_avoid.xml` (~266 tok)
 - `slayer_training.xml` (~1106 tok)
 
+## paparazzi/conf/airframes/ENAC/hybrid/
+
+- `cyfoam.xml` — Declares of (~3242 tok)
+- `falcon_v2.xml` (~3611 tok)
+
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
+- `anton_indi_aruco.xml` (~2774 tok)
 - `anton_mfc.xml` (~4207 tok)
+- `cobraV2.xml` (~2527 tok)
+- `crow_indoor.xml` (~2351 tok)
+- `goose.xml` (~2697 tok)
+- `maya_outdoor.xml` (~2343 tok)
+- `robobee.xml` (~2518 tok)
 
 ## paparazzi/conf/autopilot/
 
@@ -828,6 +841,7 @@
 ## paparazzi/conf/modules/
 
 - `guidance_mfc.xml` (~1762 tok)
+- `nps_scope_state.xml` (~240 tok)
 - `stabilization_mfc.xml` (~2727 tok)
 
 ## paparazzi/conf/simulator/flightgear/
@@ -837,6 +851,9 @@
 ## paparazzi/sw/airborne/
 
 - `paparazzi.h` — ifndef PAPARAZZI_H (~278 tok)
+
+## paparazzi/sw/airborne/firmwares/rotorcraft/
+
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
@@ -849,6 +866,15 @@
 - `stabilization_indi.c` (~11699 tok)
 - `stabilization_mfc.c` (~11174 tok)
 - `stabilization_mfc.h` — PPRZ command to each actuator (~591 tok)
+
+## paparazzi/sw/airborne/modules/nps_scope/
+
+- `nps_scope_state.c` — rotorcraft sim-only NPS scope state mirror. `nps_scope_state_periodic()` copies firmware estimate (stateGet*), NPS simulated `sensors`, nav/guidance/stabilization setpoints (SI/deg) into a static float mirror; registers est/ sensors/ sp/ trees via NPS_SCOPE_VAR + mode/ globals directly. Module nps_scope_state.xml, target nps. (~2500 tok)
+- `nps_scope_state.h` — prototype for `nps_scope_state_periodic()`. (~176 tok)
+
+## paparazzi/sw/simulator/nps/
+
+- `nps_scope.c` — ifndef _GNU_SOURCE (~1641 tok)
 
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
 

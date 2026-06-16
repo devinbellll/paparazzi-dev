@@ -856,6 +856,139 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-15T14:59:15.591Z"
+    },
+    {
+      "id": "bug-049",
+      "timestamp": "2026-06-15T15:26:42.287Z",
+      "error_message": "Wrong reference: 4096 should be 8192",
+      "file": "paparazzi/sw/simulator/nps/nps_scope.c",
+      "root_cause": "Used \"4096\" instead of \"8192\"",
+      "fix": "Changed 4096 → 8192",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T15:26:42.287Z"
+    },
+    {
+      "id": "bug-050",
+      "timestamp": "2026-06-15T00:00:00Z",
+      "error_message": "ap (hardware) target fails to compile: 'nps_v_thrust' undeclared in stabilization_indi.c:751 (error during ./build_fw.sh ANTON ... ap)",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_indi.c",
+      "root_cause": "nps_v_thrust is declared only under #ifdef SITL (line ~318) but assigned unconditionally at line ~751. On the ap target SITL/USE_NPS is undefined, so the symbol does not exist. Pre-existing on daily-notes branch from commit cf6041886 (INDI yaw debug); not introduced by the NPS scope work. nps target builds fine because SITL is defined there.",
+      "fix": "NOT FIXED (out of scope, user's active debug code). To fix: guard the assignment, e.g. wrap line 751 in #ifdef SITL, or move nps_v_thrust mirroring behind the same guard. Reported to user.",
+      "tags": [
+        "nps",
+        "stabilization_indi",
+        "SITL",
+        "build",
+        "ap-target",
+        "pre-existing"
+      ],
+      "related_bugs": [
+        "bug-mfc-yaw-period"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T00:00:00Z"
+    },
+    {
+      "id": "bug-051",
+      "timestamp": "2026-06-15T16:05:02.441Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/quadrotor/maya_outdoor.xml",
+      "root_cause": "Had \"radio_control\"",
+      "fix": "Changed to \"nps_scope_state\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T16:05:02.441Z"
+    },
+    {
+      "id": "bug-052",
+      "timestamp": "2026-06-15T16:05:04.518Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/quadrotor/crow_indoor.xml",
+      "root_cause": "Had \"radio_control\"",
+      "fix": "Changed to \"nps_scope_state\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T16:05:04.519Z"
+    },
+    {
+      "id": "bug-053",
+      "timestamp": "2026-06-15T16:05:05.778Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/quadrotor/goose.xml",
+      "root_cause": "Had \"radio_control\"",
+      "fix": "Changed to \"nps_scope_state\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T16:05:05.778Z"
+    },
+    {
+      "id": "bug-054",
+      "timestamp": "2026-06-15T16:05:07.693Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/quadrotor/cobraV2.xml",
+      "root_cause": "Had \"radio_control\"",
+      "fix": "Changed to \"nps_scope_state\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T16:05:07.693Z"
+    },
+    {
+      "id": "bug-055",
+      "timestamp": "2026-06-15T16:05:09.013Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/hybrid/cyfoam.xml",
+      "root_cause": "Had \"udp\"",
+      "fix": "Changed to \"nps_scope_state\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T16:05:09.013Z"
+    },
+    {
+      "id": "bug-056",
+      "timestamp": "2026-06-15T16:05:10.426Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/hybrid/falcon_v2.xml",
+      "root_cause": "Had \"radio_control\"",
+      "fix": "Changed to \"nps_scope_state\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T16:05:10.426Z"
     }
   ]
 }
