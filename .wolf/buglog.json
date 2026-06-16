@@ -989,6 +989,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-15T16:05:10.426Z"
+    },
+    {
+      "id": "bug-057",
+      "timestamp": "2026-06-16T08:48:36.112Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 4→6 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-16T08:48:36.112Z"
+    },
+    {
+      "id": "bug-058",
+      "timestamp": "2026-06-16T10:20:28.506Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 11→7 lines (5 removed) | Also: /* Butterworth 2nd-order low-pass filters: NED pos; * and the vertical thrust output used by accel_to_",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-16T10:21:11.238Z"
     }
   ]
 }

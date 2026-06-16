@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-15T16:07:52.296Z
-> Files: 653 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-16T10:46:38.839Z
+> Files: 655 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -143,6 +143,7 @@
 - `2026-06-10.md` — Today (~1004 tok)
 - `2026-06-11.md` — Today (~427 tok)
 - `2026-06-15.md` — Today (~610 tok)
+- `2026-06-16.md` — Today (~318 tok)
 
 ## Knowledge/Sessions/
 
@@ -162,6 +163,7 @@
 - `2026-06-11-mfc-thrust-unit-link.md` — Session: 2026-06-11 — MFC thrust-unit link between guidance and stabilizers (~990 tok)
 - `2026-06-15-nps-scope-state-folders.md` — Session — 2026-06-15: NPS scope est/sensors/setpoints/modes folders (~766 tok)
 - `2026-06-15-yaw-oscillation-mfc-indi.md` — 2026-06-15 — Yaw oscillation: MFC guidance + INDI stabilization (~715 tok)
+- `2026-06-16-guidance-mfc-filters.md` — 2026-06-16 — guidance_mfc: Butterworth filters on NED measurement and thrust (~620 tok)
 
 ## enac_paparazzi/
 
@@ -858,7 +860,7 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6056 tok)
-- `guidance_mfc.c` (~4476 tok)
+- `guidance_mfc.c` (~4960 tok)
 - `guidance_mfc.h` (~432 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
