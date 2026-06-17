@@ -140,7 +140,7 @@ WLS MATH:
   paparazzi/sw/airborne/math/wls/wls_alloc.h
 
 BUILD:
-  /workspace/build_fw.sh AIRCRAFT conf/path TARGET
+  ./pprz.sh build AIRCRAFT TARGET
   Output: paparazzi/var/aircrafts/AIRCRAFT/ap/obj/ap.elf
 ```
 

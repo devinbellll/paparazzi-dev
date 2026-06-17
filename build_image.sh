@@ -39,4 +39,4 @@ docker build $PLATFORM -f Dockerfile.build -t "$IMAGE" .
 
 echo ""
 echo "==> Done: $IMAGE"
-echo "    Test it:  ./build_fw.sh ANTON paparazzi/conf/airframes/ENAC/conf_enac.xml"
+echo "    Test it:  ./pprz.sh build ANTON ap"

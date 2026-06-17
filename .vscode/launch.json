@@ -3,8 +3,9 @@
     "configurations": [
         {
             // Debug the NPS sim's firmware C code. First run the task
-            // "sim: ANTON_MFC (gdb wait :1234)" (sim.sh --mfc --gdb), which starts
-            // gdbserver inside the build container on :1234. On Mac/Docker Desktop
+            // "Sim: ANTON_MFC (gdb wait :1234)" (sim.sh --mfc --gdb), which builds
+            // incrementally (only if needed) and starts gdbserver inside the build
+            // container on :1234. On Mac/Docker Desktop
             // the port is published (-p 1234:1234); from the sbx sandbox publish it
             // with `sbx ports "$SANDBOX_VM_ID" --publish 1234:1234`, then attach.
             //

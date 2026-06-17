@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-17T14:33:42.641Z
-> Files: 680 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-17T16:44:48.519Z
+> Files: 674 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -15,7 +15,7 @@
 ## ../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/
 
 - `MEMORY.md` (~38 tok)
-- `runtime-sandbox-and-build-model.md` (~748 tok)
+- `runtime-sandbox-and-build-model.md` (~1062 tok)
 
 ## ../home/vscode/.claude/plans/
 
@@ -37,20 +37,14 @@
 - `.DS_Store` (~2186 tok)
 - `.gitignore` — Git ignore rules (~60 tok)
 - `.gitmodules` (~52 tok)
-- `build_active.sh` — Build whatever C/C++ configuration is currently selected in VS Code. (~832 tok)
-- `build_fw.sh` — Paparazzi firmware build script (~923 tok)
-- `build_image.sh` — ── Build the Paparazzi toolchain image (arm64-native) ──────────────────────── (~484 tok)
-- `CLAUDE.md` — OpenWolf (~2898 tok)
-- `Dockerfile.build` — ── Paparazzi headless build/sim toolchain — arm64-native ───────────────────── (~1182 tok)
-- `Dockerfile.paparazzi` — ── Layer 5: Paparazzi UAV Toolchains ───────────────────────────────────────── (~636 tok)
-- `gen_build_log.sh` — Capture a verbose build log for Makefile Tools buildLog IntelliSense. (~602 tok)
-- `gen_compile_commands.sh` — ── Generate compile_commands.json for VSCode / clangd IntelliSense ─────────── (~660 tok)
-- `gen_compile_db.sh` — Generate a per-config compile_commands.json for VS Code IntelliSense. (~623 tok)
-- `gen_vscode.sh` — Codegen prebuild step for VS Code / Makefile Tools. (~221 tok)
+- `build_image.sh` — ── Build the Paparazzi toolchain image (arm64-native) ──────────────────────── (~474 tok)
+- `CLAUDE.md` — OpenWolf (~3209 tok)
+- `Dockerfile.build` — ── Paparazzi headless build/sim toolchain — arm64-native ───────────────────── (~1295 tok)
+- `Dockerfile.paparazzi` — ── Layer 5: Paparazzi UAV Toolchains (legacy devcontainer base) ─────────────── (~636 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
-- `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~805 tok)
-- `pprz.sh` — ── pprz.sh — unified Paparazzi build/IDE tool (ephemeral container dispatch) ── (~1850 tok)
-- `README.md` — Project documentation (~1275 tok)
+- `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~804 tok)
+- `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2263 tok)
+- `README.md` — Project documentation (~1408 tok)
 - `sim_anton.py` — pprz_block_frame, on_rate_attitude, on_pos_llh, on_speed_pos (~7056 tok)
 - `sim.sh` — ── Run the ANTON NPS / SITL simulation in an ephemeral container ───────────── (~1114 tok)
 
@@ -147,17 +141,17 @@
 ## .vscode/
 
 - `c_cpp_properties.json` (~174 tok)
-- `launch.json` (~605 tok)
+- `launch.json` (~622 tok)
 - `settings.json` (~323 tok)
-- `tasks.json` (~1042 tok)
+- `tasks.json` (~1286 tok)
 
 ## Knowledge/
 
 - `00 - Index.md` — Paparazzi Control System — Knowledge Base (~315 tok)
 - `02 - INDI Stabilization Deep Dive.md` — INDI Stabilization Deep Dive (~1765 tok)
-- `08 - Paparazzi Build System and VS Code Integration.md` — Paparazzi Build System — Makefile Chain and VS Code Integration (~2012 tok)
+- `08 - Paparazzi Build System and VS Code Integration.md` — Paparazzi Build System — Makefile Chain and VS Code Integration (~2285 tok)
 - `09 - FlightGear 3D Visualization.md` — FlightGear 3D Visualization for NPS (~1076 tok)
-- `10 - Simplified Autopilots & Flight Modes.md` — 10 - Simplified Autopilots & Flight Modes (~2108 tok)
+- `10 - Simplified Autopilots & Flight Modes.md` — 10 - Simplified Autopilots & Flight Modes (~2177 tok)
 
 ## Knowledge/Daily Notes/
 
@@ -189,17 +183,17 @@
 - `2026-06-15-nps-scope-state-folders.md` — Session — 2026-06-15: NPS scope est/sensors/setpoints/modes folders (~766 tok)
 - `2026-06-15-yaw-oscillation-mfc-indi.md` — 2026-06-15 — Yaw oscillation: MFC guidance + INDI stabilization (~715 tok)
 - `2026-06-16-guidance-mfc-filters.md` — 2026-06-16 — guidance_mfc: Butterworth filters on NED measurement and thrust (~620 tok)
+- `2026-06-17-build-tooling-overhaul.md` — 2026-06-17 — Build tooling overhaul: one build button + working IntelliSense (~1101 tok)
 - `2026-06-17-containerized-build-run-integration.md` — 2026-06-17 — Containerized build/sim + VSCode integration (~949 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
 - `.clangd` — clangd config; CompilationDatabase at repo root; tolerates missing system headers. (~150 tok)
 - `.vscode/{tasks,launch,settings,c_cpp_properties}.json` — clangd IntelliSense (MS engine disabled), active-config picker drives pprz.sh tasks, gdbserver attach with /workspace→repo sourceFileMap. (~400 tok)
-- `build_fw.sh` — firmware build. Self-dispatches into container when no local arm-none-eabi-gcc; native branch otherwise. PPRZ=${PAPARAZZI_HOME:-/workspace/paparazzi}. (~250 tok)
 - `build_image.sh` — `docker build` wrapper; `--amd64` registers qemu binfmt + builds emulated. Documents the 3 PPA domains to allow on host. (~120 tok)
-- `Dockerfile.build` — standalone arm64 paparazzi toolchain image (ubuntu:24.04 + PPA paparazzi-dev/jsbsim, arm-none-eabi gcc+newlib, python+ivy, bear, gdb-multiarch). No Claude/Node layers. Runs as uid 1000. (~350 tok)
+- `Dockerfile.build` — standalone arm64 paparazzi toolchain image (ubuntu:24.04 + PPA paparazzi-dev/jsbsim, arm-none-eabi gcc+newlib, python+ivy, compiledb, gdb-multiarch). No bear (gRPC wrapper broken in-container). No Claude/Node layers. Runs as uid 1000. (~350 tok)
 - `pprz_docker.sh` — dispatcher library. `pprz_run [opts] -- <cmd>` runs cmd in ephemeral container, repo→/workspace, passes PPRZ_HOST_ROOT/PPRZ_HOST_CC for path rewrites. Auto-builds image if missing. (~200 tok)
-- `pprz.sh` — consolidated VSCode tool: subcommands build/db/log/codegen ("AIRCRAFT (target)"). In-container work at /workspace, host-side rewrites /workspace→PPRZ_HOST_ROOT in compile_commands.json + build.log. Replaced build_active.sh/gen_compile_db.sh/gen_build_log.sh/gen_vscode.sh. (~450 tok)
+- `pprz.sh` — THE build tool. `pprz.sh <cmd> AIRCRAFT [TARGET]` (also accepts "AIRCRAFT (target)"): build (incremental), clean, rebuild, db (compiledb→compile_commands.json, link-failure-tolerant), codegen, bootstrap. Self-dispatches into container; host-side rewrites /workspace→PPRZ_HOST_ROOT in the DB. Replaced build_fw.sh + the old build_active/gen_* scripts. (~600 tok)
 - `sim.sh` — builds nps target + runs sim_anton.py in container. Networking forks on IS_SANDBOX (--network host for sbx DinD vs bridge+-p for Mac Docker Desktop). (~200 tok)
 
 ## enac_paparazzi/

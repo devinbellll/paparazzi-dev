@@ -37,7 +37,7 @@ Edit `paparazzi/conf/airframes/ENAC/quadrotor/anton_indi_aruco.xml`:
 </section>
 ```
 
-Then rebuild: `./build_fw.sh ANTON paparazzi/conf/airframes/ENAC/conf_enac.xml`
+Then rebuild: `./pprz.sh build ANTON ap`
 
 ---
 
@@ -149,7 +149,7 @@ And replace the `STABILIZATION_ATTITUDE_INDI` section with `STABILIZATION_ATTITU
    <module name="stabilization" type="myctrl"/>
    ```
 
-4. **Rebuild**: `./build_fw.sh ANTON paparazzi/conf/airframes/ENAC/conf_enac.xml`
+4. **Rebuild**: `./pprz.sh build ANTON ap`
 
 ---
 
@@ -170,7 +170,7 @@ Higher number = higher priority = the WLS will sacrifice other axes less for thi
 
 ```bash
 # Build
-./build_fw.sh ANTON paparazzi/conf/airframes/ENAC/conf_enac.xml
+./pprz.sh build ANTON ap
 
 # Output ELF
 paparazzi/var/aircrafts/ANTON/ap/obj/ap.elf

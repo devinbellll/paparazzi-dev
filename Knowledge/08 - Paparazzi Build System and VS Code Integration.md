@@ -115,41 +115,60 @@ But this requires the generated files to already exist in `var/aircrafts/ANTON_M
 > The earlier Makefile-Tools/`make -n` approach (above) is superseded. It never
 > worked reliably because Paparazzi's source list isn't resolved until a real
 > build runs (so `make -n` can't see the TUs). We now drive IntelliSense from a
-> real `compile_commands.json` captured with `bear`, and run all builds in
-> ephemeral containers. Builds happen in a Linux container, but VSCode reads files
-> at the Mac repo path, so container `/workspace` paths are rewritten to the host
-> path in every emitted artifact.
+> real `compile_commands.json` captured by **`compiledb`** parsing a verbose
+> build, and run all builds in ephemeral containers. Builds happen in a Linux
+> container, but VSCode reads files at the Mac repo path, so container
+> `/workspace` paths are rewritten to the host path in every emitted artifact.
+
+> **Why not `bear`?** bear 3.x intercepts compilers with a wrapper that phones
+> home to a local gRPC daemon; inside this container that loopback connection
+> fails (`gRPC call failed ... Connection refused`), so every compile under bear
+> fails and no DB is produced. `compiledb` is pure Python — it just parses make's
+> verbose stdout — and works reliably.
 
 **One picker drives everything.** The C/C++ status-bar config name
 (`"AIRCRAFT (target)"`, from `c_cpp_properties.json`) feeds the tasks via
 `${command:cpptools.activeConfigName}`. The MS C/C++ IntelliSense engine is
 **disabled**; clangd provides IntelliSense from `compile_commands.json`.
 
-### `pprz.sh` — consolidated build/IDE tool
+### `pprz.sh` — the build/IDE tool
 
-Replaces the former `build_active.sh` / `gen_compile_db.sh` / `gen_build_log.sh` /
-`gen_vscode.sh`. Each subcommand runs inside the toolchain container at `/workspace`:
+One front door. Each command runs inside the toolchain container at `/workspace`;
+the aircraft and target are **separate args** (the VSCode picker's
+`"AIRCRAFT (target)"` form is also accepted):
 
 ```bash
-./pprz.sh build   "ANTON_MFC (ap)" [fast]   # full, or fast airborne-only incremental
-./pprz.sh db      "ANTON_MFC (ap)"          # compile_commands.json (clangd) + host rewrite
-./pprz.sh log     "ANTON_MFC (ap)"          # verbose build.log + host rewrite
-./pprz.sh codegen "ANTON_MFC (ap)"          # regenerate airframe.h / modules.h only
+./pprz.sh build    ANTON_MFC ap     # incremental — the single build button
+./pprz.sh clean    ANTON_MFC ap
+./pprz.sh rebuild  ANTON_MFC ap
+./pprz.sh db       ANTON_MFC ap     # compile_commands.json (clangd) + host rewrite
+./pprz.sh codegen  ANTON_MFC ap     # regenerate airframe.h / modules.h only
+./pprz.sh bootstrap                 # rebuild the OCaml ground segment
 ```
+
+`build` is incremental: `<target>.compile` reruns codegen only when the XML
+changed (the generator compares mtimes + an md5 of the config) and recompiles only
+changed C files. The slow `make -C paparazzi` ground-segment step runs once (guard
+on the generators / `var/include`), not every build.
 
 ### `tasks.json`
 
-`build: active config (fast|full)`, `db/log/codegen: … active config`,
-`image: build toolchain`, and `sim:` tasks — all call `pprz.sh` / `sim.sh` /
-`build_image.sh` against the active config.
+**Build** (default, Shift+Cmd+B), **Clean**, **Rebuild (clean + build)**,
+**IntelliSense: regenerate compile DB**, **Codegen only**, **Bootstrap ground
+segment**, **Build toolchain image**, and the **Sim:** tasks — all call `pprz.sh`
+/ `sim.sh` / `build_image.sh` against the active config.
 
 ### `compile_commands.json` (the IntelliSense source)
 
-`./pprz.sh db "<config>"` runs a clean build under `bear` in the container, writes
-`var/aircrafts/<AC>/<target>/compile_commands.json`, copies it to the repo root,
-and rewrites `/workspace` → the host repo path. clangd (`.clangd`,
-`--compile-commands-dir`) reads the root copy. Re-run `db` after changing the
-airframe XML, adding/removing files, or changing build-affecting defines.
+`./pprz.sh db "<config>"` does a `clean_ac` then a verbose build
+(`USE_VERBOSE_COMPILE=yes Q=''`), tees the log, and runs `compiledb --parse` on it,
+writing `var/aircrafts/<AC>/<target>/compile_commands.json`, copying it to the repo
+root, and rewriting `/workspace` → the host repo path. clangd (`.clangd`,
+`--compile-commands-dir`) reads the root copy. A final **link** failure is
+tolerated on purpose — every per-file compile command (all clangd needs) is already
+captured, and `ap` firmware may legitimately not link mid-development. Re-run `db`
+after changing the airframe XML, adding/removing files, or changing build-affecting
+defines.
 
 ### System-header fidelity (optional)
 

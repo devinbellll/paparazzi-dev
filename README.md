@@ -16,9 +16,10 @@ Headless firmware build environment for ENAC UAV Lab aircraft. Cross-compiles AR
 │       ├── quadrotor/      # Rotorcraft airframe definitions
 │       └── rover/
 ├── enac_paparazzi/         # ENAC's fork (github.com/enacuavlab/paparazzi)
-├── build_fw.sh             # Firmware build wrapper script
-├── Dockerfile.paparazzi    # Container image (extends claude-code-base)
-└── .devcontainer/          # VS Code / Cursor devcontainer config
+├── pprz.sh                 # The build tool (build / clean / rebuild / db / codegen / bootstrap)
+├── sim.sh                  # NPS sim runner
+├── build_image.sh          # Build the paparazzi-build toolchain image
+└── Dockerfile.build        # arm64 toolchain image
 ```
 
 ---
@@ -28,30 +29,34 @@ Headless firmware build environment for ENAC UAV Lab aircraft. Cross-compiles AR
 ### Quick build
 
 ```bash
-./build_fw.sh AIRCRAFT CONF_XML [TARGET]
+./pprz.sh build AIRCRAFT [TARGET]      # TARGET defaults to ap (autopilot)
 ```
 
-The default target is `ap` (autopilot). Examples:
+Aircraft and target are **separate args** — there is no conf path to pass (the
+fleet XML is fixed to `conf/airframes/ENAC/conf_enac.xml`). Examples:
 
 ```bash
-# Build ANTON autopilot firmware
-./build_fw.sh ANTON paparazzi/conf/airframes/ENAC/conf_enac.xml
-
-# Build CYFOAM with explicit target
-./build_fw.sh CYFOAM paparazzi/conf/airframes/ENAC/conf_enac.xml ap
-
-# Build PANACHE_1 fixed-wing
-./build_fw.sh PANACHE_1 paparazzi/conf/airframes/ENAC/conf_enac.xml
+./pprz.sh build ANTON              # ANTON autopilot firmware (ap)
+./pprz.sh build CYFOAM ap          # explicit target
+./pprz.sh build ANTON_MFC nps      # nps (sim) target
 ```
 
-Output ELF lands at: `paparazzi/var/aircrafts/<AIRCRAFT>/ap/obj/ap.elf`
+Output ELF lands at: `paparazzi/var/aircrafts/<AIRCRAFT>/<TARGET>/obj/<TARGET>.elf`
 
-### What the script does
+`build` is incremental and CMake-like: codegen reruns only when the airframe/conf
+XML changed, and only the C files that changed recompile. Other commands:
+`clean`, `rebuild`, `db` (regenerate `compile_commands.json` for clangd),
+`codegen` (headers only), `bootstrap` (rebuild the OCaml ground segment).
 
-1. Builds Paparazzi host tools (`make -j1 -C paparazzi/`) — serial to avoid dronecan submodule lock conflicts
-2. Runs `make -f Makefile.ac AIRCRAFT=... CONF_XML=... USE_LTO=no <target>.compile`
+### How it works
 
-`USE_LTO=no` is a permanent workaround for a gcc-arm-none-eabi 13.2 LTO ICE triggered by Rosetta 2 emulation (affects all builds in this container, including on Intel where it's a no-op).
+`pprz.sh` runs natively when a cross-compiler is on PATH (inside the toolchain
+container), otherwise it dispatches itself into an ephemeral arm64 container
+(repo bind-mounted at `/workspace`). Internally `build` runs
+`make -f Makefile.ac AIRCRAFT=... CONF_XML=conf/... USE_LTO=no <target>.compile`
+from the `paparazzi/` dir. The OCaml ground segment is built once (when the
+generators / `var/include` are missing), not on every build. `USE_LTO=no` (ap
+target) keeps incremental dev rebuilds fast; flip to `USE_LTO=yes` for release.
 
 ---
 

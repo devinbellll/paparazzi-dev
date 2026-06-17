@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ── Ephemeral Paparazzi build/sim container dispatcher ────────────────────────
 #
-# Sourced by build_fw.sh and sim.sh. Runs any command inside a throwaway
+# Sourced by pprz.sh and sim.sh. Runs any command inside a throwaway
 # arm64 container built from Dockerfile.build, with the repo bind-mounted at
 # /workspace so all generated code/artifacts land back in the workspace tree
 # (visible to both sandbox Claude and host VSCode).

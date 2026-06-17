@@ -97,3 +97,23 @@
 
 - Prefers being shown questions as plain text first (rejected AskUserQuestion tool prompts twice asking to "show/give back the question").
 - Wants complete VSCode(host)↔Claude(sbx)↔build integration: real symbols, generated #defines, true linking, fast incremental builds, accurate debugging, token-efficient exploration.
+
+## Key Learnings additions (2026-06-17 — build tooling overhaul)
+
+- Paparazzi's per-aircraft `<target>.compile` (from `make -C paparazzi -f Makefile.ac AIRCRAFT=.. CONF_XML=.. <target>.compile`) is ALREADY incremental/CMake-like: it depends on `<target>.ac_h` (codegen via gen_aircraft.out, which only rewrites airframe.h/modules.h when the XML changed — it compares mtimes via `is_older` + an md5 of conf_aircraft.xml), then `cd sw/airborne && make all` recompiles only changed TUs and relinks only if an object changed. Don't reinvent incrementality — one `<target>.compile` IS the build button. Measured: full nps 51s → no-op rebuild 10s (0 compiles) → 1-file touch 11s (1 TU + relink).
+- The ONLY redundant slow step in the old build_fw.sh was `make -j1 -C paparazzi` (ground segment) on EVERY build. Gate it behind a guard (generators/`var/include` present) so it runs once. This alone removes the need for the old "fast" vs "full" split.
+- CONF_XML canonical form is `conf/airframes/ENAC/conf_enac.xml` (relative to the `paparazzi/` dir), NOT `paparazzi/conf/...`. gen_aircraft.out parses `-conf` relative to make's cwd, and the build runs `make -C paparazzi`, so the repo-root form resolves to `paparazzi/paparazzi/conf/...` and FAILS. The old docs/build_fw.sh examples using `paparazzi/conf/...` were wrong; pprz.sh only worked because it converted to an absolute path.
+- compiledb is the bear-free way to get compile_commands.json: it PARSES make's verbose stdout (needs `USE_VERBOSE_COMPILE=yes Q=''` for the chibios/airborne rules to echo the real `$(CC) -c ...` lines, and `--print-directory` + `--build-dir` for per-TU include resolution). It drops entries whose source file doesn't exist on disk (use `-S/--no-strict` to disable). nps echoes "CC file.o"/"LD ..."; ap/chibios echoes "Compiling file".
+- A clangd compile_commands.json only needs the per-FILE compile commands; a final LINK failure is irrelevant. pprz.sh db tolerates it on purpose (ap firmware may legitimately not link mid-dev).
+
+## Do-Not-Repeat additions
+
+- [2026-06-17] **Don't use `bear` for compile_commands.json in the ephemeral build container.** bear 3.x's gRPC intercept wrapper can't reach its loopback daemon there → "gRPC call failed ... Connection refused", every compile fails, no DB. Use `compiledb --parse` on a verbose build log (bug-051).
+- [2026-06-17] **`pprz.sh` interface is `pprz.sh <cmd> AIRCRAFT [TARGET]`** (e.g. `pprz.sh build ANTON_MFC nps`), NOT a conf-path arg and NOT a `fast` mode. It also accepts the VSCode picker's single-arg `"AIRCRAFT (target)"`. `build_fw.sh` was removed.
+- [2026-06-17] **In pprz.sh db, mkdir the `-o` output dir AFTER `clean_ac`** — clean_ac wipes `var/aircrafts/<AC>/`, and compiledb validates the output file's parent dir up-front, so creating it before clean_ac → "No such file or directory".
+
+## Decision Log additions (2026-06-17 — build tooling overhaul)
+
+- Removed build_fw.sh; pprz.sh is the single build tool (build/clean/rebuild/db/codegen/bootstrap). User wanted one build button (Shift+Cmd+B) with CMake-like incrementality + a few niche tasks.
+- Replaced bear with compiledb for the IntelliSense DB (bear broken in-container).
+- Did NOT fix the ANTON_MFC ap link error (nps_scope leak, bug-052) — out of scope of the build-tooling task; flagged to user.

@@ -1,86 +1,176 @@
 {
     "version": "2.0.0",
+    // All tasks key off the active C/C++ configuration name from the status-bar
+    // picker (${command:cpptools.activeConfigName}, e.g. "ANTON_MFC (ap)").
+    // pprz.sh accepts that "AIRCRAFT (target)" form directly.
     "tasks": [
         {
-            "label": "build: active config (fast)",
+            "label": "Build",
             "type": "shell",
             "command": "${workspaceFolder}/pprz.sh",
-            "args": ["build", "${command:cpptools.activeConfigName}", "fast"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": { "kind": "build", "isDefault": true },
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": ["$gcc"]
+            "args": [
+                "build",
+                "${command:cpptools.activeConfigName}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
         },
         {
-            "label": "build: active config (full)",
+            "label": "Clean",
             "type": "shell",
             "command": "${workspaceFolder}/pprz.sh",
-            "args": ["build", "${command:cpptools.activeConfigName}"],
-            "options": { "cwd": "${workspaceFolder}" },
+            "args": [
+                "clean",
+                "${command:cpptools.activeConfigName}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": ["$gcc"]
-        },
-        {
-            "label": "db: regenerate for active config",
-            "detail": "compile_commands.json for clangd (clean build under bear, paths rewritten to host)",
-            "type": "shell",
-            "command": "${workspaceFolder}/pprz.sh",
-            "args": ["db", "${command:cpptools.activeConfigName}"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
             "problemMatcher": []
         },
         {
-            "label": "log: regenerate for active config",
-            "detail": "verbose build.log (Makefile-Tools fallback), paths rewritten to host",
+            "label": "Rebuild (clean + build)",
             "type": "shell",
             "command": "${workspaceFolder}/pprz.sh",
-            "args": ["log", "${command:cpptools.activeConfigName}"],
-            "options": { "cwd": "${workspaceFolder}" },
+            "args": [
+                "rebuild",
+                "${command:cpptools.activeConfigName}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "IntelliSense: regenerate compile DB",
+            "detail": "compile_commands.json for clangd (clean verbose build via compiledb, paths rewritten to host). Run after XML / file-set / define changes.",
+            "type": "shell",
+            "command": "${workspaceFolder}/pprz.sh",
+            "args": [
+                "db",
+                "${command:cpptools.activeConfigName}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
             "problemMatcher": []
         },
         {
-            "label": "codegen: active config",
-            "detail": "regenerate airframe.h / modules.h after editing the airframe XML",
+            "label": "Codegen only (airframe.h / modules.h)",
+            "detail": "regenerate generated headers after editing the airframe XML, without compiling",
             "type": "shell",
             "command": "${workspaceFolder}/pprz.sh",
-            "args": ["codegen", "${command:cpptools.activeConfigName}"],
-            "options": { "cwd": "${workspaceFolder}" },
+            "args": [
+                "codegen",
+                "${command:cpptools.activeConfigName}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
             "problemMatcher": []
         },
         {
-            "label": "image: build toolchain",
+            "label": "Bootstrap ground segment",
+            "detail": "(re)build the OCaml ground segment + code generators (rarely needed — pulls / messages.xml changes)",
+            "type": "shell",
+            "command": "${workspaceFolder}/pprz.sh",
+            "args": [
+                "bootstrap"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build toolchain image",
             "detail": "build/refresh the paparazzi-build container image",
             "type": "shell",
             "command": "${workspaceFolder}/build_image.sh",
-            "options": { "cwd": "${workspaceFolder}" },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
             "problemMatcher": []
         },
         {
-            "label": "sim: ANTON_MFC (render)",
+            "label": "Sim: ANTON_MFC (render)",
             "type": "shell",
             "command": "${workspaceFolder}/sim.sh",
-            "args": ["--mfc", "--render"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "presentation": { "reveal": "always", "panel": "dedicated" },
+            "args": [
+                "--mfc",
+                "--render"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
             "problemMatcher": []
         },
         {
-            "label": "sim: ANTON_MFC (gdb wait :1234)",
+            "label": "Sim: ANTON_MFC (gdb wait :1234)",
             "type": "shell",
             "command": "${workspaceFolder}/sim.sh",
-            "args": ["--mfc", "--gdb"],
-            "options": { "cwd": "${workspaceFolder}" },
+            "args": [
+                "--mfc",
+                "--gdb"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "isBackground": true,
-            "presentation": { "reveal": "always", "panel": "dedicated" },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
             "problemMatcher": []
         }
     ]

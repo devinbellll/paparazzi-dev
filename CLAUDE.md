@@ -27,9 +27,8 @@ Headless ARM Cortex-M firmware development environment for ENAC UAV Lab aircraft
 │   └── conf/modules/                  # Module XML definitions (build + settings wiring)
 ├── Knowledge/              # Developer notes — Obsidian-compatible, start here
 ├── enac_paparazzi/         # ENAC fork (github.com/enacuavlab/paparazzi) — older, not used for builds
-├── build_fw.sh             # Firmware build wrapper (native or container-dispatched)
+├── pprz.sh                 # The build tool: build / clean / rebuild / db / codegen / bootstrap
 ├── sim.sh                  # NPS sim runner (ephemeral container)
-├── pprz.sh                 # VSCode flows: build / db / log / codegen
 ├── pprz_docker.sh          # Ephemeral-container dispatcher library
 ├── build_image.sh          # Build the paparazzi-build toolchain image
 ├── Dockerfile.build        # arm64 toolchain image (standalone, no Claude layers)
@@ -67,19 +66,38 @@ same `.elf` as the old amd64/Rosetta image — without emulation.
 
 ```bash
 ./build_image.sh                 # one-time: build the paparazzi-build:latest image
-./build_fw.sh AIRCRAFT CONF_XML [TARGET]
+./pprz.sh build AIRCRAFT [TARGET]   # TARGET defaults to ap
 ```
 
-`build_fw.sh` runs natively if a cross-compiler is on PATH, otherwise it dispatches
-itself into the container automatically. CONF_XML is a path relative to `/workspace`
-(or an absolute `/workspace/...` path). Default target is `ap`.
+`pprz.sh` runs the work natively when a cross-compiler is on PATH (inside the
+container), otherwise it dispatches itself into an ephemeral container
+automatically. The aircraft and target are **separate args** — no CONF path to
+pass (the fleet XML is fixed to `conf/airframes/ENAC/conf_enac.xml`; override with
+the `CONF` env var, given relative to the `paparazzi/` dir).
 
 ```bash
-./build_fw.sh ANTON paparazzi/conf/airframes/ENAC/conf_enac.xml
-./build_fw.sh PANACHE_1 paparazzi/conf/airframes/ENAC/conf_enac.xml ap
+./pprz.sh build ANTON              # ap target
+./pprz.sh build ANTON_MFC nps      # nps (sim) target
+./pprz.sh build PANACHE_1 ap
 ```
 
-Output: `paparazzi/var/aircrafts/<AIRCRAFT>/ap/obj/ap.elf`
+`build` is **incremental and CMake-like**: it re-runs codegen only when the
+airframe/conf XML changed (the generator compares mtimes + an md5 of the config),
+and recompiles only the C files that changed — make drives the dependency graph.
+The first build of an aircraft (or after `clean`) compiles everything; subsequent
+builds are fast.
+
+Other commands:
+
+```bash
+./pprz.sh clean    ANTON_MFC ap    # wipe var/aircrafts/ANTON_MFC
+./pprz.sh rebuild  ANTON_MFC ap    # clean, then build
+./pprz.sh db       ANTON_MFC ap    # regenerate compile_commands.json for clangd
+./pprz.sh codegen  ANTON_MFC ap    # regenerate airframe.h / modules.h only
+./pprz.sh bootstrap                # (re)build the OCaml ground segment + generators
+```
+
+Output: `paparazzi/var/aircrafts/<AIRCRAFT>/<TARGET>/obj/<TARGET>.elf`
 
 **Image build network prerequisite:** the paparazzi PPA needs three domains that
 the sandbox blocks by default. Allow them on the **host** before `./build_image.sh`:
@@ -90,10 +108,12 @@ If the PPA has no arm64 binaries, fall back to `./build_image.sh --amd64` (qemu
 emulation; keeps `USE_LTO=no`). Scripts are unchanged — only the image platform differs.
 
 **Build flags that must stay:**
-- `USE_LTO=no` — was a Rosetta LTO-ICE workaround; kept for fast incremental dev
-  rebuilds (flip to `USE_LTO=yes` for release). arm64-native no longer hits the ICE.
-- Host tools use `make -j1` — parallel builds hit a git submodule lock conflict in
-  the dronecan submodule.
+- `USE_LTO=no` (ap target only) — was a Rosetta LTO-ICE workaround; kept for fast
+  incremental dev rebuilds (flip to `USE_LTO=yes` for release). arm64-native no
+  longer hits the ICE. Applied automatically by `pprz.sh` for the `ap` target.
+- Ground-segment bootstrap uses `make -j1` — parallel builds hit a git submodule
+  lock conflict in the dronecan submodule. `pprz.sh` only runs this once (when the
+  generators / `var/include` are missing), not on every build.
 
 **A successful compile (`.elf` produced) is the only automated correctness check.** Functional correctness requires flight test.
 
@@ -103,9 +123,8 @@ emulation; keeps `USE_LTO=no`). Scripts are unchanged — only the image platfor
 |--------|---------|
 | `build_image.sh [--amd64]` | Build the `paparazzi-build` toolchain image. |
 | `pprz_docker.sh` | Dispatcher library: `pprz_run` runs a command in an ephemeral container (repo → `/workspace`). |
-| `build_fw.sh` | Firmware build; native or container-dispatched. |
-| `sim.sh [--no-build] <sim_anton flags>` | Build the `nps` target and run the NPS sim in a container (IVY local; PlotJuggler/FlightGear stream to the Mac). |
-| `pprz.sh {build\|db\|log\|codegen} "AIRCRAFT (target)"` | VSCode-driven flows (consolidated from the former build_active/gen_* scripts). `db` emits `compile_commands.json` for clangd, rewriting `/workspace`→host paths. |
+| `pprz.sh <cmd> AIRCRAFT [TARGET]` | The build tool. `build` (incremental), `clean`, `rebuild`, `db` (compile_commands.json for clangd, `/workspace`→host rewritten), `codegen`, `bootstrap`. Runs native in-container, else dispatches into one. Accepts the VSCode picker form `"AIRCRAFT (target)"` too. |
+| `sim.sh [--no-build] <sim_anton flags>` | Build the `nps` target (build-if-needed via `pprz.sh build`) and run the NPS sim in a container (IVY local; PlotJuggler/FlightGear stream to the Mac). |
 
 ## VSCode integration (native Mac + Docker Desktop)
 
@@ -113,10 +132,12 @@ VSCode runs natively on the Mac and dispatches builds to its own Docker Desktop
 daemon (image built there too); Claude uses the sandbox's daemon. Both write the
 same shared workspace files. IntelliSense is **clangd** driven by a host-path
 `compile_commands.json` (the MS C/C++ engine is disabled but its config-name picker
-still drives the tasks). Regenerate the DB after XML/file/define changes:
-`./pprz.sh db "ANTON_MFC (ap)"` (or the *db: regenerate for active config* task).
-Sim C debugging: run the *sim: ANTON_MFC (gdb wait :1234)* task, then the
-*Attach: NPS sim C* launch config (sourceFileMap maps `/workspace`→repo).
+still drives the tasks). The single **Build** task (Shift+Cmd+B) runs
+`./pprz.sh build "<active config>"` — incremental. Regenerate the DB after
+XML / file-set / define changes: the *IntelliSense: regenerate compile DB* task
+(`./pprz.sh db "ANTON_MFC (ap)"`). Sim C debugging: run the
+*Sim: ANTON_MFC (gdb wait :1234)* task, then the *Attach: NPS sim C* launch
+config (sourceFileMap maps `/workspace`→repo).
 
 ## Aircraft fleet
 
@@ -173,7 +194,7 @@ paparazzi/sw/airborne/state.h       ← stateGetNedToBodyQuat_f(), stateGetBodyR
 
 ### Changing the control law parameters (G1, ACT_FREQ, filters)
 1. Edit the airframe XML (`conf/airframes/ENAC/quadrotor/<aircraft>.xml`)
-2. Rebuild with `./build_fw.sh`
+2. Rebuild with `./pprz.sh build <AIRCRAFT> ap` (codegen reruns automatically on XML change)
 3. Parameters become `#define` via `generated/airframe.h` at compile time
 
 ### Writing a new stabilization module

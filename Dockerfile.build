@@ -68,12 +68,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ── This-workflow extras ──────────────────────────────────────────────────────
-# bear            -> generate compile_commands.json for VSCode/clangd IntelliSense
 # gdb-multiarch   -> debug the arm64 NPS sim (gdbserver attach)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bear \
     gdb-multiarch \
     && rm -rf /var/lib/apt/lists/*
+
+# compiledb -> generate compile_commands.json for VSCode/clangd by PARSING make's
+# verbose output. We do NOT use `bear` here: bear 3.x intercepts compilers via a
+# wrapper that phones home to a local gRPC daemon, and that loopback connection
+# fails inside this container ("gRPC call failed ... Connection refused"), so
+# every compile under bear fails and no DB is produced. compiledb is pure Python
+# (no daemon) and works reliably. See ./pprz.sh db.
+RUN pip3 install --no-cache-dir --break-system-packages compiledb
 
 # ── ivy-python (sim_anton.py: `from ivy.std_api import ...`) ───────────────────
 # Prefer the distro package; fall back to pip (PEP-668 override) if unavailable.
@@ -83,7 +89,7 @@ RUN (apt-get update && apt-get install -y --no-install-recommends python3-ivy \
 
 # ── Environment ───────────────────────────────────────────────────────────────
 # Workspace is bind-mounted at /workspace by the dispatcher, matching the
-# hardcoded PPRZ=/workspace/paparazzi in build_fw.sh and sim_anton.py.
+# hardcoded PPRZ=/workspace/paparazzi in pprz.sh and sim_anton.py.
 ENV PAPARAZZI_HOME=/workspace/paparazzi
 ENV PAPARAZZI_SRC=/workspace/paparazzi
 

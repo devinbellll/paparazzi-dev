@@ -178,12 +178,17 @@ Two `<control_block>` elements define alternative guidance stacks. Only one is c
 
 The generator only overwrites `Makefile.ac` if it is older than the airframe XML. If you run an NPS build first and then an AP build without changing any XML, the AP build reuses the NPS-generated `Makefile.ac`, which has `USE_GENERATED_AUTOPILOT = TRUE` only in the NPS block. Result: `autopilot_static.c` is compiled alongside the generated header → duplicate case value errors.
 
-**Fix:** Delete `var/aircrafts/<AC>/Makefile.ac` before switching build targets:
+**Fix:** `pprz.sh` now handles this automatically — it records the last-built
+target per aircraft (`var/aircrafts/<AC>/.pprz_last_target`) and forces a clean
+codegen of the shared `Makefile.ac` only when the target changes, so a same-target
+rebuild stays fully incremental:
 
 ```bash
-rm paparazzi/var/aircrafts/ANTON_MFC/Makefile.ac
-./build_fw.sh ANTON_MFC conf/airframes/ENAC/conf_enac.xml ap
+./pprz.sh build ANTON_MFC ap     # auto-refreshes codegen if the last build was nps
 ```
+
+(Manual equivalent, if needed: `rm paparazzi/var/aircrafts/ANTON_MFC/Makefile.ac`
+before switching targets.)
 
 ### `&&` in exception conditions
 

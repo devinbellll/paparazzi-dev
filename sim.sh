@@ -44,10 +44,10 @@ for a in ${SIM_ARGS[@]+"${SIM_ARGS[@]}"}; do
   [[ "$a" == "--z"   ]] && AC_NAME="ANTON_MFC_THRUST"
 done
 
-# ── Build the NPS target (incremental) ────────────────────────────────────────
+# ── Build the NPS target (incremental, build-if-needed) ───────────────────────
 if [[ "$DO_BUILD" == true ]]; then
   echo "==> Building NPS target for $AC_NAME..."
-  "$SCRIPT_DIR/build_fw.sh" "$AC_NAME" "$CONF" nps
+  CONF="$CONF" "$SCRIPT_DIR/pprz.sh" build "$AC_NAME" nps
 fi
 
 # ── Networking differs by daemon ──────────────────────────────────────────────

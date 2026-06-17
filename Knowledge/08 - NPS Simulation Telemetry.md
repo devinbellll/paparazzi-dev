@@ -177,7 +177,7 @@ IvyBindMsg(on_my_msg, r"(\d+ MY_MSG .*)")
 ### Step 5 — Rebuild the NPS target
 
 ```bash
-./build_fw.sh AIRCRAFT /workspace/paparazzi/conf/airframes/ENAC/conf_enac.xml nps
+./pprz.sh build AIRCRAFT nps
 ```
 
 Use the **absolute path** for the conf XML — relative paths fail when the build wrapper changes directory.
