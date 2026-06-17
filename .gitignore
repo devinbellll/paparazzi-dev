@@ -13,3 +13,5 @@ enac_paparazzi/
 **/.DS_store
 **/__pycache__/
 **/.obsidian/
+
+compile_commands.json

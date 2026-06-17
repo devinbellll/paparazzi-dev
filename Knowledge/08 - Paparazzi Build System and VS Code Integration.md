@@ -110,61 +110,60 @@ But this requires the generated files to already exist in `var/aircrafts/ANTON_M
 
 ---
 
-## Current VS Code Setup
+## Current VS Code Setup (2026-06-17 — clangd + ephemeral containers)
 
-### `settings.json` — Makefile Tools configurations
+> The earlier Makefile-Tools/`make -n` approach (above) is superseded. It never
+> worked reliably because Paparazzi's source list isn't resolved until a real
+> build runs (so `make -n` can't see the TUs). We now drive IntelliSense from a
+> real `compile_commands.json` captured with `bear`, and run all builds in
+> ephemeral containers. Builds happen in a Linux container, but VSCode reads files
+> at the Mac repo path, so container `/workspace` paths are rewritten to the host
+> path in every emitted artifact.
 
-```json
-"makefile.makefilePath": "${workspaceFolder}/paparazzi/Makefile.ac",
-"makefile.makeDirectory": "${workspaceFolder}/paparazzi",
-"makefile.configureOnOpen": false,
-"makefile.configurations": [
-  {
-    "name": "ANTON_MFC (ap)",
-    "makeArgs": ["AIRCRAFT=ANTON_MFC", "CONF_XML=...", "USE_LTO=no"],
-    "buildTarget": "ap.compile"
-  },
-  ...
-]
-```
+**One picker drives everything.** The C/C++ status-bar config name
+(`"AIRCRAFT (target)"`, from `c_cpp_properties.json`) feeds the tasks via
+`${command:cpptools.activeConfigName}`. The MS C/C++ IntelliSense engine is
+**disabled**; clangd provides IntelliSense from `compile_commands.json`.
 
-`makeArgs` provides `AIRCRAFT`, `CONF_XML`, and `USE_LTO=no` (required for ARM builds). `buildTarget` sets the compile target when the configuration is selected in the status bar.
+### `pprz.sh` — consolidated build/IDE tool
 
-### `tasks.json` — Build tasks (reliable alternative to Makefile Tools build button)
-
-`Ctrl+Shift+B` → `build: AIRCRAFT TARGET` calls `build_fw.sh` which runs the correct full chain.
-
-### `gen_vscode.sh` — Codegen prebuild helper
-
-Runs steps 1–2 of the chain (no compile): creates the generated headers and `var/aircrafts/AIRCRAFT/Makefile.ac`. Run this after changing any airframe XML before triggering a Makefile Tools configure.
+Replaces the former `build_active.sh` / `gen_compile_db.sh` / `gen_build_log.sh` /
+`gen_vscode.sh`. Each subcommand runs inside the toolchain container at `/workspace`:
 
 ```bash
-./gen_vscode.sh AIRCRAFT [CONF_XML] [TARGET]
+./pprz.sh build   "ANTON_MFC (ap)" [fast]   # full, or fast airborne-only incremental
+./pprz.sh db      "ANTON_MFC (ap)"          # compile_commands.json (clangd) + host rewrite
+./pprz.sh log     "ANTON_MFC (ap)"          # verbose build.log + host rewrite
+./pprz.sh codegen "ANTON_MFC (ap)"          # regenerate airframe.h / modules.h only
 ```
 
-### `c_cpp_properties.json` — IntelliSense config
+### `tasks.json`
 
-Currently delegates to Makefile Tools via `configurationProvider: "ms-vscode.makefile-tools"`. Falls back to no IntelliSense if Makefile Tools configure hasn't succeeded.
+`build: active config (fast|full)`, `db/log/codegen: … active config`,
+`image: build toolchain`, and `sim:` tasks — all call `pprz.sh` / `sim.sh` /
+`build_image.sh` against the active config.
+
+### `compile_commands.json` (the IntelliSense source)
+
+`./pprz.sh db "<config>"` runs a clean build under `bear` in the container, writes
+`var/aircrafts/<AC>/<target>/compile_commands.json`, copies it to the repo root,
+and rewrites `/workspace` → the host repo path. clangd (`.clangd`,
+`--compile-commands-dir`) reads the root copy. Re-run `db` after changing the
+airframe XML, adding/removing files, or changing build-affecting defines.
+
+### System-header fidelity (optional)
+
+The DB's compile commands use the ARM cross-compiler. For full bare-metal system
+headers, install a Mac `arm-none-eabi-gcc` (`brew install --cask gcc-arm-embedded`)
+and regenerate with `PPRZ_HOST_CC=/path/to/arm-none-eabi-gcc ./pprz.sh db "<config>"`
+— the rewrite then points clangd at it via `--query-driver`. Without it, project
+headers and generated `#define`s still resolve.
 
 ---
 
-## What Needs to Work for IntelliSense
+## What needs to work for IntelliSense (current)
 
-The minimal sequence for IntelliSense to function:
-
-1. **Run codegen first:**
-   ```bash
-   ./gen_vscode.sh ANTON_MFC  # creates var/aircrafts/ANTON_MFC/Makefile.ac + generated/
-   ```
-
-2. **Select the configuration in VS Code:**
-   Click the Makefile Tools configuration item in the status bar → pick `ANTON_MFC (ap)`.
-   This activates `makeArgs` AND sets `buildTarget` to `ap.compile`.
-
-3. **Trigger configure:**
-   `Ctrl+Shift+P → Makefile: Configure`
-   This runs `make -n ... ap.compile` and extracts compiler commands.
-
-4. **IntelliSense is now populated** from the dry-run output.
-
-The open question for someone with Makefile Tools expertise: **is there a `settings.json` key that sets the initial build target on workspace open, so step 2 is not required manually?** The extension's internal workspace state (not `settings.json`) controls the active build target between sessions.
+1. Build the image once (`./build_image.sh`; see CLAUDE.md for the PPA allowlist).
+2. `./pprz.sh db "ANTON_MFC (ap)"` → host-path `compile_commands.json` at repo root.
+3. clangd indexes it automatically; open any firmware `.c` and generated `#define`s
+   and the include graph resolve. (Re-run `db` after XML/file/define changes.)

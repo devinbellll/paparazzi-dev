@@ -74,3 +74,26 @@
 ## Do-Not-Repeat additions
 
 - [2026-06-15] **`ap` build is broken on daily-notes branch (bug-050, pre-existing): `nps_v_thrust` used unguarded at stabilization_indi.c:751 but declared only under `#ifdef SITL`.** Don't attribute this to NPS/sim work. Fix is to `#ifdef SITL`-guard line 751.
+
+## Key Learnings additions (2026-06-17 — containerized build/sim)
+
+- Runtime is now an aarch64 sbx sandbox (IS_SANDBOX=1, SANDBOX_VM_ID=claude-paparazzi-dev), NOT the old amd64 Rosetta devcontainer. No local toolchain. A nested arm64 Docker daemon (DinD) is available and shares the sandbox filesystem, so `docker run -v "$WORKSPACE_DIR":/workspace ...` bind-mounts the repo and outputs land back in the tree.
+- Firmware is cross-compiled (arm-none-eabi → Cortex-M), so build-host arch does NOT change the .elf. arm64-native builds are valid and faster; the old USE_LTO=no was a Rosetta ICE workaround (kept only for fast incremental dev).
+- The paparazzi PPA needs api.launchpad.net, keyserver.ubuntu.com, ppa.launchpadcontent.net — all blocked by the sandbox default-deny policy. ports.ubuntu.com + launchpad.net are allowed. User must `sbx policy allow network ...` on the host before ./build_image.sh. The `sbx policy allow` takes effect on the RUNNING sandbox immediately — NO relaunch needed (verified by curl probe).
+- RESOLVED 2026-06-17: the PPA DOES ship arm64. paparazzi-dev 3.31~ubuntu5 (an `all`-arch metapackage) + paparazzi-jsbsim 1.7-1ubuntu2; dry-run install resolves 787 pkgs, 0 broken, on arm64. The OCaml ground segment is PREBUILT for arm64 — no source compile, no amd64 emulation. The old "no way to compile OCaml for arm64" doubt conflated this with native-macOS OCaml (which we are NOT doing). END-TO-END VERIFIED: clean `./build_fw.sh ANTON conf/airframes/ENAC/conf_enac.xml nps` from the sandbox produces a native-arm64 simsitl (ELF machine 0xb7).
+- CROSS-ARCH CONTAMINATION (critical): all four actors (host Mac, host Docker build container, Claude sandbox, sandbox DinD container) share ONE workspace tree via /workspace bind mounts. Firmware .o/.elf are cross-compiled (arch-independent, safe), BUT the native host-side OCaml tooling is arch-specific and ALSO lives in the shared tree: sw/ext/pprzlink/build/ocaml/.../myocamlbuild and sw/lib/ocaml/dlllib-pprz.so + *.cma/*.cmi. If host (amd64) and sandbox (arm64) build into the same tree, these collide → "Exec format error" (myocamlbuild) or "cannot load shared library dlllib-pprz" / "file in wrong format". RULE: pick ONE arch for everything. M3 is arm64-native so the HOST Docker Desktop image should ALSO be arm64 (./build_image.sh with NO --amd64; runs native, no Rosetta). To switch a tree that was built amd64 → arm64, run `make clean` in-container (purges sw/lib/ocaml + pprzlink/build) before rebuilding. NEVER run host and sandbox builds concurrently against the tree.
+- Platform-mismatch gotcha: pprz_run must `--platform` MATCH the built image's arch. Requesting linux/arm64 against an amd64 image (or vice-versa) makes docker treat the local image as ABSENT and try to PULL it → "Unable to find image ... locally". pprz_docker.sh pprz_platform() now auto-detects via `docker image inspect --format {{.Architecture}}`; PPRZ_PLATFORM overrides.
+- unifiedmocaprouter (sw/ext, OptiTrack mocap router) CANNOT build on arm64: its NatNet SDK fetchcontent pulls a vendor x86-64-only libNatNet.so → ld "file in wrong format". It is NOT needed for firmware or NPS sim. Upstream sw/ext/Makefile self-skips it when libboost-program-options-dev is absent (BOOST_INSTALLED check) — so Dockerfile.build deliberately does NOT install boost.
+- Host Mac is reachable only as a network host (host.docker.internal); the sandbox cannot run host shell commands, so host-native builds can't be driven from here — ephemeral containers are the path.
+- VSCode model chosen = native Mac + Docker Desktop (Option B): VSCode dispatches to its own daemon, Claude to the sandbox's; both write the same shared files. Requires /workspace→host path rewrites for compile_commands.json + build.log + debugger sourceFileMap, and clangd (not MS C/C++ engine) for IntelliSense.
+
+## Decision Log additions (2026-06-17)
+
+- Chose ephemeral arm64 containers over host-Mac builds (can't drive host shell) and over amd64 emulation (no binfmt; slower; firmware identical anyway).
+- Consolidated build_active/gen_compile_db/gen_build_log/gen_vscode into pprz.sh subcommands (user request), keeping the active-config picker UX.
+- Kept the legacy .devcontainer/ + Dockerfile.paparazzi for reference rather than deleting.
+
+## User Preferences additions (2026-06-17)
+
+- Prefers being shown questions as plain text first (rejected AskUserQuestion tool prompts twice asking to "show/give back the question").
+- Wants complete VSCode(host)↔Claude(sbx)↔build integration: real symbols, generated #defines, true linking, fast incremental builds, accurate debugging, token-efficient exploration.

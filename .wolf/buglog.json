@@ -1021,6 +1021,242 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-06-16T10:21:11.238Z"
+    },
+    {
+      "id": "bug-059",
+      "timestamp": "2026-06-17T08:24:39.891Z",
+      "error_message": "Significant refactor of ",
+      "file": "sim_anton.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→6 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T08:24:39.891Z"
+    },
+    {
+      "id": "bug-060",
+      "timestamp": "2026-06-17T09:19:10.488Z",
+      "error_message": "Significant refactor of ",
+      "file": "sim.sh",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 7→17 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T09:19:10.488Z"
+    },
+    {
+      "id": "bug-061",
+      "timestamp": "2026-06-17T09:22:37.975Z",
+      "error_message": "Significant refactor of ",
+      "file": "CLAUDE.md",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 20→60 lines (3 removed) | Also: ├── build_fw.sh             # Firmware build wrapp; ├── Dockerfile.paparazzi    # Container toolchain  | Also: ## Devcontainer; The build runs in a linux/amd64 container (`Docker",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-17T09:23:21.783Z"
+    },
+    {
+      "id": "bug-062",
+      "timestamp": "2026-06-17T10:30:18.059Z",
+      "error_message": "Significant refactor of ",
+      "file": "build_fw.sh",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 8→11 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T10:30:18.059Z"
+    },
+    {
+      "id": "bug-063",
+      "timestamp": "2026-06-17T10:35:21.578Z",
+      "error_message": "Incorrect value in code",
+      "file": "pprz.sh",
+      "root_cause": "Had \"$SUB\"",
+      "fix": "Changed to \"$(uname -s)\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T10:35:21.578Z"
+    },
+    {
+      "id": "bug-064",
+      "timestamp": "2026-06-17T10:44:37.975Z",
+      "error_message": "Significant refactor of ",
+      "file": "build_image.sh",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 12→17 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T10:44:37.975Z"
+    },
+    {
+      "id": "bug-065",
+      "timestamp": "2026-06-17T12:52:17.778Z",
+      "error_message": "Incorrect value in code",
+      "file": "pprz_docker.sh",
+      "root_cause": "Had \"${PPRZ_PLATFORM:-linux/arm64}\"",
+      "fix": "Changed to \"$(pprz_platform)\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T12:52:17.778Z"
+    },
+    {
+      "id": "bug-066",
+      "timestamp": "2026-06-17T00:00:00.000Z",
+      "error_message": "Unable to find image 'paparazzi-build:latest' locally (after build_image.sh --amd64)",
+      "file": "pprz_docker.sh",
+      "root_cause": "pprz_run hardcoded --platform linux/arm64. The image was built --amd64, so docker run requested an arm64 variant that doesn't exist locally and tried to pull it.",
+      "fix": "Added pprz_platform() that inspects the image's actual Architecture via 'docker image inspect --format {{.Architecture}}' and emits matching linux/amd64|linux/arm64; PPRZ_PLATFORM still overrides. pprz_run now uses $(pprz_platform).",
+      "tags": [
+        "docker",
+        "platform",
+        "amd64",
+        "arm64",
+        "build"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T00:00:00.000Z"
+    },
+    {
+      "id": "bug-067",
+      "timestamp": "2026-06-17T13:58:10.623Z",
+      "error_message": "Significant refactor of ",
+      "file": "Dockerfile.build",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→11 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "build"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T13:58:10.623Z"
+    },
+    {
+      "error_message": "sh: .../pprzlink/build/ocaml/pprzlink/myocamlbuild: Exec format error (make ... byte Error 126)",
+      "file": "paparazzi/sw/ext/pprzlink/build (shared tree)",
+      "root_cause": "Shared workspace tree had an amd64 myocamlbuild built by the host's --amd64 db task; the arm64 sandbox container tried to exec it. Native OCaml host-tooling is arch-specific and shared across all four actors.",
+      "fix": "Standardize on arm64 everywhere; run `make clean` in-container to purge sw/ext/pprzlink/build + sw/lib/ocaml, then rebuild arm64. Never run host(amd64)+sandbox(arm64) builds against the same tree.",
+      "tags": [
+        "docker",
+        "arm64",
+        "amd64",
+        "ocaml",
+        "pprzlink",
+        "cross-arch",
+        "shared-tree"
+      ],
+      "id": "bug-068",
+      "timestamp": "2026-06-17T16:00:00.000Z",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T16:00:00.000Z"
+    },
+    {
+      "error_message": "Fatal error: cannot load shared library dlllib-pprz / sw/lib/ocaml/dlllib-pprz.so: cannot open shared object file",
+      "file": "paparazzi/sw/lib/ocaml/dlllib-pprz.so (shared tree)",
+      "root_cause": "dlllib-pprz.so was an amd64 ELF (machine 0x3e) from the host db task; arm64 OCaml gen tools couldn't load it. Same cross-arch contamination class as the myocamlbuild bug.",
+      "fix": "`make clean` in-container purges sw/lib/ocaml native artifacts; rebuild arm64.",
+      "tags": [
+        "ocaml",
+        "arm64",
+        "amd64",
+        "cross-arch",
+        "shared-tree"
+      ],
+      "id": "bug-069",
+      "timestamp": "2026-06-17T16:00:00.000Z",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T16:00:00.000Z"
+    },
+    {
+      "error_message": "/usr/bin/ld: libNatNet.so: error adding symbols: file in wrong format (unifiedmocaprouter)",
+      "file": "Dockerfile.build",
+      "root_cause": "sw/ext unifiedmocaprouter fetches a vendor x86-64-only NatNet SDK libNatNet.so; it cannot link on arm64. make ext built it because libboost-program-options-dev was present (BOOST_INSTALLED gate).",
+      "fix": "Removed libboost-program-options-dev + libboost-filesystem-dev from Dockerfile.build so sw/ext/Makefile self-skips unifiedmocaprouter (not needed for firmware/sim). Rebuilt image.",
+      "tags": [
+        "docker",
+        "arm64",
+        "natnet",
+        "mocap",
+        "unifiedmocaprouter",
+        "make-ext",
+        "boost"
+      ],
+      "id": "bug-070",
+      "timestamp": "2026-06-17T16:00:00.000Z",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T16:00:00.000Z"
+    },
+    {
+      "id": "bug-071",
+      "timestamp": "2026-06-17T14:04:24.323Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/runtime-sandbox-and-build-model.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→25 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T14:04:24.323Z"
+    },
+    {
+      "id": "bug-072",
+      "timestamp": "2026-06-17T14:33:33.750Z",
+      "error_message": "Significant refactor of ",
+      "file": "Knowledge/Daily Notes/2026-06-17.md",
+      "root_cause": "21 lines replaced/restructured",
+      "fix": "Rewrote 30→24 lines (21 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-17T14:33:33.750Z"
     }
   ]
 }

@@ -6,15 +6,40 @@
 #   -c   Clean the aircraft build first (required when switching LTO on/off)
 #
 # Example:
-#   ./build_fw.sh ANTON conf/airframes/ENAC/conf_enac.xml
-#   ./build_fw.sh -c ANTON conf/airframes/ENAC/conf_enac.xml ap
+#   ./build_fw.sh ANTON paparazzi/conf/airframes/ENAC/conf_enac.xml
+#   ./build_fw.sh -c ANTON paparazzi/conf/airframes/ENAC/conf_enac.xml ap
+#
+# EXECUTION MODEL
+#   If the ARM cross-compiler is on PATH (we are inside the toolchain container,
+#   or on a host that has it), the build runs natively here.
+#   Otherwise (the lean Claude sbx sandbox) the script re-invokes ITSELF inside
+#   an ephemeral arm64 toolchain container (see pprz_docker.sh / Dockerfile.build),
+#   with the repo bind-mounted at /workspace. Build outputs land back in the
+#   workspace tree, visible to both the sandbox and host VSCode.
 
 set -euo pipefail
 
-PPRZ=/workspace/paparazzi
+# Preserve the original argv so we can forward it verbatim into the container.
+ORIG_ARGS=("$@")
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# ── Dispatch into the toolchain container unless we're on a Linux host that has
+# the full toolchain (i.e. inside the build container). macOS always dispatches,
+# even if arm-none-eabi-gcc was installed there for clangd — the OCaml ground
+# segment / codegen only exist in the container.
+if [[ "$(uname -s)" != "Linux" ]] || ! command -v arm-none-eabi-gcc >/dev/null 2>&1; then
+  # shellcheck source=pprz_docker.sh
+  source "$SCRIPT_DIR/pprz_docker.sh"
+  echo "==> Dispatching build into container '$(pprz_image_name)'..."
+  pprz_run -- ./build_fw.sh ${ORIG_ARGS[@]+"${ORIG_ARGS[@]}"}
+  exit $?
+fi
+
+# ── Native build (inside the toolchain container, or a toolchained host) ───────
+PPRZ="${PAPARAZZI_HOME:-/workspace/paparazzi}"
 CLEAN=false
 
-# ── Args ──────────────────────────────────────────────────────────────────────
 if [[ "${1:-}" == "-c" ]]; then
   CLEAN=true
   shift
@@ -51,8 +76,9 @@ if [[ "$CLEAN" == true ]]; then
   make -C "$PPRZ" -f Makefile.ac AIRCRAFT="$AIRCRAFT" clean_ac
 fi
 
-# USE_LTO=no works around a gcc-arm-none-eabi 13.2 LTO ICE triggered by
-# Rosetta 2 emulation (linux/amd64 container on Apple Silicon).
+# USE_LTO=no works around a gcc-arm-none-eabi 13.2 LTO ICE seen under Rosetta and
+# also keeps incremental dev rebuilds fast. (arm64-native no longer hits the ICE,
+# but LTO is left off for fast iteration; flip to USE_LTO=yes for release builds.)
 echo "==> Compiling firmware..."
 make -C "$PPRZ" -f Makefile.ac \
   AIRCRAFT="$AIRCRAFT" \

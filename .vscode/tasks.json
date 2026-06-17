@@ -2,158 +2,86 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build: active config (full)",
-            "type": "shell",
-            "command": "${workspaceFolder}/build_active.sh",
-            "args": ["${command:cpptools.activeConfigName}"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": ["$gcc"]
-        },
-        {
             "label": "build: active config (fast)",
             "type": "shell",
-            "command": "${workspaceFolder}/build_active.sh",
-            "args": ["${command:cpptools.activeConfigName}", "fast"],
-            "options": { "cwd": "${workspaceFolder}" },            
+            "command": "${workspaceFolder}/pprz.sh",
+            "args": ["build", "${command:cpptools.activeConfigName}", "fast"],
+            "options": { "cwd": "${workspaceFolder}" },
             "group": { "kind": "build", "isDefault": true },
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": ["$gcc"]
         },
         {
+            "label": "build: active config (full)",
+            "type": "shell",
+            "command": "${workspaceFolder}/pprz.sh",
+            "args": ["build", "${command:cpptools.activeConfigName}"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared" },
+            "problemMatcher": ["$gcc"]
+        },
+        {
             "label": "db: regenerate for active config",
+            "detail": "compile_commands.json for clangd (clean build under bear, paths rewritten to host)",
             "type": "shell",
-            "command": "${workspaceFolder}/gen_compile_db.sh",
-            "args": [
-                "${command:cpptools.activeConfigName}"
-            ],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": []
-        },
-
-        {
-            "label": "codegen: ANTON_MFC ap",
-            "type": "shell",
-            "command": "${workspaceFolder}/gen_vscode.sh",
-            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
+            "command": "${workspaceFolder}/pprz.sh",
+            "args": ["db", "${command:cpptools.activeConfigName}"],
             "options": { "cwd": "${workspaceFolder}" },
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": []
         },
         {
-            "label": "codegen: ANTON_MFC nps",
+            "label": "log: regenerate for active config",
+            "detail": "verbose build.log (Makefile-Tools fallback), paths rewritten to host",
             "type": "shell",
-            "command": "${workspaceFolder}/gen_vscode.sh",
-            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
+            "command": "${workspaceFolder}/pprz.sh",
+            "args": ["log", "${command:cpptools.activeConfigName}"],
             "options": { "cwd": "${workspaceFolder}" },
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": []
         },
         {
-            "label": "codegen: ANTON_MFC_THRUST ap",
+            "label": "codegen: active config",
+            "detail": "regenerate airframe.h / modules.h after editing the airframe XML",
             "type": "shell",
-            "command": "${workspaceFolder}/gen_vscode.sh",
-            "args": ["ANTON_MFC_THRUST", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
+            "command": "${workspaceFolder}/pprz.sh",
+            "args": ["codegen", "${command:cpptools.activeConfigName}"],
             "options": { "cwd": "${workspaceFolder}" },
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": []
         },
         {
-            "label": "codegen: ANTON_MFC_THRUST nps",
+            "label": "image: build toolchain",
+            "detail": "build/refresh the paparazzi-build container image",
             "type": "shell",
-            "command": "${workspaceFolder}/gen_vscode.sh",
-            "args": ["ANTON_MFC_THRUST", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
+            "command": "${workspaceFolder}/build_image.sh",
             "options": { "cwd": "${workspaceFolder}" },
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared" },
             "problemMatcher": []
         },
         {
-            "label": "codegen: ANTON ap",
+            "label": "sim: ANTON_MFC (render)",
             "type": "shell",
-            "command": "${workspaceFolder}/gen_vscode.sh",
-            "args": ["ANTON", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
+            "command": "${workspaceFolder}/sim.sh",
+            "args": ["--mfc", "--render"],
             "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
+            "presentation": { "reveal": "always", "panel": "dedicated" },
             "problemMatcher": []
         },
         {
-            "label": "codegen: ANTON nps",
+            "label": "sim: ANTON_MFC (gdb wait :1234)",
             "type": "shell",
-            "command": "${workspaceFolder}/gen_vscode.sh",
-            "args": ["ANTON", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
+            "command": "${workspaceFolder}/sim.sh",
+            "args": ["--mfc", "--gdb"],
             "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
+            "isBackground": true,
+            "presentation": { "reveal": "always", "panel": "dedicated" },
             "problemMatcher": []
-        },
-
-        {
-            "label": "build: ANTON_MFC nps",
-            "type": "shell",
-            "command": "${workspaceFolder}/build_fw.sh",
-            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": ["$gcc"]
-        },
-        {
-            "label": "build: ANTON_MFC ap",
-            "type": "shell",
-            "command": "${workspaceFolder}/build_fw.sh",
-            "args": ["ANTON_MFC", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": ["$gcc"]
-        },
-        {
-            "label": "build: ANTON_MFC_THRUST nps",
-            "type": "shell",
-            "command": "${workspaceFolder}/build_fw.sh",
-            "args": ["ANTON_MFC_THRUST", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": ["$gcc"]
-        },
-        {
-            "label": "build: ANTON_MFC_THRUST ap",
-            "type": "shell",
-            "command": "${workspaceFolder}/build_fw.sh",
-            "args": ["ANTON_MFC_THRUST", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": ["$gcc"]
-        },
-        {
-            "label": "build: ANTON nps",
-            "type": "shell",
-            "command": "${workspaceFolder}/build_fw.sh",
-            "args": ["ANTON", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "nps"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": ["$gcc"]
-        },
-        {
-            "label": "build: ANTON ap",
-            "type": "shell",
-            "command": "${workspaceFolder}/build_fw.sh",
-            "args": ["ANTON", "${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml", "ap"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "build",
-            "presentation": { "reveal": "always", "panel": "shared" },
-            "problemMatcher": ["$gcc"]
         }
     ]
 }

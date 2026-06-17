@@ -1,0 +1,95 @@
+# ── Paparazzi headless build/sim toolchain — arm64-native ─────────────────────
+#
+# Standalone image (NO Claude Code / Node layers). Claude now runs in a lean sbx
+# sandbox and dispatches builds/sims into ephemeral containers from THIS image.
+#
+# arm64-native: the firmware is cross-compiled (arm-none-eabi -> Cortex-M), so the
+# .elf is identical to the old amd64/Rosetta build — just faster, no emulation.
+#
+# Build:   ./build_image.sh           (wraps the docker build below)
+#   docker build -f Dockerfile.build -t paparazzi-build:latest .
+#
+# If the paparazzi PPA has no arm64 binaries, rebuild for amd64 emulation instead:
+#   docker run --privileged --rm tonistiigi/binfmt --install amd64
+#   docker build --platform linux/amd64 -f Dockerfile.build -t paparazzi-build:latest .
+# (scripts are unchanged; only the image platform differs.)
+# ─────────────────────────────────────────────────────────────────────────────
+FROM ubuntu:24.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# ── Core utils ────────────────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git \
+    make \
+    build-essential \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Paparazzi PPA: ground segment, code generators, JSBSim (for NPS) ──────────
+RUN add-apt-repository ppa:paparazzi-uav/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    paparazzi-dev \
+    paparazzi-jsbsim \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── ARM cross-compiler ────────────────────────────────────────────────────────
+# libnewlib-* must be explicit: gcc-arm-none-eabi only recommends it, so
+# --no-install-recommends would drop the bare-metal C standard library.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc-arm-none-eabi \
+    libnewlib-arm-none-eabi \
+    libnewlib-dev \
+    libstdc++-arm-none-eabi-newlib \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+# NOTE: libboost-program-options-dev is deliberately NOT installed. It only gated
+# `make ext`'s unifiedmocaprouter (OptiTrack mocap router), whose NatNet SDK ships
+# an x86-64-only prebuilt libNatNet.so that fails to link on arm64
+# ("file in wrong format"). Without boost the upstream sw/ext/Makefile self-skips
+# that tool (BOOST_INSTALLED check) — it is not needed for firmware or the NPS sim.
+
+# ── Python build + sim dependencies ───────────────────────────────────────────
+# python-is-python3: Paparazzi build scripts call `python`, not `python3`.
+# python3-lxml / python3-empy: XML airframe parsing + code-gen templates
+#   (empy on 24.04 is 3.3.4 — the last compatible API version).
+# python3-future / python3-zombie-imp: Py2->3 shims present in pprz-dep.
+# python3-pexpect: used by some build/sim helpers.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python-is-python3 \
+    python3-lxml \
+    python3-empy \
+    python3-future \
+    python3-zombie-imp \
+    python3-pexpect \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── This-workflow extras ──────────────────────────────────────────────────────
+# bear            -> generate compile_commands.json for VSCode/clangd IntelliSense
+# gdb-multiarch   -> debug the arm64 NPS sim (gdbserver attach)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bear \
+    gdb-multiarch \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── ivy-python (sim_anton.py: `from ivy.std_api import ...`) ───────────────────
+# Prefer the distro package; fall back to pip (PEP-668 override) if unavailable.
+RUN (apt-get update && apt-get install -y --no-install-recommends python3-ivy \
+      && rm -rf /var/lib/apt/lists/*) \
+    || pip3 install --no-cache-dir --break-system-packages ivy-python
+
+# ── Environment ───────────────────────────────────────────────────────────────
+# Workspace is bind-mounted at /workspace by the dispatcher, matching the
+# hardcoded PPRZ=/workspace/paparazzi in build_fw.sh and sim_anton.py.
+ENV PAPARAZZI_HOME=/workspace/paparazzi
+ENV PAPARAZZI_SRC=/workspace/paparazzi
+
+# ── User ──────────────────────────────────────────────────────────────────────
+# ubuntu:24.04 ships a default `ubuntu` user at uid/gid 1000. Containers run as
+# 1000:1000 so bind-mounted build outputs stay owned by the sandbox `agent`(1000)
+# instead of root — no root-owned files leaking into the host tree.
+USER ubuntu
+WORKDIR /workspace

@@ -451,9 +451,11 @@ def main():
                      "--scope_port", str(SCOPE_PORT),
                      "--scope_decim", str(SCOPE_DECIM)]
     if _GDB:
-        _sim_cmd = ["qemu-x86_64", "-g", "1234"] + _sim_cmd
+        # arm64-native sim → use gdbserver (was qemu-x86_64 under the old amd64
+        # Rosetta image). Attach from the Mac after `sbx ports <vm> --publish 1234:1234`.
+        _sim_cmd = ["gdbserver", ":1234"] + _sim_cmd
     _fg_note = f"  FlightGear → {FG_HOST}:{FG_PORT}" if _USE_FG else ""
-    print("Starting ANTON NPS sim …" + (" (QEMU gdbstub :1234, waiting for debugger)" if _GDB else "") + _fg_note)
+    print("Starting ANTON NPS sim …" + (" (gdbserver :1234, waiting for debugger)" if _GDB else "") + _fg_note)
     sim = subprocess.Popen(
         _sim_cmd,
         env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,

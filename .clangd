@@ -1,0 +1,24 @@
+# clangd configuration for Paparazzi firmware IntelliSense.
+#
+# IntelliSense is driven by compile_commands.json at the repo root, produced by
+#   ./pprz.sh db "ANTON_MFC (ap)"     (or the "db: regenerate for active config" task)
+# which runs a clean build under `bear` in the container, then rewrites the
+# container's /workspace paths to this host repo path. Re-run db after changing
+# the airframe XML, adding/removing files, or changing build-affecting defines.
+#
+# The DB's compile commands use the ARM cross-compiler. To resolve bare-metal
+# system headers (<stdint.h>, etc.), point clangd at a Mac arm-none-eabi-gcc:
+#   brew install --cask gcc-arm-embedded
+# then regenerate the DB with PPRZ_HOST_CC set, e.g.
+#   PPRZ_HOST_CC=/Applications/ArmGNUToolchain/.../bin/arm-none-eabi-gcc ./pprz.sh db "ANTON_MFC (ap)"
+# Without it, project headers and generated #defines still resolve; only some
+# toolchain system headers may be unindexed.
+CompileFlags:
+  CompilationDatabase: .
+  # clangd defaults to clang's builtin includes; let it query the cross GCC.
+Index:
+  Background: Build
+Diagnostics:
+  UnusedIncludes: None
+  Suppress:
+    - pp_file_not_found   # tolerate missing system headers when host CC absent

@@ -27,9 +27,14 @@ Headless ARM Cortex-M firmware development environment for ENAC UAV Lab aircraft
 │   └── conf/modules/                  # Module XML definitions (build + settings wiring)
 ├── Knowledge/              # Developer notes — Obsidian-compatible, start here
 ├── enac_paparazzi/         # ENAC fork (github.com/enacuavlab/paparazzi) — older, not used for builds
-├── build_fw.sh             # Firmware build wrapper
-├── Dockerfile.paparazzi    # Container toolchain image
-└── .devcontainer/          # VS Code devcontainer config
+├── build_fw.sh             # Firmware build wrapper (native or container-dispatched)
+├── sim.sh                  # NPS sim runner (ephemeral container)
+├── pprz.sh                 # VSCode flows: build / db / log / codegen
+├── pprz_docker.sh          # Ephemeral-container dispatcher library
+├── build_image.sh          # Build the paparazzi-build toolchain image
+├── Dockerfile.build        # arm64 toolchain image (standalone, no Claude layers)
+├── Dockerfile.paparazzi    # Legacy: toolchain layered on the old devcontainer base
+└── .devcontainer/          # Legacy VS Code devcontainer config (pre-sandbox)
 ```
 
 The active ENAC airframe definitions live in `paparazzi/conf/airframes/ENAC/`. Treat `paparazzi/` as the source of truth; `enac_paparazzi/` is an older fork kept for reference.
@@ -54,11 +59,20 @@ Before ending any non-trivial session, ALWAYS write Knowledge/Sessions/<YYYY-MM-
 
 ## Building firmware
 
+Claude now runs in a lean sbx sandbox with **no local toolchain**. Builds and the
+NPS sim run in **ephemeral arm64 containers** (`Dockerfile.build`), with the repo
+bind-mounted at `/workspace` so artifacts land back in the tree. The firmware is
+cross-compiled (`arm-none-eabi` → Cortex-M), so an arm64-native build produces the
+same `.elf` as the old amd64/Rosetta image — without emulation.
+
 ```bash
+./build_image.sh                 # one-time: build the paparazzi-build:latest image
 ./build_fw.sh AIRCRAFT CONF_XML [TARGET]
 ```
 
-CONF_XML is a path relative to `/workspace`. Default target is `ap`.
+`build_fw.sh` runs natively if a cross-compiler is on PATH, otherwise it dispatches
+itself into the container automatically. CONF_XML is a path relative to `/workspace`
+(or an absolute `/workspace/...` path). Default target is `ap`.
 
 ```bash
 ./build_fw.sh ANTON paparazzi/conf/airframes/ENAC/conf_enac.xml
@@ -67,11 +81,42 @@ CONF_XML is a path relative to `/workspace`. Default target is `ap`.
 
 Output: `paparazzi/var/aircrafts/<AIRCRAFT>/ap/obj/ap.elf`
 
+**Image build network prerequisite:** the paparazzi PPA needs three domains that
+the sandbox blocks by default. Allow them on the **host** before `./build_image.sh`:
+```
+sbx policy allow network api.launchpad.net,keyserver.ubuntu.com,ppa.launchpadcontent.net
+```
+If the PPA has no arm64 binaries, fall back to `./build_image.sh --amd64` (qemu
+emulation; keeps `USE_LTO=no`). Scripts are unchanged — only the image platform differs.
+
 **Build flags that must stay:**
-- `USE_LTO=no` — permanent workaround for a gcc-arm-none-eabi 13.2 LTO internal compiler error triggered by Rosetta 2 emulation. Remove only if the toolchain is upgraded and the ICE is confirmed fixed.
-- Host tools use `make -j1` — parallel builds hit a git submodule lock conflict in the dronecan submodule.
+- `USE_LTO=no` — was a Rosetta LTO-ICE workaround; kept for fast incremental dev
+  rebuilds (flip to `USE_LTO=yes` for release). arm64-native no longer hits the ICE.
+- Host tools use `make -j1` — parallel builds hit a git submodule lock conflict in
+  the dronecan submodule.
 
 **A successful compile (`.elf` produced) is the only automated correctness check.** Functional correctness requires flight test.
+
+## Tooling scripts
+
+| Script | Purpose |
+|--------|---------|
+| `build_image.sh [--amd64]` | Build the `paparazzi-build` toolchain image. |
+| `pprz_docker.sh` | Dispatcher library: `pprz_run` runs a command in an ephemeral container (repo → `/workspace`). |
+| `build_fw.sh` | Firmware build; native or container-dispatched. |
+| `sim.sh [--no-build] <sim_anton flags>` | Build the `nps` target and run the NPS sim in a container (IVY local; PlotJuggler/FlightGear stream to the Mac). |
+| `pprz.sh {build\|db\|log\|codegen} "AIRCRAFT (target)"` | VSCode-driven flows (consolidated from the former build_active/gen_* scripts). `db` emits `compile_commands.json` for clangd, rewriting `/workspace`→host paths. |
+
+## VSCode integration (native Mac + Docker Desktop)
+
+VSCode runs natively on the Mac and dispatches builds to its own Docker Desktop
+daemon (image built there too); Claude uses the sandbox's daemon. Both write the
+same shared workspace files. IntelliSense is **clangd** driven by a host-path
+`compile_commands.json` (the MS C/C++ engine is disabled but its config-name picker
+still drives the tasks). Regenerate the DB after XML/file/define changes:
+`./pprz.sh db "ANTON_MFC (ap)"` (or the *db: regenerate for active config* task).
+Sim C debugging: run the *sim: ANTON_MFC (gdb wait :1234)* task, then the
+*Attach: NPS sim C* launch config (sourceFileMap maps `/workspace`→repo).
 
 ## Aircraft fleet
 
@@ -175,6 +220,13 @@ The `WLS_N_U_MAX` / `WLS_N_V_MAX` defines must be inside the `<module>` tag (not
 </airframe>
 ```
 
-## Devcontainer
+## Build environment (current vs legacy)
 
-The build runs in a linux/amd64 container (`Dockerfile.paparazzi`) built on top of a Claude Code base image. Apple Silicon Macs use Rosetta 2 emulation — builds are slower but correct. The two-stage build and `make up` shortcut are documented in README.md.
+**Current:** Claude runs in an aarch64 sbx sandbox with a nested Docker daemon and
+no toolchain. Builds/sims run in ephemeral `paparazzi-build` containers from
+`Dockerfile.build` (arm64-native, no Rosetta). See *Building firmware* and
+*VSCode integration* above.
+
+**Legacy (pre-sandbox):** `.devcontainer/` + `Dockerfile.paparazzi` ran the build
+inside a linux/amd64 devcontainer under Rosetta 2 (VSCode lived at `/workspace`).
+Kept for reference; the active path is the ephemeral-container model.

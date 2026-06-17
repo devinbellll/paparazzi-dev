@@ -1,29 +1,15 @@
 {
+    // These named configurations exist only to drive the status-bar picker:
+    // ${command:cpptools.activeConfigName} feeds the build/db/log/codegen tasks
+    // ("AIRCRAFT (target)"). Actual IntelliSense is provided by clangd via
+    // compile_commands.json (C_Cpp.intelliSenseEngine is disabled in settings.json).
     "version": 4,
     "configurations": [
-        {
-            "name": "ANTON_MFC (ap)",
-            "configurationProvider": "ms-vscode.makefile-tools"
-        },
-        {
-            "name": "ANTON_MFC (nps)",
-            "configurationProvider": "ms-vscode.makefile-tools"
-        },
-        {
-            "name": "ANTON (ap)",
-            "configurationProvider": "ms-vscode.makefile-tools"
-        },
-        {
-            "name": "ANTON (nps)",
-            "configurationProvider": "ms-vscode.makefile-tools"
-        },
-        {
-            "name": "ANTON_MFC_THRUST (ap)",
-            "configurationProvider": "ms-vscode.makefile-tools"
-        },
-        {
-            "name": "ANTON_MFC_THRUST (nps)",
-            "configurationProvider": "ms-vscode.makefile-tools"
-        },
+        { "name": "ANTON_MFC (ap)" },
+        { "name": "ANTON_MFC (nps)" },
+        { "name": "ANTON (ap)" },
+        { "name": "ANTON (nps)" },
+        { "name": "ANTON_MFC_THRUST (ap)" },
+        { "name": "ANTON_MFC_THRUST (nps)" }
     ]
 }

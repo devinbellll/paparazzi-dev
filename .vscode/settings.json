@@ -2,73 +2,26 @@
   "workbench.editorAssociations": {
     "*.md": "vscode.markdown.preview.editor"
   },
-  "makefile.makePath": "make",
-  "makefile.makefilePath": "${workspaceFolder}/paparazzi/Makefile.ac",
-  "makefile.makeDirectory": "${workspaceFolder}/paparazzi",
-  "makefile.launchConfigurations": [],
-  "makefile.defaultConfiguration": "ANTON_MFC (ap)",
-  "makefile.configurations": [
-    {
-      "name": "ANTON_MFC (ap)",
-      "makeArgs": [
-        "-f", "Makefile.ac",
-        "AIRCRAFT=ANTON_MFC",
-        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
-        "USE_LTO=no",
-        "ap.compile"
-      ],
-      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC/ap/build.log"
-    },
-    {
-      "name": "ANTON_MFC (nps)",
-      "makeArgs": [
-        "-f", "Makefile.ac",
-        "AIRCRAFT=ANTON_MFC",
-        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
-        "nps.compile"
-      ],
-      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC/nps/build.log"
-    },
-    {
-      "name": "ANTON (ap)",
-      "makeArgs": [
-        "-f", "Makefile.ac",
-        "AIRCRAFT=ANTON",
-        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
-        "USE_LTO=no",
-        "ap.compile"
-      ],
-      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON/ap/build.log"
-    },
-    {
-      "name": "ANTON (nps)",
-      "makeArgs": [
-        "-f", "Makefile.ac",
-        "AIRCRAFT=ANTON",
-        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
-        "nps.compile"
-      ],
-      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON/nps/build.log"
-    },
-    {
-      "name": "ANTON_MFC_THRUST (ap)",
-      "makeArgs": [
-        "-f", "Makefile.ac",
-        "AIRCRAFT=ANTON_MFC_THRUST",
-        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
-        "USE_LTO=no",
-        "ap.compile"
-      ],
-      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC_THRUST/ap/build.log"
-    },
-    {
-      "name": "ANTON_MFC_THRUST (nps)",
-      "makeArgs": [
-        "-f", "Makefile.ac",
-        "AIRCRAFT=ANTON_MFC_THRUST",
-        "CONF_XML=${workspaceFolder}/paparazzi/conf/airframes/ENAC/conf_enac.xml",
-        "nps.compile"
-      ],
-      "buildLog": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC_THRUST/nps/build.log"
-  ]
+
+  // ── IntelliSense via clangd (not the MS C/C++ engine) ──────────────────────
+  // Builds run in an ephemeral Linux container; clangd reads the host-path
+  // compile_commands.json produced by `./pprz.sh db "<config>"`. The MS C/C++
+  // IntelliSense engine is disabled to avoid two engines fighting, but the
+  // extension stays installed so the config-name picker (status bar) still
+  // drives ${command:cpptools.activeConfigName} for the build/db/log tasks.
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}",
+    "--background-index",
+    "--header-insertion=never",
+    // Trust the ARM cross-compiler for system-include discovery (needs a Mac
+    // arm-none-eabi-gcc + a DB regenerated with PPRZ_HOST_CC — see .clangd).
+    "--query-driver=**/arm-none-eabi-*"
+  ],
+
+  // The build/db/log/codegen tasks key off the active C/C++ configuration name
+  // ("AIRCRAFT (target)"), so the single picker still drives everything.
+  "files.associations": {
+    "*.h": "c"
+  }
 }
