@@ -13,6 +13,8 @@
 - **Project:** workspace
 - **Description:** Headless firmware build environment for ENAC UAV Lab aircraft. Cross-compiles ARM Cortex-M firmware using the Paparazzi autopilot framework inside a containerized linux/amd64 toolchain.
 
+- **Running two controllers / switching in flight = ONE law at a time, not parallel shadow.** Paparazzi's only precedent (oneloop ANDI/INDI, `rotorcraft_oneloop_switch.xml`) is one module with both laws sharing state, switched by an int (`ctrl_type`) re-`enter()`d on each `<on_enter>`. The autopilot XML is a codegen input (`gen_autopilot.ml`), not runtime config. MFC vs INDI is harder: two separate modules with COLLIDING global symbols (`stabilization_attitude_run`, strong `set_rotorcraft_commands` override, `g1g2`/`actuators_pprz`/`act_is_servo`/`stab_thrust_filt`) and both `<provides>commands</provides>`/`guidance` — so they can't naively co-compile. A dual wrapper module owning the contested singletons is required first. See `Knowledge/11 …` + `Knowledge/Plans/`.
+
 - **FlightGear NPS integration requires `--fg_fdm` flag.** NPS defaults to GUI protocol (FGNetGUI, version 8). `--native-fdm` in FG expects FDM protocol (FGNetFDM, version 24). Without `--fg_fdm`, FG silently discards every packet. `sim_anton.py --fg` passes this automatically.
 
 - **`nps_flightgear_init` uses `inet_addr()` — hostnames don't work.** Must resolve `host.docker.internal` to an IP in Python before passing to simsitl. `sim_anton.py` uses `socket.gethostbyname()` for this. Docker Desktop Mac host resolves to `192.168.65.254`.

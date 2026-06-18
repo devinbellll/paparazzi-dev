@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-17T16:44:48.519Z
-> Files: 674 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-18T15:04:13.084Z
+> Files: 685 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -42,11 +42,11 @@
 - `Dockerfile.build` — ── Paparazzi headless build/sim toolchain — arm64-native ───────────────────── (~1295 tok)
 - `Dockerfile.paparazzi` — ── Layer 5: Paparazzi UAV Toolchains (legacy devcontainer base) ─────────────── (~636 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
-- `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~804 tok)
+- `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~811 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2263 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — pprz_block_frame, on_rate_attitude, on_pos_llh, on_speed_pos (~7056 tok)
-- `sim.sh` — ── Run the ANTON NPS / SITL simulation in an ephemeral container ───────────── (~1114 tok)
+- `sim_anton.py` — pprz_block_frame, on_rate_attitude, on_pos_llh, on_speed_pos (~7386 tok)
+- `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1129 tok)
 
 ## .claude/
 
@@ -147,11 +147,12 @@
 
 ## Knowledge/
 
-- `00 - Index.md` — Paparazzi Control System — Knowledge Base (~315 tok)
+- `00 - Index.md` — Paparazzi Control System — Knowledge Base (~413 tok)
 - `02 - INDI Stabilization Deep Dive.md` — INDI Stabilization Deep Dive (~1765 tok)
 - `08 - Paparazzi Build System and VS Code Integration.md` — Paparazzi Build System — Makefile Chain and VS Code Integration (~2285 tok)
 - `09 - FlightGear 3D Visualization.md` — FlightGear 3D Visualization for NPS (~1076 tok)
 - `10 - Simplified Autopilots & Flight Modes.md` — 10 - Simplified Autopilots & Flight Modes (~2177 tok)
+- `11 - In-Flight Controller Switching (Oneloop Pattern).md` — 11 - In-Flight Controller Switching (Oneloop Pattern) (~1709 tok)
 
 ## Knowledge/Daily Notes/
 
@@ -163,6 +164,11 @@
 - `2026-06-15.md` — Today (~610 tok)
 - `2026-06-16.md` — Today (~318 tok)
 - `2026-06-17.md` — Today (~721 tok)
+
+## Knowledge/Plans/
+
+- `Dual-Controller Handover Mode.md` — Plan — Dual-Controller Handover Mode (switch MFC ↔ INDI in flight) (~1755 tok)
+- `Dual-Controller Shadow Mode.md` — Plan — Dual-Controller Shadow Mode (MFC alongside INDI) (~2092 tok)
 
 ## Knowledge/Sessions/
 
@@ -185,6 +191,8 @@
 - `2026-06-16-guidance-mfc-filters.md` — 2026-06-16 — guidance_mfc: Butterworth filters on NED measurement and thrust (~620 tok)
 - `2026-06-17-build-tooling-overhaul.md` — 2026-06-17 — Build tooling overhaul: one build button + working IntelliSense (~1101 tok)
 - `2026-06-17-containerized-build-run-integration.md` — 2026-06-17 — Containerized build/sim + VSCode integration (~949 tok)
+- `2026-06-18-dual-controller-research-and-plans.md` — 2026-06-18 — Dual-controller research & plans (MFC alongside INDI) (~731 tok)
+- `2026-06-18-git-worktree-submodules.md` — Git Worktree Setup with Nested Submodules (2026-06-18) (~852 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -867,6 +875,10 @@
 - `maya_outdoor.xml` (~2343 tok)
 - `robobee.xml` (~2518 tok)
 
+## paparazzi/conf/airframes/tudelft/
+
+- `rotwing_v3c_oneloop_simulation.xml` (~5460 tok)
+
 ## paparazzi/conf/autopilot/
 
 - `anton_mfc_autopilot.xml` (~1564 tok)
@@ -900,10 +912,18 @@
 - `stabilization_mfc.c` (~11174 tok)
 - `stabilization_mfc.h` — PPRZ command to each actuator (~591 tok)
 
+## paparazzi/sw/airborne/modules/ctrl/
+
+- `eff_scheduling_rotwing_V2.c` — Declares into (~4590 tok)
+
 ## paparazzi/sw/airborne/modules/nps_scope/
 
 - `nps_scope_state.c` — rotorcraft sim-only NPS scope state mirror. `nps_scope_state_periodic()` copies firmware estimate (stateGet*), NPS simulated `sensors`, nav/guidance/stabilization setpoints (SI/deg) into a static float mirror; registers est/ sensors/ sp/ trees via NPS_SCOPE_VAR + mode/ globals directly. Module nps_scope_state.xml, target nps. (~2500 tok)
 - `nps_scope_state.h` — prototype for `nps_scope_state_periodic()`. (~176 tok)
+
+## paparazzi/sw/airborne/modules/rotwing_drone/
+
+- `rotwing_state.c` — Declares based (~6239 tok)
 
 ## paparazzi/sw/simulator/nps/
 
@@ -916,6 +936,9 @@
 
 ## scope registry redesign (2026-06-05)
 
+- `Knowledge/11 - In-Flight Controller Switching (Oneloop Pattern).md` — End-to-end trace of how Paparazzi switches control laws in flight: autopilot XML → gen_autopilot.ml codegen table → runtime mode/select/on_enter machine; oneloop ANDI/INDI as the one-law-at-a-time precedent; the WEAK set_rotorcraft_commands chokepoint. (~1500 tok)
+- `Knowledge/Plans/Dual-Controller Handover Mode.md` — Plan to switch motor authority MFC↔INDI in flight bumplessly (re-enter on switch), oneloop-style RC+GCS trigger; reuses Shadow Phase 0. (~950 tok)
+- `Knowledge/Plans/Dual-Controller Shadow Mode.md` — Plan to compile MFC + INDI together; Phase 0 de-confliction (symbol collisions: stabilization_attitude_run, set_rotorcraft_commands, g1g2/actuators_pprz globals) via a dual wrapper module; INDI drives, MFC shadowed + logged for validation. (~1100 tok)
 - `sw/airborne/nps_scope_var.h` — firmware-facing shim (always-on include path). `NPS_SCOPE_VAR`/`NPS_SCOPE_VARN` macros register a global by address via `__attribute__((constructor))`; gated on `USE_NPS`, no-op on real targets. (~250 tok)
 - `sw/simulator/nps/nps_scope.c` — now controller-agnostic: fdm `truth` block + generic variable registry (`nps_scope_register`/`_array`), emits each registered var as a top-level JSON key. No MFC/controller references. (~900 tok)
 - `sw/simulator/nps/nps_scope.h` — adds `nps_scope_type_t` enum + register prototypes. (~250 tok)

@@ -7,7 +7,8 @@
       "Bash(timeout 30 python3 sim_anton.py --fg --mfc)",
       "Bash(pkill -f \"sim_anton\\\\|sw_simulator\\\\|jsbsim\\\\|pprzsim\")",
       "Bash(timeout 45 python3 sim_anton.py --fg --mfc)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(CONF=\"conf/userconf/tudelft/conf.xml\" ./pprz.sh rebuild RW3C_DePonti_Simulation nps)"
     ]
   }
 }

@@ -1457,7 +1457,16 @@
       "file": "pprz.sh, Dockerfile.build",
       "root_cause": "bear 3.x intercepts compilers via a wrapper that phones home to a local gRPC daemon; inside the ephemeral build container that loopback connection fails, so every compile under bear fails and no DB is written (only an orphan compile_commands.events.json).",
       "fix": "Dropped bear. Dockerfile.build installs compiledb (pure-Python, parses make's verbose stdout, no daemon). pprz.sh db does clean_ac, a verbose build (USE_VERBOSE_COMPILE=yes Q='') teed to build_verbose.log, then 'compiledb --parse log --build-dir paparazzi'. Verified 228 entries, host paths rewritten, MFC defines present.",
-      "tags": ["bear", "compiledb", "compile_commands", "intellisense", "clangd", "grpc", "container", "build-system"],
+      "tags": [
+        "bear",
+        "compiledb",
+        "compile_commands",
+        "intellisense",
+        "clangd",
+        "grpc",
+        "container",
+        "build-system"
+      ],
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-17T18:30:00.000Z"
@@ -1469,10 +1478,68 @@
       "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_indi.c, guidance_v.c",
       "root_cause": "nps_scope_z_sp/ref defined unconditionally in guidance_v.c:65-66, used in guidance_indi.c:523-524, but on ap the NPS_SCOPE_VAR registration anchoring them is compiled out (USE_NPS undefined), so --gc-sections drops the definitions while guidance_indi.o still references them. Same class as bug-050 (sim instrumentation leaking into ap). Pre-existing in MFC work, NOT caused by the build-system change; nps links fine.",
       "fix": "NOT YET FIXED — flagged to user. Options: guard the guidance_indi.c uses with #if defined(USE_NPS), or keep the guidance_v.c definitions. Out of scope of the build-tooling task.",
-      "tags": ["link-error", "gc-sections", "nps-scope", "ap-target", "mfc", "pre-existing", "guidance_indi"],
-      "related_bugs": ["bug-050"],
+      "tags": [
+        "link-error",
+        "gc-sections",
+        "nps-scope",
+        "ap-target",
+        "mfc",
+        "pre-existing",
+        "guidance_indi"
+      ],
+      "related_bugs": [
+        "bug-050"
+      ],
       "occurrences": 1,
       "last_seen": "2026-06-17T18:35:00.000Z"
+    },
+    {
+      "id": "bug-087",
+      "timestamp": "2026-06-18T13:45:51.291Z",
+      "error_message": "Incorrect value in code",
+      "file": "sim.sh",
+      "root_cause": "Had \"${SIM_ARGS[@]}\"",
+      "fix": "Changed to \"$AC_NAME\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T13:45:51.291Z"
+    },
+    {
+      "id": "bug-088",
+      "timestamp": "2026-06-18T13:46:09.499Z",
+      "error_message": "Significant refactor of ",
+      "file": "sim_anton.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 17→22 lines (2 removed) | Also: _USE_RENDER = \"--render\" in sys.argv; _USE_MFC   = \"--mfc\" in sys.argv",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-18T13:46:26.347Z"
+    },
+    {
+      "id": "bug-089",
+      "timestamp": "2026-06-18T13:54:38.125Z",
+      "error_message": "Wrong reference: time should be airspeed_sim_time",
+      "file": "paparazzi/sw/airborne/modules/ctrl/eff_scheduling_rotwing_V2.c",
+      "root_cause": "Used \"time\" instead of \"airspeed_sim_time\"",
+      "fix": "Changed time → airspeed_sim_time",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T13:54:38.125Z"
     }
   ]
 }
