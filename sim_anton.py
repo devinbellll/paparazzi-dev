@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """
-Launch ANTON NPS simulation and print live aircraft state to the terminal.
+Launch a Paparazzi NPS simulation and print live aircraft state to the terminal.
 Sends a takeoff command sequence 1 second after the sim is ready.
 
-Usage:  python3 sim_anton.py [--mfc] [--gdb] [--fg] [--render] [--no-scope] [--debug-scope]
+Usage:  python3 sim_anton.py AIRCRAFT [--gdb] [--fg] [--render] [--no-scope] [--debug-scope]
         Ctrl-C to stop (kills child processes cleanly).
+
+  AIRCRAFT  Aircraft name as registered in the conf XML (e.g. ANTON_MFC,
+            RW3C_DePonti_Simulation). The CONF env var selects which conf file
+            to search (default: conf/airframes/ENAC/conf_enac.xml, relative to
+            PAPARAZZI_HOME).
 
 Flags:
   --render  Enable the live TUI dashboard (default: plain debug log to stdout).
@@ -56,6 +61,7 @@ import subprocess
 import sys
 import threading
 import time
+import xml.etree.ElementTree as ET
 from collections import deque
 from ivy.std_api import IvyInit, IvyStart, IvyStop, IvyBindMsg
 from scope_stream import ScopeStream
@@ -65,24 +71,43 @@ SERVER  = f"{PPRZ}/sw/ground_segment/tmtc/server"
 LINK    = f"{PPRZ}/sw/ground_segment/tmtc/link"
 IVY_BUS = "127.255.255.255:2010"
 
-_USE_RENDER = "--render" in sys.argv
-_USE_MFC   = "--mfc" in sys.argv
-_USE_Z     = "--z" in sys.argv
-_GDB       = "--gdb" in sys.argv
-_USE_FG    = "--fg" in sys.argv
-_USE_SCOPE = "--no-scope" not in sys.argv   # in-sim emitter — ON by default
-_USE_LEGACY_SCOPE = "--debug-scope" in sys.argv       # old Python state resampler (debug)
+# ── Parse positional AC_NAME + flags ─────────────────────────────────────────
+_flags = set()
+AC_NAME = None
+for _arg in sys.argv[1:]:
+    if _arg.startswith("-"):
+        _flags.add(_arg)
+    elif AC_NAME is None:
+        AC_NAME = _arg
 
-# Determine AC_NAME and AC_ID based on flags
-if _USE_MFC:
-    AC_NAME = "ANTON_MFC"
-    AC_ID = 218
-elif _USE_Z:
-    AC_NAME = "ANTON_MFC_THRUST"
-    AC_ID = 219
-else:
-    AC_NAME = "ANTON"
-    AC_ID = 217
+if AC_NAME is None:
+    print(f"Usage: {sys.argv[0]} AIRCRAFT [--gdb] [--fg] [--render] [--no-scope] [--debug-scope]",
+          file=sys.stderr)
+    sys.exit(1)
+
+_USE_RENDER       = "--render"      in _flags
+_GDB              = "--gdb"         in _flags
+_USE_FG           = "--fg"          in _flags
+_USE_SCOPE        = "--no-scope"    not in _flags
+_USE_LEGACY_SCOPE = "--debug-scope" in _flags
+
+# ── Look up AC_ID from the conf XML ──────────────────────────────────────────
+def _lookup_ac_id(pprz_home: str, conf_rel: str, name: str) -> int | None:
+    conf_path = os.path.join(pprz_home, conf_rel)
+    try:
+        tree = ET.parse(conf_path)
+        for ac in tree.getroot().findall("aircraft"):
+            if ac.get("name") == name:
+                return int(ac.get("ac_id"))
+    except Exception as e:
+        print(f"Warning: could not parse {conf_path}: {e}", file=sys.stderr)
+    return None
+
+_CONF = os.environ.get("CONF", "conf/airframes/ENAC/conf_enac.xml")
+AC_ID = _lookup_ac_id(PPRZ, _CONF, AC_NAME)
+if AC_ID is None:
+    print(f"Error: aircraft '{AC_NAME}' not found in {os.path.join(PPRZ, _CONF)}", file=sys.stderr)
+    sys.exit(1)
 
 SIMSITL  = f"{PPRZ}/var/aircrafts/{AC_NAME}/nps/simsitl"
 FG_PORT  = 5501                     # NPS default; FG: --native-fdm=socket,in,60,,5501,udp

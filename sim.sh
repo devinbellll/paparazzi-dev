@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# ── Run the ANTON NPS / SITL simulation in an ephemeral container ─────────────
+# ── Run an NPS / SITL simulation in an ephemeral container ────────────────────
 #
-# Usage: ./sim.sh [--no-build] [sim_anton.py flags...]
-#   ./sim.sh --mfc --render          # build ANTON_MFC nps, run with TUI dashboard
-#   ./sim.sh --z                     # ANTON_MFC_THRUST
-#   ./sim.sh --mfc --gdb             # wait for a debugger on :1234 (see below)
-#   ./sim.sh --no-build --mfc        # skip the rebuild, just run
+# Usage: ./sim.sh AIRCRAFT [--no-build] [sim_anton.py flags...]
+#   ./sim.sh ANTON_MFC --render          # build ANTON_MFC nps, run with TUI dashboard
+#   ./sim.sh ANTON_MFC --gdb             # wait for a debugger on :1234 (see below)
+#   ./sim.sh ANTON_MFC --no-build        # skip the rebuild, just run
+#   CONF="conf/userconf/tudelft/conf.xml" ./sim.sh RW3C_DePonti_Simulation
 #
 # The sim + the OCaml ground segment (server, link) + the IVY bus all run INSIDE
 # one container; only the visualization streams out to the Mac host:
@@ -29,24 +29,30 @@ CONF="${CONF:-conf/airframes/ENAC/conf_enac.xml}"
 
 # ── Parse our own flags; forward the rest to sim_anton.py ─────────────────────
 DO_BUILD=true
+AC_NAME=""
 SIM_ARGS=()
 for a in "$@"; do
   case "$a" in
     --no-build) DO_BUILD=false ;;
-    *) SIM_ARGS+=("$a") ;;
+    -*) SIM_ARGS+=("$a") ;;
+    *)
+      if [[ -z "$AC_NAME" ]]; then
+        AC_NAME="$a"
+      else
+        SIM_ARGS+=("$a")
+      fi
+      ;;
   esac
 done
 
-# Pick the aircraft the way sim_anton.py does (must match for the nps binary).
-AC_NAME="ANTON"
-for a in ${SIM_ARGS[@]+"${SIM_ARGS[@]}"}; do
-  [[ "$a" == "--mfc" ]] && AC_NAME="ANTON_MFC"
-  [[ "$a" == "--z"   ]] && AC_NAME="ANTON_MFC_THRUST"
-done
+if [[ -z "$AC_NAME" ]]; then
+  echo "Usage: $0 AIRCRAFT [--no-build] [sim_anton.py flags...]" >&2
+  exit 1
+fi
 
 # ── Build the NPS target (incremental, build-if-needed) ───────────────────────
 if [[ "$DO_BUILD" == true ]]; then
-  echo "==> Building NPS target for $AC_NAME..."
+  echo "==> Building NPS target for $AC_NAME (CONF=$CONF)..."
   CONF="$CONF" "$SCRIPT_DIR/pprz.sh" build "$AC_NAME" nps
 fi
 
@@ -83,4 +89,4 @@ TTY_OPTS=(-i)
 [[ -t 0 && -t 1 ]] && TTY_OPTS=(-it)
 
 echo "==> Launching NPS sim ($AC_NAME) in container '$(pprz_image_name)'..."
-pprz_run "${NET_OPTS[@]}" "${TTY_OPTS[@]}" -- python3 sim_anton.py ${SIM_ARGS[@]+"${SIM_ARGS[@]}"}
+pprz_run "${NET_OPTS[@]}" "${TTY_OPTS[@]}" -- python3 sim_anton.py "$AC_NAME" ${SIM_ARGS[@]+"${SIM_ARGS[@]}"}

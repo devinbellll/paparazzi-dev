@@ -79,6 +79,7 @@ pprz_run() {
     -e PAPARAZZI_SRC=/workspace/paparazzi \
     -e PPRZ_HOST_ROOT="$PPRZ_HOST_ROOT" \
     -e PPRZ_HOST_CC="${PPRZ_HOST_CC:-}" \
+    -e CONF="${CONF:-}" \
     -w /workspace \
     ${docker_opts[@]+"${docker_opts[@]}"} \
     "$PPRZ_IMAGE" \
