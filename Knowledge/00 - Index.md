@@ -15,6 +15,9 @@ Index of all notes. Designed for Obsidian; internal links use `[[Note Name]]` st
 | [[07 - All Touch Points Cheatsheet]] | Quick reference: every file to touch per change type |
 | [[08 - NPS Simulation Telemetry]] | Firmware logs in Python: two message paths, adding new messages, format gotchas |
 | [[09 - FlightGear 3D Visualization]] | Live 3D view of NPS sim in FlightGear on Mac — setup, gotchas, verification |
+| [[11 - In-Flight Controller Switching (Oneloop Pattern)]] | How Paparazzi switches control laws in flight (XML→codegen→runtime); oneloop ANDI/INDI precedent |
+| [[Plans/Dual-Controller Shadow Mode]] | Plan: run MFC + INDI together, INDI drives, MFC shadowed for validation |
+| [[Plans/Dual-Controller Handover Mode]] | Plan: in-flight bumpless switch of motor authority between MFC and INDI |
 
 ## Quick-start question
 
