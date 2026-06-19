@@ -1540,6 +1540,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-18T13:54:38.125Z"
+    },
+    {
+      "id": "bug-090",
+      "timestamp": "2026-06-19T10:08:29.025Z",
+      "error_message": "Wrong reference: DS_store should be cache",
+      "file": ".gitignore",
+      "root_cause": "Used \"DS_store\" instead of \"cache\"",
+      "fix": "Changed DS_store → cache",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "unknown"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T10:08:29.025Z"
+    },
+    {
+      "id": "bug-091",
+      "timestamp": "2026-06-19T10:08:56.974Z",
+      "error_message": "Significant refactor of ",
+      "file": "pprz.sh",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→3 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T10:08:56.974Z"
     }
   ]
 }

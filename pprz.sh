@@ -151,9 +151,9 @@ host_rewrite() {
   local file="$1"
   local host_root="${PPRZ_HOST_ROOT:-$SCRIPT_DIR}"
   [[ -f "$file" ]] || { echo "!! expected artifact missing: $file" >&2; return 1; }
-  sed -i "s#/workspace#${host_root}#g" "$file"
+  perl -pi -e "s|/workspace|${host_root}|g" "$file"
   if [[ -n "${PPRZ_HOST_CC:-}" ]]; then
-    sed -i "s#\"/usr/bin/arm-none-eabi-gcc\"#\"${PPRZ_HOST_CC}\"#g; s#\"arm-none-eabi-gcc\"#\"${PPRZ_HOST_CC}\"#g" "$file"
+    perl -pi -e "s|\"/usr/bin/arm-none-eabi-gcc\"|\"${PPRZ_HOST_CC}\"|g; s|\"arm-none-eabi-gcc\"|\"${PPRZ_HOST_CC}\"|g" "$file"
   fi
   echo "==> Rewrote container paths -> ${host_root} in $(basename "$file")"
 }

@@ -10,6 +10,7 @@ enac_paparazzi/
 **/.wolf/hooks/_session.json
 
 # Misc
+.cache/
 **/.DS_store
 **/__pycache__/
 **/.obsidian/

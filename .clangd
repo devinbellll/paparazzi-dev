@@ -1,10 +1,10 @@
 # clangd configuration for Paparazzi firmware IntelliSense.
 #
 # IntelliSense is driven by compile_commands.json at the repo root, produced by
-#   ./pprz.sh db "ANTON_MFC (ap)"     (or the "db: regenerate for active config" task)
-# which runs a clean build under `bear` in the container, then rewrites the
-# container's /workspace paths to this host repo path. Re-run db after changing
-# the airframe XML, adding/removing files, or changing build-affecting defines.
+#   ./pprz.sh db "ANTON_MFC (ap)"     (or the "IntelliSense: regenerate compile DB" task)
+# which runs a clean verbose build parsed by compiledb in the container, then
+# rewrites container /workspace paths to the host repo path. Re-run db after
+# changing the airframe XML, adding/removing files, or changing build defines.
 #
 # The DB's compile commands use the ARM cross-compiler. To resolve bare-metal
 # system headers (<stdint.h>, etc.), point clangd at a Mac arm-none-eabi-gcc:

@@ -3,21 +3,20 @@
     "*.md": "vscode.markdown.preview.editor"
   },
 
-  // ── IntelliSense via clangd (not the MS C/C++ engine) ──────────────────────
-  // Builds run in an ephemeral Linux container; clangd reads the host-path
-  // compile_commands.json produced by `./pprz.sh db "<config>"`. The MS C/C++
-  // IntelliSense engine is disabled to avoid two engines fighting, but the
-  // extension stays installed so the config-name picker (status bar) still
-  // drives ${command:cpptools.activeConfigName} for the build/db/log tasks.
-  "C_Cpp.intelliSenseEngine": "disabled",
-  "clangd.arguments": [
-    "--compile-commands-dir=${workspaceFolder}",
-    "--background-index",
-    "--header-insertion=never",
-    // Trust the ARM cross-compiler for system-include discovery (needs a Mac
-    // arm-none-eabi-gcc + a DB regenerated with PPRZ_HOST_CC — see .clangd).
-    "--query-driver=**/arm-none-eabi-*"
-  ],
+  // ── IntelliSense via cpptools + per-aircraft compile_commands.json ──────────
+  // Each c_cpp_properties.json config points compileCommands at the per-aircraft
+  // DB under paparazzi/var/aircrafts/<AC>/<TARGET>/. Switching the status-bar
+  // config instantly switches IntelliSense context. Run `./pprz.sh db AIRCRAFT`
+  // to generate (or refresh) the DB for a given aircraft/target.
+  "C_Cpp.intelliSenseEngine": "default",
+
+  // // ── clangd (disabled — cpptools handles IntelliSense) ─────────────────────
+  // "clangd.arguments": [
+  //   "--compile-commands-dir=${workspaceFolder}",
+  //   "--background-index",
+  //   "--header-insertion=never",
+  //   "--query-driver=**/arm-none-eabi-*"
+  // ],
 
   // The build/db/log/codegen tasks key off the active C/C++ configuration name
   // ("AIRCRAFT (target)"), so the single picker still drives everything.

@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-18T15:04:13.084Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T10:08:56.923Z
 > Files: 685 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
@@ -35,7 +35,7 @@
 - `.clangd` — clangd configuration for Paparazzi firmware IntelliSense. (~324 tok)
 - `.claudeignore` — Secrets and credentials (~56 tok)
 - `.DS_Store` (~2186 tok)
-- `.gitignore` — Git ignore rules (~60 tok)
+- `.gitignore` — Git ignore rules (~76 tok)
 - `.gitmodules` (~52 tok)
 - `build_image.sh` — ── Build the Paparazzi toolchain image (arm64-native) ──────────────────────── (~474 tok)
 - `CLAUDE.md` — OpenWolf (~3209 tok)
@@ -43,7 +43,7 @@
 - `Dockerfile.paparazzi` — ── Layer 5: Paparazzi UAV Toolchains (legacy devcontainer base) ─────────────── (~636 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~811 tok)
-- `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2263 tok)
+- `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2266 tok)
 - `README.md` — Project documentation (~1408 tok)
 - `sim_anton.py` — pprz_block_frame, on_rate_attitude, on_pos_llh, on_speed_pos (~7386 tok)
 - `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1129 tok)
@@ -140,9 +140,9 @@
 
 ## .vscode/
 
-- `c_cpp_properties.json` (~174 tok)
+- `c_cpp_properties.json` (~555 tok)
 - `launch.json` (~622 tok)
-- `settings.json` (~323 tok)
+- `settings.json` (~286 tok)
 - `tasks.json` (~1286 tok)
 
 ## Knowledge/
