@@ -8,15 +8,15 @@
   // DB under paparazzi/var/aircrafts/<AC>/<TARGET>/. Switching the status-bar
   // config instantly switches IntelliSense context. Run `./pprz.sh db AIRCRAFT`
   // to generate (or refresh) the DB for a given aircraft/target.
-  "C_Cpp.intelliSenseEngine": "default",
+  "C_Cpp.intelliSenseEngine": "Tag Parser",
 
-  // // ── clangd (disabled — cpptools handles IntelliSense) ─────────────────────
-  // "clangd.arguments": [
-  //   "--compile-commands-dir=${workspaceFolder}",
-  //   "--background-index",
-  //   "--header-insertion=never",
-  //   "--query-driver=**/arm-none-eabi-*"
-  // ],
+  // ── clangd (disabled — cpptools handles IntelliSense) ─────────────────────
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}",
+    "--background-index",
+    "--header-insertion=never",
+    "--query-driver=**/arm-none-eabi-*"
+  ],
 
   // The build/db/log/codegen tasks key off the active C/C++ configuration name
   // ("AIRCRAFT (target)"), so the single picker still drives everything.

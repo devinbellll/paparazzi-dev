@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T10:08:56.923Z
-> Files: 704 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T14:31:06.359Z
+> Files: 706 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -16,6 +16,7 @@
 
 - `look-at-build-fw-sh-and-async-kettle.md` — Plan: Decouple Claude/VSCode from the Paparazzi build env via ephemeral arm64 containers (~2405 tok)
 - `purrfect-sprouting-lovelace.md` — Plan: sim_anton cleanup + GCS shell + dual-ctrl flight plan (~1571 tok)
+- `resource-users-devinbellll-workspace-en-prancy-cupcake.md` — Plan: Fix IntelliSense — two separate root causes (~906 tok)
 
 ## ../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/
 
@@ -48,12 +49,13 @@
 - `Dockerfile.paparazzi` — ── Layer 5: Paparazzi UAV Toolchains (legacy devcontainer base) ─────────────── (~636 tok)
 - `handover_bumptest.py` — ac_id, frame, block, setting (~1298 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
-- `pprz_ctrl.py` — lookup_ac_id, block_frame, setting_frame, send (~1343 tok)
+- `plotjuggler_mfc.xml` (~8841 tok)
+- `pprz_ctrl.py` — find_sim_container, send_cmd, main (~760 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~811 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2266 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — pprz_block_frame, pprz_setting_frame, on_rate_attitude, on_pos_llh (~5640 tok)
+- `sim_anton.py` — pprz_block_frame, pprz_setting_frame, on_rate_attitude, on_pos_llh (~6278 tok)
 - `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1129 tok)
 
 ## .claude/
@@ -906,7 +908,7 @@
 
 ## paparazzi/conf/flight_plans/ENAC/
 
-- `anton_dual_ctrl_test.xml` (~987 tok)
+- `anton_dual_ctrl_test.xml` (~996 tok)
 
 ## paparazzi/conf/modules/
 
@@ -933,7 +935,7 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6074 tok)
-- `guidance_mfc.c` (~4960 tok)
+- `guidance_mfc.c` (~4997 tok)
 - `guidance_mfc.h` (~432 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
@@ -945,7 +947,7 @@
 
 ## paparazzi/sw/airborne/modules/control_dual/
 
-- `control_dual_mfc_indi.c` — Declares int16_t (~2762 tok)
+- `control_dual_mfc_indi.c` — Declares int16_t (~2794 tok)
 - `control_dual_mfc_indi.h` (~710 tok)
 
 ## paparazzi/sw/airborne/modules/ctrl/

@@ -1,47 +1,15 @@
 {
+    // These named configurations exist only to drive the status-bar picker:
+    // ${command:cpptools.activeConfigName} feeds the build/db/log/codegen tasks
+    // ("AIRCRAFT (target)"). Actual IntelliSense is provided by clangd via
+    // compile_commands.json (C_Cpp.intelliSenseEngine is disabled in settings.json).
     "version": 4,
     "configurations": [
-        {
-            "name": "ANTON_MFC (ap)",
-            "compileCommands": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC/ap/compile_commands.json",
-            "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
-            "intelliSenseMode": "gcc-arm",
-            "cStandard": "c11"
-        },
-        {
-            "name": "ANTON_MFC (nps)",
-            "compileCommands": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC/nps/compile_commands.json",
-            "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
-            "intelliSenseMode": "gcc-arm",
-            "cStandard": "c11"
-        },
-        {
-            "name": "ANTON (ap)",
-            "compileCommands": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON/ap/compile_commands.json",
-            "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
-            "intelliSenseMode": "gcc-arm",
-            "cStandard": "c11"
-        },
-        {
-            "name": "ANTON (nps)",
-            "compileCommands": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON/nps/compile_commands.json",
-            "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
-            "intelliSenseMode": "gcc-arm",
-            "cStandard": "c11"
-        },
-        {
-            "name": "ANTON_MFC_THRUST (ap)",
-            "compileCommands": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC_THRUST/ap/compile_commands.json",
-            "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
-            "intelliSenseMode": "gcc-arm",
-            "cStandard": "c11"
-        },
-        {
-            "name": "ANTON_MFC_THRUST (nps)",
-            "compileCommands": "${workspaceFolder}/paparazzi/var/aircrafts/ANTON_MFC_THRUST/nps/compile_commands.json",
-            "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
-            "intelliSenseMode": "gcc-arm",
-            "cStandard": "c11"
-        }
+        { "name": "ANTON_MFC (ap)" },
+        { "name": "ANTON_MFC (nps)" },
+        { "name": "ANTON (ap)" },
+        { "name": "ANTON (nps)" },
+        { "name": "ANTON_MFC_THRUST (ap)" },
+        { "name": "ANTON_MFC_THRUST (nps)" }
     ]
 }

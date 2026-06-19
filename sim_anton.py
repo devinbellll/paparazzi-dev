@@ -15,18 +15,22 @@ Flags:
   --fg              Stream NET_FDM pose to FlightGear on the Mac host (host.docker.internal:5501).
   --switch-after N  Switch to MFC N seconds after takeoff, then back to INDI N seconds later.
 
-Manual controller switching (run in a second terminal while the sim is running):
-  python3 pprz_ctrl.py AIRCRAFT switch mfc
-  python3 pprz_ctrl.py AIRCRAFT switch indi
-  python3 pprz_ctrl.py AIRCRAFT block 5     # jump to a flight plan block
+Interactive commands (type in the sim terminal, or pipe via pprz_ctrl.py):
+  block <id>              jump to flight plan block
+  switch <indi|mfc>       hand motor authority to the named controller
+  setting <idx> <float>   set an arbitrary GCS setting by index
+
+  From a second terminal on the host:
+    python3 pprz_ctrl.py AIRCRAFT switch mfc
+    python3 pprz_ctrl.py AIRCRAFT block 5
 
 Takeoff sequence (flight plan blocks):
   Block 3 "Start Engine" → NavResurrect() un-kills throttle
   Block 4 "Takeoff"      → climbs to CLIMB waypoint at nav.climb_vspeed
 
 Command delivery:
-  Commands (block jumps, settings changes) are sent as pprz binary frames over UDP to
-  port 4243 (the sim's primary datalink input — DOWNLINK_DEVICE=udp0, UDP0_PORT_IN=4243).
+  Commands are sent as pprz binary frames over UDP to port 4243
+  (the sim's primary datalink input — DOWNLINK_DEVICE=udp0, UDP0_PORT_IN=4243).
 
 Observability:
   Layer 0 — JSBSim truth:   NPS_RATE_ATTITUDE, NPS_POS_LLH, NPS_SPEED_POS
@@ -401,6 +405,37 @@ def takeoff_sequence(sock: socket.socket):
         send_switch(sock, DUAL_CTRL_INDI, "INDI")
 
 
+def cmd_loop(sock: socket.socket):
+    """Read text commands from stdin and dispatch them. Runs as a daemon thread.
+
+    Accepts:  block <id> | switch <indi|mfc> | setting <idx> <float>
+    """
+    for raw in sys.stdin:
+        parts = raw.strip().split()
+        if not parts:
+            continue
+        cmd = parts[0]
+        try:
+            if cmd == "block" and len(parts) >= 2:
+                send_block(sock, int(parts[1]), parts[1])
+            elif cmd == "switch" and len(parts) >= 2 and parts[1] in ("indi", "mfc"):
+                law = DUAL_CTRL_MFC if parts[1] == "mfc" else DUAL_CTRL_INDI
+                send_switch(sock, law, parts[1].upper())
+            elif cmd == "setting" and len(parts) >= 3:
+                frame = pprz_setting_frame(int(parts[1]), float(parts[2]))
+                sock.sendto(frame, (SIM_HOST, SIM_PORT))
+                state["cmd"] = f"SETTING idx={parts[1]} val={parts[2]}"
+                print(f"[ctrl] setting idx={parts[1]} val={parts[2]}", flush=True)
+            else:
+                print(
+                    f"[cmd] unknown: {raw.strip()!r}  "
+                    "(commands: block <id> | switch <indi|mfc> | setting <idx> <val>)",
+                    flush=True,
+                )
+        except Exception as exc:
+            print(f"[cmd] error: {exc}", flush=True)
+
+
 # ── main ──────────────────────────────────────────────────────────────────────
 def main():
     env = {**os.environ, "PAPARAZZI_HOME": PPRZ}
@@ -467,6 +502,7 @@ def main():
     threading.Thread(target=sim_stdout_reader, args=(sim,), daemon=True).start()
     threading.Thread(target=takeoff_sequence,  args=(sock,), daemon=True).start()
     threading.Thread(target=log_writer,        daemon=True).start()
+    threading.Thread(target=cmd_loop,          args=(sock,), daemon=True).start()
     print(f"Logging → {LOG_FILE}   Debug → {DEBUG_LOG_FILE}")
     if _USE_SCOPE:
         print(f"Scope → PlotJuggler at {SCOPE_HOST}:{SCOPE_PORT} (decim {SCOPE_DECIM}, ~{1000//SCOPE_DECIM} Hz)")
