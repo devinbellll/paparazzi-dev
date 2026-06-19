@@ -1572,6 +1572,240 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-19T10:08:56.974Z"
+    },
+    {
+      "id": "bug-092",
+      "timestamp": "2026-06-18T19:34:39.416008Z",
+      "error_message": "multiple definition of `set_rotorcraft_commands'; stabilization_mfc.o vs stabilization_indi.o (dual stabilization build)",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_mfc.c",
+      "root_cause": "Both stabilizers define a strong (non-WEAK) set_rotorcraft_commands override under #ifdef STABILIZATION_*_COMMANDS (auto-generated from the airframe command map, so both ARE defined for ANTON). Linking both stabilizer cores into one .elf (dual wrapper) -> duplicate strong symbol.",
+      "fix": "Renamed MFC's to static __attribute__((unused)) mfc_set_rotorcraft_commands. INDI is the active law in the dual stack and owns the single commit point; MFC's variant is unused until Handover gives MFC motor authority.",
+      "tags": [
+        "dual-controller",
+        "link",
+        "set_rotorcraft_commands",
+        "mfc",
+        "indi",
+        "phase0"
+      ],
+      "related_bugs": [
+        "bug-039"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T19:34:39.416008Z"
+    },
+    {
+      "id": "bug-093",
+      "timestamp": "2026-06-18T19:34:39.416008Z",
+      "error_message": "static declaration of 'g1g2'/'actuators_pprz'/... follows non-static declaration (stabilization_mfc.c) after dual wrapper header included stabilization_indi.h",
+      "file": "paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.h",
+      "root_cause": "stabilization_mfc.c transitively includes generated/modules.h, which includes the dual module's <header> (control_dual_mfc_indi.h). When that header #included stabilization_indi.h to re-export actuators_pprz for the NPS glue, INDI's externs (g1g2, actuators_pprz, Bwls, act_pref, act_is_servo, actuator_state_filt_vect, stab_thrust_filt, wls_stab_p) leaked into the MFC TU and clashed with its now-static defs. The dual module also defines INDI_OUTPUTS/INDI_NUM_ACT firmware-wide, which activated those externs.",
+      "fix": "Wrapper header declares ONLY `extern int16_t actuators_pprz[];` (the one symbol the NPS glue needs via modules.h) instead of including all of stabilization_indi.h. control_dual_mfc_indi.c includes stabilization_indi.h directly for the core prototypes. MFC's own actuators_pprz renamed to static mfc_actuators_pprz so the modules.h-visible INDI extern doesn't clash with it.",
+      "tags": [
+        "dual-controller",
+        "modules.h",
+        "include-leak",
+        "actuators_pprz",
+        "static",
+        "phase0",
+        "nps"
+      ],
+      "related_bugs": [
+        "bug-092",
+        "bug-039"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T19:34:39.416008Z"
+    },
+    {
+      "id": "bug-094",
+      "timestamp": "2026-06-18T23:30:00.000Z",
+      "error_message": "ANTON_MFC ap build: 'nps_th_cmd_z'/'nps_v_thrust' undeclared in stabilization_indi.c (731,751)",
+      "file": "sw/airborne/firmwares/rotorcraft/stabilization/stabilization_indi.c",
+      "root_cause": "Sim-only debug taps nps_th_cmd_z/nps_v_thrust are declared only under #ifdef SITL in stabilization_indi.h but assigned unconditionally at lines 731/751. Blocked any flight (ap) build that compiles the INDI core — now including the dual shadow stack. This is the long-known bug-050.",
+      "fix": "Wrapped both assignments in #ifdef SITL ... #endif. ap now compiles stabilization_indi.c.",
+      "tags": [
+        "ap",
+        "sitl-guard",
+        "stabilization_indi",
+        "dual-controller",
+        "bug-050"
+      ],
+      "related_bugs": [
+        "bug-050",
+        "bug-095"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T23:30:00.000Z"
+    },
+    {
+      "id": "bug-095",
+      "timestamp": "2026-06-18T23:30:00.000Z",
+      "error_message": "ANTON_MFC ap link: undefined reference to nps_scope_z_ref / nps_scope_z_sp (guidance_indi.c)",
+      "file": "sw/airborne/firmwares/rotorcraft/guidance/guidance_indi.c",
+      "root_cause": "nps_scope_z_sp/z_ref are defined under #ifdef SITL in guidance_v.c but assigned unguarded in guidance_indi_run_mode (guidance_indi.c:523-524). On ap the defs are absent -> link error. This is the long-deferred bug-052.",
+      "fix": "Wrapped the two assignments in #ifdef SITL. ANTON_MFC ap now links (ap.elf produced).",
+      "tags": [
+        "ap",
+        "link",
+        "sitl-guard",
+        "guidance_indi",
+        "nps_scope",
+        "dual-controller",
+        "bug-052"
+      ],
+      "related_bugs": [
+        "bug-052",
+        "bug-094"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T23:30:00.000Z"
+    },
+    {
+      "id": "bug-096",
+      "timestamp": "2026-06-18T23:30:00.000Z",
+      "error_message": "'PPRZ_MSG_ID_DUAL_CTRL' undeclared (not in a function) in generated/periodic_telemetry.h after adding DUAL_CTRL to messages.xml",
+      "file": "sw/ext/pprzlink/message_definitions/v1.0/messages.xml",
+      "root_cause": "pprz.sh build does NOT regenerate the pprzlink message headers (var/include/pprzlink/messages.h). They are generated once by 'make pprzlink_protocol' (pymessages) into var/include and reused. Editing messages.xml alone leaves PPRZ_MSG_ID_* stale, so periodic_telemetry codegen (which references the new id via the telemetry XML) fails to compile.",
+      "fix": "After editing messages.xml, run `make -C paparazzi pprzlink_protocol` in the build container (pprz_run -- make ... pprzlink_protocol), then pprz.sh build. Regenerated to 250 telemetry msgs incl DUAL_CTRL.",
+      "tags": [
+        "pprzlink",
+        "messages.xml",
+        "codegen",
+        "telemetry",
+        "var/include"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T23:30:00.000Z"
+    },
+    {
+      "id": "bug-097",
+      "timestamp": "2026-06-18T21:34:52.236Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_mfc.c",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 10→15 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T21:34:52.236Z"
+    },
+    {
+      "id": "bug-098",
+      "timestamp": "2026-06-18T21:37:20.058Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.c",
+      "root_cause": "19 lines replaced/restructured",
+      "fix": "Rewrote 48→102 lines (19 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T21:37:20.058Z"
+    },
+    {
+      "id": "bug-099",
+      "timestamp": "2026-06-18T21:37:34.289Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.h",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 12→18 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "h"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T21:37:34.289Z"
+    },
+    {
+      "id": "bug-100",
+      "timestamp": "2026-06-18T21:38:53.816Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/conf/modules/stabilization_dual_mfc_indi.xml",
+      "root_cause": "14 lines replaced/restructured",
+      "fix": "Rewrote 18→3 lines (14 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T21:38:53.816Z"
+    },
+    {
+      "id": "bug-101",
+      "timestamp": "2026-06-18T21:44:49.762Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/conf_enac.xml",
+      "root_cause": "Had \"modules/air_data.xml modules/electrical.xml modul",
+      "fix": "Changed to \"modules/air_data.xml modules/electrical.xml modul",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-18T21:44:49.762Z"
+    },
+    {
+      "id": "bug-102",
+      "timestamp": "2026-06-19T05:59:45.169Z",
+      "error_message": "Significant refactor of ",
+      "file": "Knowledge/Sessions/2026-06-18-dual-controller-phase2-handover.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 3→14 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T05:59:45.169Z"
+    },
+    {
+      "id": "bug-103",
+      "timestamp": "2026-06-19T09:48:37.691Z",
+      "error_message": "Wrong reference: define should be target",
+      "file": "paparazzi/conf/airframes/ENAC/quadrotor/anton_mfc.xml",
+      "root_cause": "Used \"define\" instead of \"target\"",
+      "fix": "Changed define → target",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T09:48:37.691Z"
+    },
+    {
+      "id": "bug-104",
+      "timestamp": "2026-06-19T09:51:49.244Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/flight_plans/ENAC/anton_dual_ctrl_test.xml",
+      "root_cause": "Had \"flight_plan.dtd\"",
+      "fix": "Changed to \"../flight_plan.dtd\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T09:51:49.244Z"
     }
   ]
 }

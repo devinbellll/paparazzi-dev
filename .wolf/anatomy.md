@@ -1,16 +1,21 @@
 # anatomy.md
 
 > Auto-maintained by OpenWolf. Last scanned: 2026-06-19T10:08:56.923Z
-> Files: 685 tracked | Anatomy hits: 0 | Misses: 0
+> Files: 704 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
 - `2026-06-01.proposed.md` — Today (~349 tok)
 - `2026-06-04.proposed.md` — Today (~713 tok)
 
+## ../../../../../../home/agent/.claude/jobs/8ea7bd1d/tmp/
+
+- `handover_test.py` — block_frame, setting_frame, on_pos_llh, on_dual_ctrl (~2029 tok)
+
 ## ../../../../../../home/agent/.claude/plans/
 
 - `look-at-build-fw-sh-and-async-kettle.md` — Plan: Decouple Claude/VSCode from the Paparazzi build env via ephemeral arm64 containers (~2405 tok)
+- `purrfect-sprouting-lovelace.md` — Plan: sim_anton cleanup + GCS shell + dual-ctrl flight plan (~1571 tok)
 
 ## ../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/
 
@@ -41,11 +46,14 @@
 - `CLAUDE.md` — OpenWolf (~3209 tok)
 - `Dockerfile.build` — ── Paparazzi headless build/sim toolchain — arm64-native ───────────────────── (~1295 tok)
 - `Dockerfile.paparazzi` — ── Layer 5: Paparazzi UAV Toolchains (legacy devcontainer base) ─────────────── (~636 tok)
+- `handover_bumptest.py` — ac_id, frame, block, setting (~1298 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
+- `pprz_ctrl.py` — lookup_ac_id, block_frame, setting_frame, send (~1343 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~811 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2266 tok)
+- `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — pprz_block_frame, on_rate_attitude, on_pos_llh, on_speed_pos (~7386 tok)
+- `sim_anton.py` — pprz_block_frame, pprz_setting_frame, on_rate_attitude, on_pos_llh (~5640 tok)
 - `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1129 tok)
 
 ## .claude/
@@ -191,6 +199,9 @@
 - `2026-06-16-guidance-mfc-filters.md` — 2026-06-16 — guidance_mfc: Butterworth filters on NED measurement and thrust (~620 tok)
 - `2026-06-17-build-tooling-overhaul.md` — 2026-06-17 — Build tooling overhaul: one build button + working IntelliSense (~1101 tok)
 - `2026-06-17-containerized-build-run-integration.md` — 2026-06-17 — Containerized build/sim + VSCode integration (~949 tok)
+- `2026-06-18-dual-controller-phase0.md` — Session — 2026-06-18: Dual-Controller Phase 0 (MFC + INDI co-compile) (~900 tok)
+- `2026-06-18-dual-controller-phase1.md` — Session — 2026-06-18: Dual-Controller Phase 1 (shadow telemetry + fidelity + flight build) (~1155 tok)
+- `2026-06-18-dual-controller-phase2-handover.md` — Session — 2026-06-18: Dual-Controller Phase 2 (runtime handover MFC ↔ INDI) (~1251 tok)
 - `2026-06-18-dual-controller-research-and-plans.md` — 2026-06-18 — Dual-controller research & plans (MFC alongside INDI) (~731 tok)
 - `2026-06-18-git-worktree-submodules.md` — Git Worktree Setup with Nested Submodules (2026-06-18) (~852 tok)
 
@@ -203,6 +214,12 @@
 - `pprz_docker.sh` — dispatcher library. `pprz_run [opts] -- <cmd>` runs cmd in ephemeral container, repo→/workspace, passes PPRZ_HOST_ROOT/PPRZ_HOST_CC for path rewrites. Auto-builds image if missing. (~200 tok)
 - `pprz.sh` — THE build tool. `pprz.sh <cmd> AIRCRAFT [TARGET]` (also accepts "AIRCRAFT (target)"): build (incremental), clean, rebuild, db (compiledb→compile_commands.json, link-failure-tolerant), codegen, bootstrap. Self-dispatches into container; host-side rewrites /workspace→PPRZ_HOST_ROOT in the DB. Replaced build_fw.sh + the old build_active/gen_* scripts. (~600 tok)
 - `sim.sh` — builds nps target + runs sim_anton.py in container. Networking forks on IS_SANDBOX (--network host for sbx DinD vs bridge+-p for Mac Docker Desktop). (~200 tok)
+
+## dual-controller Phase 0 (2026-06-18)
+
+- `paparazzi/conf/modules/stabilization_dual_mfc_indi.xml` — compiles stabilization_indi.c + stabilization_mfc.c + the wrapper (NOT the quat_*.c dispatchers); provides commands; defines INDI_OUTPUTS/INDI_NUM_ACT + MFC_OUTPUTS/MFC_NUM_ACT. Select via `<module name="stabilization" type="dual_mfc_indi"/>`. (~400 tok)
+- `paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.c` — dual stabilization wrapper: owns the single stabilization_attitude_run/_enter; runs INDI (active, drives motors) + MFC (shadow, into inert mfc_shadow_cmd[]) each tick; stabilization_dual_init calls both cores' init. (~500 tok)
+- `paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.h` — DUAL_CTRL_{INDI,MFC}, dual_ctrl_active, mfc_shadow_cmd; declares extern actuators_pprz[] for the NPS glue (NOT full indi.h — would leak externs into the MFC TU via modules.h). (~250 tok)
 
 ## enac_paparazzi/
 
@@ -860,6 +877,10 @@
 - `rotorcraft_oa_avoid.xml` (~266 tok)
 - `slayer_training.xml` (~1106 tok)
 
+## paparazzi/conf/airframes/ENAC/
+
+- `conf_enac.xml` (~2013 tok)
+
 ## paparazzi/conf/airframes/ENAC/hybrid/
 
 - `cyfoam.xml` — Declares of (~3242 tok)
@@ -868,7 +889,7 @@
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
 - `anton_indi_aruco.xml` (~2774 tok)
-- `anton_mfc.xml` (~4207 tok)
+- `anton_mfc.xml` (~4286 tok)
 - `cobraV2.xml` (~2527 tok)
 - `crow_indoor.xml` (~2351 tok)
 - `goose.xml` (~2697 tok)
@@ -883,15 +904,24 @@
 
 - `anton_mfc_autopilot.xml` (~1564 tok)
 
+## paparazzi/conf/flight_plans/ENAC/
+
+- `anton_dual_ctrl_test.xml` (~987 tok)
+
 ## paparazzi/conf/modules/
 
 - `guidance_mfc.xml` (~1762 tok)
 - `nps_scope_state.xml` (~240 tok)
+- `stabilization_dual_mfc_indi.xml` (~1026 tok)
 - `stabilization_mfc.xml` (~2727 tok)
 
 ## paparazzi/conf/simulator/flightgear/
 
 - `bebop-set.xml` (~361 tok)
+
+## paparazzi/conf/telemetry/
+
+- `default_rotorcraft.xml` (~2775 tok)
 
 ## paparazzi/sw/airborne/
 
@@ -902,15 +932,21 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
-- `guidance_indi.c` — Declares is (~6056 tok)
+- `guidance_indi.c` — Declares is (~6074 tok)
 - `guidance_mfc.c` (~4960 tok)
 - `guidance_mfc.h` (~432 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
-- `stabilization_indi.c` (~11699 tok)
-- `stabilization_mfc.c` (~11174 tok)
-- `stabilization_mfc.h` — PPRZ command to each actuator (~591 tok)
+- `stabilization_indi.c` (~12054 tok)
+- `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
+- `stabilization_mfc.c` (~11894 tok)
+- `stabilization_mfc.h` — ifndef STABILIZATION_MFC (~827 tok)
+
+## paparazzi/sw/airborne/modules/control_dual/
+
+- `control_dual_mfc_indi.c` — Declares int16_t (~2762 tok)
+- `control_dual_mfc_indi.h` (~710 tok)
 
 ## paparazzi/sw/airborne/modules/ctrl/
 
@@ -924,6 +960,10 @@
 ## paparazzi/sw/airborne/modules/rotwing_drone/
 
 - `rotwing_state.c` — Declares based (~6239 tok)
+
+## paparazzi/sw/ext/pprzlink/message_definitions/v1.0/
+
+- `messages.xml` — Declares name (~50532 tok)
 
 ## paparazzi/sw/simulator/nps/
 
