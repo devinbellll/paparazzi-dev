@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-24T12:03:39.471Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-24T12:48:53.720Z
 > Files: 736 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
@@ -70,7 +70,7 @@
 - `check-gitignore.sh` — PreToolUse hook (Edit|Write|MultiEdit) — token-discipline harness. (~461 tok)
 - `format-code.sh` — PostToolUse hook (Edit|Write|MultiEdit) — token-discipline harness. (~305 tok)
 - `openwolf-refresh.sh` — SessionStart hook — token-discipline harness. (~289 tok)
-- `prompt-retro.sh` — Stop hook — token-discipline harness. (~161 tok)
+- `prompt-retro.sh` — .claude/hooks/prompt-retro.sh (~817 tok)
 
 ## .claude/rules/
 

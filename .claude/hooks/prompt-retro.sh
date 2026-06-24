@@ -1,16 +1,5 @@
 #!/usr/bin/env bash
 # .claude/hooks/prompt-retro.sh
-# Stop hook — session retro guard.
-#
-# Fires only when the session was substantive: ≥3 new entries in
-# .wolf/memory.md since the last retro written today.
-#
-# Dead-end escape: if RETRO_DEAD_END=1 is set in the environment,
-# writes a minimal dead-end retro and exits cleanly instead of blocking.
-# Usage: RETRO_DEAD_END=1 RETRO_TOPIC=<slug> RETRO_NOTE="<one line>" <stop command>
-#
-# Loop-safe: bookkeeping entries written by the retro hook itself
-# (references to Knowledge/Sessions/) are excluded from the count.
 
 set -uo pipefail
 
@@ -25,20 +14,19 @@ if [ ! -f "$memory_file" ]; then
 fi
 
 # ── 1. Find the most recent retro written today (if any) ─────────────────────
-latest_session="$(ls -t "$session_dir/${today}-"*.md 2>/dev/null | head -1)"
+latest_session="$(ls -t "$session_dir/${today}-"*.md 2>/dev/null | head -1 || true)"
 
 # ── 2. Count substantive memory entries since the last retro ─────────────────
 count_new_entries() {
   local since_line=0
 
-  if [ -n "$latest_session" ]; then
-    local retro_basename
-    retro_basename="$(basename "$latest_session")"
-    local last_retro_line
-    last_retro_line="$(grep -n "$retro_basename" "$memory_file" 2>/dev/null \
-      | tail -1 | cut -d: -f1)"
-    [ -n "$last_retro_line" ] && since_line="$last_retro_line"
-  fi
+  # Search for the last memory row that references any today's session retro.
+  # We match "Knowledge/Sessions/YYYY-MM-DD-" rather than a specific filename
+  # because Claude writes the row before the filename is finalised.
+  local last_retro_line
+  last_retro_line="$(grep -n "Knowledge/Sessions/${today}-" "$memory_file" 2>/dev/null \
+    | tail -1 | cut -d: -f1)"
+  [ -n "$last_retro_line" ] && since_line="$last_retro_line"
 
   if [ "$since_line" -gt 0 ]; then
     tail -n +"$((since_line + 1))" "$memory_file"
@@ -60,9 +48,10 @@ fi
 # ── 4. Dead-end escape ───────────────────────────────────────────────────────
 if [ "${RETRO_DEAD_END:-}" = "1" ]; then
   topic="${RETRO_TOPIC:-dead-end}"
-  note="${RETRO_NOTE:-Tried something that didn't work out. No changes committed.}"
-  retro_path="$session_dir/${today}-${topic}.md"
+  note="${RETRO_NOTE:-Tried something that did not work out. No changes committed.}"
+
   session_n=$(( $(ls "$session_dir/${today}-"*.md 2>/dev/null | wc -l) + 1 ))
+  retro_path="$session_dir/${today}-${topic}.md"
 
   cat > "$retro_path" <<EOF
 ---
@@ -76,6 +65,10 @@ status: raw
 ${note}
 EOF
 
+  # Append a sentinel memory row so the counter resets on the next stop.
+  printf "| %s | Session retro (dead-end) | Knowledge/Sessions/%s-%s.md | written | - |\n" \
+    "$(date +%H:%M)" "$today" "$topic" >> "$memory_file"
+
   echo "Dead-end retro written: $(basename "$retro_path")" >&2
   exit 0
 fi
@@ -83,8 +76,23 @@ fi
 # ── 5. Block and prompt ───────────────────────────────────────────────────────
 session_n=$(( $(ls "$session_dir/${today}-"*.md 2>/dev/null | wc -l) + 1 ))
 
-printf '{"decision":"block","reason":"Session had %d memory entries — write a retro before stopping.\n\nWrite to: Knowledge/Sessions/%s-<topic>.md  (session %d today)\n\nSections:\n  ## What happened\n  ## Outcomes  (✅ verified / ⚠️ unverified / ❌ dead end)\n  ## Open threads\n  ## Promotable to Knowledge/\n\nDead-end session with nothing to record?\nRe-run stop with: RETRO_DEAD_END=1 RETRO_TOPIC=<slug> RETRO_NOTE='\''<one line>'\''"}' \
-  "$new_entries" "$today" "$session_n"
-printf '\n'
+cat <<EOF
+{"decision":"block","reason":"Session had ${new_entries} memory entries — write a retro before stopping.
+
+Write to: Knowledge/Sessions/${today}-<topic>.md  (session ${session_n} today)
+
+Sections:
+  ## What happened
+  ## Outcomes  (✅ verified / ⚠️ unverified / ❌ dead end)
+  ## Open threads
+  ## Promotable to Knowledge/
+
+After writing the retro, append ONE row to .wolf/memory.md:
+  | HH:MM | Session retro | Knowledge/Sessions/${today}-<topic>.md | written | ~NNN |
+(This resets the counter so the next stop is not blocked.)
+
+Dead-end session with nothing to record?
+Re-run stop with: RETRO_DEAD_END=1 RETRO_TOPIC=<slug> RETRO_NOTE=<one line>"}
+EOF
 
 exit 0
