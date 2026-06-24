@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-24T10:04:04.340Z
-> Files: 730 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-24T12:03:39.471Z
+> Files: 736 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -169,6 +169,8 @@
 
 ## Knowledge/Daily Notes/
 
+- `2026-05-27.md` — Today (~196 tok)
+- `2026-05-28.md` — Today (~204 tok)
 - `2026-06-05.md` — Today (~550 tok)
 - `2026-06-08.md` — Today (~439 tok)
 - `2026-06-09.md` — Today (~845 tok)
@@ -177,6 +179,10 @@
 - `2026-06-15.md` — Today (~610 tok)
 - `2026-06-16.md` — Today (~318 tok)
 - `2026-06-17.md` — Today (~721 tok)
+- `2026-06-18.md` — Today (~530 tok)
+- `2026-06-19.md` — Today (~370 tok)
+- `2026-06-22.md` — Today (~499 tok)
+- `2026-06-24.md` — Today (~309 tok)
 
 ## Knowledge/Plans/
 
