@@ -125,8 +125,13 @@ SCOPE_HOST  = FG_HOST   # same egress path as FlightGear
 SCOPE_PORT  = 9870
 SCOPE_DECIM = 2         # emit every Nth sim step (~500 Hz at 1 kHz sim rate)
 
-LOG_FILE       = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv"
-DEBUG_LOG_FILE = f"/tmp/mfc_sim_{datetime.datetime.now():%Y%m%d_%H%M%S}_debug.log"
+# Logs land in /workspace/sim_logs/ (bind-mounted to the host) so they survive
+# container exit. Fall back to /tmp if running outside a container.
+_LOG_DIR = os.environ.get("MFC_LOG_DIR", "/workspace/sim_logs")
+os.makedirs(_LOG_DIR, exist_ok=True)
+_TS = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+LOG_FILE       = os.path.join(_LOG_DIR, f"mfc_sim_{_TS}.csv")
+DEBUG_LOG_FILE = os.path.join(_LOG_DIR, f"mfc_sim_{_TS}_debug.log")
 
 # ── pprz binary encoding ─────────────────────────────────────────────────────
 STX            = 0x99
