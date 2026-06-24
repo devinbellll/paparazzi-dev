@@ -1,240 +1,67 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <root>
- <tabbed_widget parent="main_window" name="Main Window">
-  <Tab tab_name="DUAL_CTRL" containers="1">
-   <Container>
-    <DockSplitter orientation="-" sizes="1" count="1">
-     <DockSplitter orientation="|" sizes="0.333333;0.333333;0.333333" count="3">
-      <!-- Left: selector / shadow flags -->
-      <DockSplitter orientation="-" sizes="0.333333;0.333333;0.333333" count="3">
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="2.0" bottom="-0.5" left="0.0"/>
-         <limitY/>
-         <curve color="#1f77b4" name="/dual/active"/>
-         <curve color="#d62728" name="/dual/mfc_shadow"/>
-         <curve color="#1ac938" name="/dual/indi_shadow"/>
-        </plot>
-       </DockArea>
-       <!-- Roll command: INDI vs MFC -->
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="2000.0" bottom="-2000.0" left="0.0"/>
-         <limitY/>
-         <curve color="#1f77b4" name="/dual/indi_cmd0"/>
-         <curve color="#d62728" name="/dual/mfc_cmd0"/>
-         <curve color="#ff7f0e" name="/dual/resid0"/>
-        </plot>
-       </DockArea>
-       <!-- Pitch command: INDI vs MFC -->
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="2000.0" bottom="-2000.0" left="0.0"/>
-         <limitY/>
-         <curve color="#1f77b4" name="/dual/indi_cmd1"/>
-         <curve color="#d62728" name="/dual/mfc_cmd1"/>
-         <curve color="#ff7f0e" name="/dual/resid1"/>
-        </plot>
-       </DockArea>
-      </DockSplitter>
-      <!-- Middle: yaw + thrust residuals -->
-      <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
-       <!-- Yaw command: INDI vs MFC -->
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="2000.0" bottom="-2000.0" left="0.0"/>
-         <limitY/>
-         <curve color="#1f77b4" name="/dual/indi_cmd2"/>
-         <curve color="#d62728" name="/dual/mfc_cmd2"/>
-         <curve color="#ff7f0e" name="/dual/resid2"/>
-        </plot>
-       </DockArea>
-       <!-- Thrust command: INDI vs MFC -->
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="10000.0" bottom="-500.0" left="0.0"/>
-         <limitY/>
-         <curve color="#1f77b4" name="/dual/indi_cmd3"/>
-         <curve color="#d62728" name="/dual/mfc_cmd3"/>
-         <curve color="#ff7f0e" name="/dual/resid3"/>
-        </plot>
-       </DockArea>
-      </DockSplitter>
-      <!-- Right: INDI vs MFC actuator outputs -->
-      <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="3500.0" bottom="-100.0" left="0.0"/>
-         <limitY/>
-         <curve color="#1f77b4" name="/indi/act0"/>
-         <curve color="#d62728" name="/indi/act1"/>
-         <curve color="#1ac938" name="/indi/act2"/>
-         <curve color="#ff7f0e" name="/indi/act3"/>
-        </plot>
-       </DockArea>
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="3500.0" bottom="-100.0" left="0.0"/>
-         <limitY/>
-         <curve color="#1f77b4" name="/mfc/act0"/>
-         <curve color="#d62728" name="/mfc/act1"/>
-         <curve color="#1ac938" name="/mfc/act2"/>
-         <curve color="#ff7f0e" name="/mfc/act3"/>
-        </plot>
-       </DockArea>
-      </DockSplitter>
-     </DockSplitter>
-    </DockSplitter>
-   </Container>
-  </Tab>
-  <Tab tab_name="INDI_STAB" containers="1">
-   <Container>
-    <DockSplitter orientation="-" sizes="1" count="1">
-     <DockSplitter orientation="|" sizes="0.333333;0.333333;0.333333" count="3">
-      <!-- Roll: INDI virtual control + WLS -->
-      <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="100.0" bottom="-100.0" left="0.0"/>
-         <limitY/>
-         <curve color="#1f77b4" name="/indi/roll_cmd"/>
-        </plot>
-       </DockArea>
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="3500.0" bottom="-100.0" left="0.0"/>
-         <limitY/>
-         <curve color="#ff7f0e" name="/indi/act0"/>
-         <curve color="#f14cc1" name="/indi/act1"/>
-         <curve color="#9467bd" name="/indi/act2"/>
-         <curve color="#17becf" name="/indi/act3"/>
-        </plot>
-       </DockArea>
-      </DockSplitter>
-      <!-- Pitch + Yaw virtual controls -->
-      <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="100.0" bottom="-100.0" left="0.0"/>
-         <limitY/>
-         <curve color="#d62728" name="/indi/pitch_cmd"/>
-        </plot>
-       </DockArea>
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="100.0" bottom="-100.0" left="0.0"/>
-         <limitY/>
-         <curve color="#1ac938" name="/indi/yaw_cmd"/>
-        </plot>
-       </DockArea>
-      </DockSplitter>
-      <!-- Thrust + vertical thrust signals -->
-      <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="100.0" bottom="-100.0" left="0.0"/>
-         <limitY/>
-         <curve color="#bcbd22" name="/indi/thrust_cmd"/>
-        </plot>
-       </DockArea>
-       <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="20.0" top="10000.0" bottom="-200.0" left="0.0"/>
-         <limitY/>
-         <curve color="#1f77b4" name="/indi/v_thrust"/>
-         <curve color="#d62728" name="/indi/th_cmd_z"/>
-        </plot>
-       </DockArea>
-      </DockSplitter>
-     </DockSplitter>
-    </DockSplitter>
-   </Container>
-  </Tab>
-  <Tab tab_name="MFC_PITCH" containers="1">
-   <Container>
-    <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
-     <DockArea name="...">
-      <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-       <range right="19.032500" top="6035.174250" bottom="-3319.244250" left="4.032500"/>
-       <limitY/>
-       <curve color="#bcbd22" name="/mfc/pitch/cmd"/>
-       <curve color="#1f77b4" name="/mfc/pitch/fk"/>
-      </plot>
-     </DockArea>
-     <DockArea name="...">
-      <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-       <range right="19.032500" top="0.476899" bottom="-0.702663" left="4.032500"/>
-       <limitY/>
-       <curve color="#d62728" name="/mfc/pitch/err"/>
-       <curve color="#1ac938" name="/mfc/pitch/meas"/>
-       <curve color="#ff7f0e" name="/mfc/pitch/sp"/>
-       <curve color="#f14cc1" name="/mfc/pitch/sp_traj"/>
-      </plot>
-     </DockArea>
-    </DockSplitter>
-   </Container>
-  </Tab>
+ <tabbed_widget name="Main Window" parent="main_window">
   <Tab tab_name="SPvMEAS" containers="1">
    <Container>
     <DockSplitter orientation="-" sizes="1" count="1">
-     <DockSplitter orientation="|" sizes="0.333333;0.333333;0.333333" count="3">
+     <DockSplitter orientation="|" sizes="0.333666;0.332667;0.333666" count="3">
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.189524" bottom="-7.718384" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-5.228458" top="-4.785043"/>
          <limitY/>
-         <curve color="#17becf" name="/sp/nav/target_n"/>
-         <curve color="#1f77b4" name="/est/x"/>
-         <curve color="#1f77b4" name="/truth/x"/>
+         <curve name="/sp/nav/target_n" color="#17becf"/>
+         <curve name="/est/x" color="#1f77b4"/>
+         <curve name="/truth/x" color="#1f77b4"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="11.961278" bottom="-9.298198" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.435960" top="0.334627"/>
          <limitY/>
-         <curve color="#ff7f0e" name="/truth/phi"/>
-         <curve color="#1f77b4" name="/sp/stab/phi"/>
-         <curve color="#1ac938" name="/est/phi"/>
+         <curve name="/truth/phi" color="#ff7f0e"/>
+         <curve name="/sp/stab/phi" color="#1f77b4"/>
+         <curve name="/est/phi" color="#1ac938"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.101032" bottom="-2.676532" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-2.193812" top="-1.588488"/>
          <limitY/>
-         <curve color="#9467bd" name="/sp/nav/target_e"/>
-         <curve color="#d62728" name="/est/y"/>
-         <curve color="#f14cc1" name="/truth/y"/>
+         <curve name="/sp/nav/target_e" color="#9467bd"/>
+         <curve name="/est/y" color="#d62728"/>
+         <curve name="/truth/y" color="#f14cc1"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="23.513970" bottom="-29.979350" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.185101" top="0.487352"/>
          <limitY/>
-         <curve color="#9467bd" name="/truth/theta"/>
-         <curve color="#bcbd22" name="/sp/stab/theta"/>
-         <curve color="#f14cc1" name="/est/theta"/>
+         <curve name="/truth/theta" color="#9467bd"/>
+         <curve name="/sp/stab/theta" color="#bcbd22"/>
+         <curve name="/est/theta" color="#f14cc1"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.189208" bottom="-7.053137" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-6.916750" top="-4.953250"/>
          <limitY/>
-         <curve color="#f14cc1" name="/sp/nav/target_d"/>
-         <curve color="#1ac938" name="/est/z"/>
-         <curve color="#9467bd" name="/truth/z"/>
+         <curve name="/sp/nav/target_d" color="#f14cc1"/>
+         <curve name="/est/z" color="#1ac938"/>
+         <curve name="/truth/z" color="#9467bd"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.116111" bottom="-4.760541" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.694247" top="-0.092923"/>
          <limitY/>
-         <curve color="#f14cc1" name="/truth/psi"/>
-         <curve color="#d62728" name="/sp/stab/psi"/>
-         <curve color="#ff7f0e" name="/est/psi"/>
+         <curve name="/truth/psi" color="#f14cc1"/>
+         <curve name="/sp/stab/psi" color="#d62728"/>
+         <curve name="/est/psi" color="#ff7f0e"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -245,64 +72,64 @@
   <Tab tab_name="MFC_RPY" containers="1">
    <Container>
     <DockSplitter orientation="-" sizes="1" count="1">
-     <DockSplitter orientation="|" sizes="0.333333;0.333333;0.333333" count="3">
+     <DockSplitter orientation="|" sizes="0.333666;0.332667;0.333666" count="3">
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="1580.952000" bottom="-2973.612000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-53.907323" top="17.850623"/>
          <limitY/>
-         <curve color="#d62728" name="/mfc/roll/cmd"/>
-         <curve color="#1ac938" name="/mfc/roll/fk"/>
+         <curve name="/mfc/roll/cmd" color="#d62728"/>
+         <curve name="/mfc/roll/fk" color="#1ac938"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.290333" bottom="-0.214822" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.007597" top="0.005332"/>
          <limitY/>
-         <curve color="#ff7f0e" name="/mfc/roll/err"/>
-         <curve color="#f14cc1" name="/mfc/roll/meas"/>
-         <curve color="#9467bd" name="/mfc/roll/sp"/>
-         <curve color="#17becf" name="/mfc/roll/sp_traj"/>
+         <curve name="/mfc/roll/err" color="#ff7f0e"/>
+         <curve name="/mfc/roll/meas" color="#f14cc1"/>
+         <curve name="/mfc/roll/sp" color="#9467bd"/>
+         <curve name="/mfc/roll/sp_traj" color="#17becf"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="6035.174250" bottom="-3319.244250" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-22.572430" top="36.207830"/>
          <limitY/>
-         <curve color="#bcbd22" name="/mfc/pitch/cmd"/>
-         <curve color="#1f77b4" name="/mfc/pitch/fk"/>
+         <curve name="/mfc/pitch/cmd" color="#bcbd22"/>
+         <curve name="/mfc/pitch/fk" color="#1f77b4"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.476899" bottom="-0.702663" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.003759" top="0.008519"/>
          <limitY/>
-         <curve color="#d62728" name="/mfc/pitch/err"/>
-         <curve color="#1ac938" name="/mfc/pitch/meas"/>
-         <curve color="#ff7f0e" name="/mfc/pitch/sp"/>
-         <curve color="#f14cc1" name="/mfc/pitch/sp_traj"/>
+         <curve name="/mfc/pitch/err" color="#d62728"/>
+         <curve name="/mfc/pitch/meas" color="#1ac938"/>
+         <curve name="/mfc/pitch/sp" color="#ff7f0e"/>
+         <curve name="/mfc/pitch/sp_traj" color="#f14cc1"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-10.385183" top="10.385183"/>
          <limitY/>
-         <curve color="#9467bd" name="/mfc/yaw/cmd"/>
-         <curve color="#17becf" name="/mfc/yaw/fk"/>
+         <curve name="/mfc/yaw/cmd" color="#9467bd"/>
+         <curve name="/mfc/yaw/fk" color="#17becf"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.000172" bottom="-0.007043" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.003679" top="0.000215"/>
          <limitY/>
-         <curve color="#bcbd22" name="/mfc/yaw/err"/>
-         <curve color="#1f77b4" name="/mfc/yaw/meas"/>
-         <curve color="#d62728" name="/mfc/yaw/sp"/>
-         <curve color="#1ac938" name="/mfc/yaw/sp_traj"/>
+         <curve name="/mfc/yaw/err" color="#bcbd22"/>
+         <curve name="/mfc/yaw/meas" color="#1f77b4"/>
+         <curve name="/mfc/yaw/sp" color="#d62728"/>
+         <curve name="/mfc/yaw/sp_traj" color="#1ac938"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -313,61 +140,61 @@
   <Tab tab_name="MFC_XYZ" containers="1">
    <Container>
     <DockSplitter orientation="-" sizes="1" count="1">
-     <DockSplitter orientation="|" sizes="0.333333;0.333333;0.333333" count="3">
+     <DockSplitter orientation="|" sizes="0.333666;0.332667;0.333666" count="3">
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-90.428119" top="8.213869"/>
          <limitY/>
-         <curve color="#ff7f0e" name="/mfc_g/x/cmd"/>
-         <curve color="#f14cc1" name="/mfc_g/x/fk"/>
+         <curve name="/mfc_g/x/cmd" color="#ff7f0e"/>
+         <curve name="/mfc_g/x/fk" color="#f14cc1"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-5.171236" top="-4.874034"/>
          <limitY/>
-         <curve color="#1f77b4" name="/mfc_g/x/meas"/>
-         <curve color="#1ac938" name="/mfc_g/x/sp"/>
-         <curve color="#ff7f0e" name="/mfc_g/x/sp_traj"/>
+         <curve name="/mfc_g/x/meas" color="#1f77b4"/>
+         <curve name="/mfc_g/x/sp" color="#1ac938"/>
+         <curve name="/mfc_g/x/sp_traj" color="#ff7f0e"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-89.222448" top="8.110347"/>
          <limitY/>
-         <curve color="#17becf" name="/mfc_g/y/cmd"/>
-         <curve color="#bcbd22" name="/mfc_g/y/fk"/>
+         <curve name="/mfc_g/y/cmd" color="#17becf"/>
+         <curve name="/mfc_g/y/fk" color="#bcbd22"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-2.103056" top="-1.685723"/>
          <limitY/>
-         <curve color="#d62728" name="/mfc_g/y/meas"/>
-         <curve color="#f14cc1" name="/mfc_g/y/sp"/>
-         <curve color="#f14cc1" name="/mfc_g/y/sp_traj"/>
+         <curve name="/mfc_g/y/meas" color="#d62728"/>
+         <curve name="/mfc_g/y/sp" color="#f14cc1"/>
+         <curve name="/mfc_g/y/sp_traj" color="#f14cc1"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.100000" top="0.100000"/>
          <limitY/>
-         <curve color="#1f77b4" name="/mfc_g/z/cmd"/>
-         <curve color="#d62728" name="/mfc_g/z/fk"/>
+         <curve name="/mfc_g/z/cmd" color="#1f77b4"/>
+         <curve name="/mfc_g/z/fk" color="#d62728"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.100000" top="0.100000"/>
          <limitY/>
-         <curve color="#1ac938" name="/mfc_g/z/meas"/>
-         <curve color="#1ac938" name="/mfc_g/z/sp"/>
-         <curve color="#ff7f0e" name="/mfc_g/z/sp_traj"/>
+         <curve name="/mfc_g/z/meas" color="#1ac938"/>
+         <curve name="/mfc_g/z/sp" color="#1ac938"/>
+         <curve name="/mfc_g/z/sp_traj" color="#ff7f0e"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -378,42 +205,42 @@
   <Tab tab_name="ACCEL2ATT" containers="1">
    <Container>
     <DockSplitter orientation="-" sizes="1" count="1">
-     <DockSplitter orientation="|" sizes="0.501025;0.498975" count="2">
+     <DockSplitter orientation="|" sizes="0.500998;0.499002" count="2">
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.612761" top="0.533034"/>
          <limitY/>
-         <curve color="#1f77b4" name="/mfc_g/acc2att/phi_d"/>
-         <curve color="#d62728" name="/mfc_g/acc2att/theta_d"/>
-         <curve color="#ff7f0e" name="/mfc_g/acc2att/att_sp_psi"/>
-         <curve color="#bcbd22" name="/mfc_g/acc2att/att_sp_phi"/>
-         <curve color="#1f77b4" name="/mfc_g/acc2att/att_sp_theta"/>
+         <curve name="/mfc_g/acc2att/phi_d" color="#1f77b4"/>
+         <curve name="/mfc_g/acc2att/theta_d" color="#d62728"/>
+         <curve name="/mfc_g/acc2att/att_sp_psi" color="#ff7f0e"/>
+         <curve name="/mfc_g/acc2att/att_sp_phi" color="#bcbd22"/>
+         <curve name="/mfc_g/acc2att/att_sp_theta" color="#1f77b4"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.511888" top="0.508767"/>
          <limitY/>
-         <curve color="#17becf" name="/mfc_g/acc2att/vhatx"/>
-         <curve color="#bcbd22" name="/mfc_g/acc2att/vhaty"/>
+         <curve name="/mfc_g/acc2att/vhatx" color="#17becf"/>
+         <curve name="/mfc_g/acc2att/vhaty" color="#bcbd22"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-12.100000" top="-11.900000"/>
          <limitY/>
-         <curve color="#9467bd" name="/mfc_g/acc2att/u1"/>
+         <curve name="/mfc_g/acc2att/u1" color="#9467bd"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.100000" bottom="-0.100000" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.590330" top="0.994381"/>
          <limitY/>
-         <curve color="#1ac938" name="/mfc_g/acc2att/cosphid"/>
-         <curve color="#ff7f0e" name="/mfc_g/acc2att/vhaty_cd"/>
+         <curve name="/mfc_g/acc2att/cosphid" color="#1ac938"/>
+         <curve name="/mfc_g/acc2att/vhaty_cd" color="#ff7f0e"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -424,49 +251,47 @@
   <Tab tab_name="WLS" containers="1">
    <Container>
     <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
-     <!-- INDI WLS -->
      <DockSplitter orientation="|" sizes="0.5;0.5" count="2">
       <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range right="19.032500" top="3291.572250" bottom="-80.282250" left="4.032500"/>
+       <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="137.427500" left="107.428500" bottom="1877.245250" top="1888.364750"/>
         <limitY/>
-        <curve color="#bcbd22" name="/wls/u0"/>
-        <curve color="#1f77b4" name="/wls/u1"/>
-        <curve color="#d62728" name="/wls/u2"/>
-        <curve color="#1ac938" name="/wls/u3"/>
+        <curve name="/wls/u0" color="#bcbd22"/>
+        <curve name="/wls/u1" color="#1f77b4"/>
+        <curve name="/wls/u2" color="#d62728"/>
+        <curve name="/wls/u3" color="#1ac938"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range right="19.032500" top="58.994140" bottom="-75.609140" left="4.032500"/>
+       <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="137.427500" left="107.428500" bottom="-11.617193" top="0.869118"/>
         <limitY/>
-        <curve color="#ff7f0e" name="/wls/v0"/>
-        <curve color="#f14cc1" name="/wls/v1"/>
-        <curve color="#9467bd" name="/wls/v2"/>
-        <curve color="#17becf" name="/wls/v3"/>
+        <curve name="/wls/v0" color="#ff7f0e"/>
+        <curve name="/wls/v1" color="#f14cc1"/>
+        <curve name="/wls/v2" color="#9467bd"/>
+        <curve name="/wls/v3" color="#17becf"/>
        </plot>
       </DockArea>
      </DockSplitter>
-     <!-- MFC WLS -->
      <DockSplitter orientation="|" sizes="0.5;0.5" count="2">
       <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range right="19.032500" top="3291.572250" bottom="-80.282250" left="4.032500"/>
+       <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="137.427500" left="107.428500" bottom="1861.190000" top="1904.450000"/>
         <limitY/>
-        <curve color="#bcbd22" name="/mfc_wls/u0"/>
-        <curve color="#1f77b4" name="/mfc_wls/u1"/>
-        <curve color="#d62728" name="/mfc_wls/u2"/>
-        <curve color="#1ac938" name="/mfc_wls/u3"/>
+        <curve name="/mfc_wls/u0" color="#bcbd22"/>
+        <curve name="/mfc_wls/u1" color="#1f77b4"/>
+        <curve name="/mfc_wls/u2" color="#d62728"/>
+        <curve name="/mfc_wls/u3" color="#1ac938"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range right="19.032500" top="58.994140" bottom="-75.609140" left="4.032500"/>
+       <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="137.427500" left="107.428500" bottom="-11.615146" top="0.646590"/>
         <limitY/>
-        <curve color="#ff7f0e" name="/mfc_wls/v0"/>
-        <curve color="#f14cc1" name="/mfc_wls/v1"/>
-        <curve color="#9467bd" name="/mfc_wls/v2"/>
-        <curve color="#17becf" name="/mfc_wls/v3"/>
+        <curve name="/mfc_wls/v0" color="#ff7f0e"/>
+        <curve name="/mfc_wls/v1" color="#f14cc1"/>
+        <curve name="/mfc_wls/v2" color="#9467bd"/>
+        <curve name="/mfc_wls/v3" color="#17becf"/>
        </plot>
       </DockArea>
      </DockSplitter>
@@ -476,64 +301,64 @@
   <Tab tab_name="States" containers="1">
    <Container>
     <DockSplitter orientation="-" sizes="1" count="1">
-     <DockSplitter orientation="|" sizes="0.333333;0.333333;0.333333" count="3">
+     <DockSplitter orientation="|" sizes="0.333666;0.332667;0.333666" count="3">
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="23.469577" bottom="-28.159197" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.704835" top="0.341185"/>
          <limitY/>
-         <curve color="#ff7f0e" name="/truth/phi"/>
-         <curve color="#f14cc1" name="/truth/psi"/>
-         <curve color="#9467bd" name="/truth/theta"/>
+         <curve name="/truth/phi" color="#ff7f0e"/>
+         <curve name="/truth/psi" color="#f14cc1"/>
+         <curve name="/truth/theta" color="#9467bd"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.224025" bottom="-7.719225" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-7.001677" top="-1.471223"/>
          <limitY/>
-         <curve color="#1f77b4" name="/truth/x"/>
-         <curve color="#f14cc1" name="/truth/y"/>
-         <curve color="#9467bd" name="/truth/z"/>
+         <curve name="/truth/x" color="#1f77b4"/>
+         <curve name="/truth/y" color="#f14cc1"/>
+         <curve name="/truth/z" color="#9467bd"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="158.207885" bottom="-157.266085" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-1.493725" top="1.472525"/>
          <limitY/>
-         <curve color="#17becf" name="/truth/p"/>
-         <curve color="#bcbd22" name="/truth/q"/>
-         <curve color="#1f77b4" name="/truth/r"/>
+         <curve name="/truth/p" color="#17becf"/>
+         <curve name="/truth/q" color="#bcbd22"/>
+         <curve name="/truth/r" color="#1f77b4"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.853893" bottom="-2.371392" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.066787" top="0.096488"/>
          <limitY/>
-         <curve color="#17becf" name="/truth/vx"/>
-         <curve color="#bcbd22" name="/truth/vy"/>
-         <curve color="#1f77b4" name="/truth/vz"/>
+         <curve name="/truth/vx" color="#17becf"/>
+         <curve name="/truth/vy" color="#bcbd22"/>
+         <curve name="/truth/vz" color="#1f77b4"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="1309.641625" bottom="-1587.712625" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-14.450650" top="14.892650"/>
          <limitY/>
-         <curve color="#d62728" name="/truth/ap"/>
-         <curve color="#1ac938" name="/truth/aq"/>
-         <curve color="#ff7f0e" name="/truth/ar"/>
+         <curve name="/truth/ap" color="#d62728"/>
+         <curve name="/truth/aq" color="#1ac938"/>
+         <curve name="/truth/ar" color="#ff7f0e"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="1.018733" bottom="-14.573033" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-10.065542" top="0.264043"/>
          <limitY/>
-         <curve color="#d62728" name="/truth/ax"/>
-         <curve color="#1ac938" name="/truth/ay"/>
-         <curve color="#ff7f0e" name="/truth/az"/>
+         <curve name="/truth/ax" color="#d62728"/>
+         <curve name="/truth/ay" color="#1ac938"/>
+         <curve name="/truth/az" color="#ff7f0e"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -546,51 +371,51 @@
     <DockSplitter orientation="-" sizes="1" count="1">
      <DockSplitter orientation="|" sizes="0.384615;0.384615;0.230769" count="3">
       <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range right="19.032500" top="0.198928" bottom="-7.451626" left="4.032500"/>
+       <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="137.427500" left="107.428500" bottom="-6.976701" top="-1.566209"/>
         <limitY/>
-        <curve color="#1f77b4" name="/est/x"/>
-        <curve color="#d62728" name="/est/y"/>
-        <curve color="#1ac938" name="/est/z"/>
+        <curve name="/est/x" color="#1f77b4"/>
+        <curve name="/est/y" color="#d62728"/>
+        <curve name="/est/z" color="#1ac938"/>
        </plot>
       </DockArea>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="23.450912" bottom="-29.977813" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.380024" top="0.423227"/>
          <limitY/>
-         <curve color="#1ac938" name="/est/phi"/>
-         <curve color="#ff7f0e" name="/est/psi"/>
-         <curve color="#f14cc1" name="/est/theta"/>
+         <curve name="/est/phi" color="#1ac938"/>
+         <curve name="/est/psi" color="#ff7f0e"/>
+         <curve name="/est/theta" color="#f14cc1"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="0.998396" bottom="-2.337281" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.093775" top="0.081639"/>
          <limitY/>
-         <curve color="#f14cc1" name="/est/vx"/>
-         <curve color="#9467bd" name="/est/vy"/>
-         <curve color="#17becf" name="/est/vz"/>
+         <curve name="/est/vx" color="#f14cc1"/>
+         <curve name="/est/vy" color="#9467bd"/>
+         <curve name="/est/vz" color="#17becf"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="157.808225" bottom="-157.453225" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-1.485254" top="1.481364"/>
          <limitY/>
-         <curve color="#9467bd" name="/est/p"/>
-         <curve color="#17becf" name="/est/q"/>
-         <curve color="#bcbd22" name="/est/r"/>
+         <curve name="/est/p" color="#9467bd"/>
+         <curve name="/est/q" color="#17becf"/>
+         <curve name="/est/r" color="#bcbd22"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-         <range right="19.032500" top="6.602618" bottom="-4.680588" left="4.032500"/>
+        <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+         <range right="137.427500" left="107.428500" bottom="-0.195854" top="0.188296"/>
          <limitY/>
-         <curve color="#bcbd22" name="/est/ax"/>
-         <curve color="#1f77b4" name="/est/ay"/>
-         <curve color="#d62728" name="/est/az"/>
+         <curve name="/est/ax" color="#bcbd22"/>
+         <curve name="/est/ay" color="#1f77b4"/>
+         <curve name="/est/az" color="#d62728"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -603,73 +428,45 @@
     <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
      <DockSplitter orientation="|" sizes="0.5;0.5" count="2">
       <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range right="19.032500" top="5451.550000" bottom="-4819.550000" left="4.032500"/>
+       <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="137.427500" left="107.428500" bottom="-3784.525000" top="5015.525000"/>
         <limitY/>
-        <curve color="#9467bd" name="/sensors/mag_x"/>
-        <curve color="#17becf" name="/sensors/mag_y"/>
-        <curve color="#bcbd22" name="/sensors/mag_z"/>
+        <curve name="/sensors/mag_x" color="#9467bd"/>
+        <curve name="/sensors/mag_y" color="#17becf"/>
+        <curve name="/sensors/mag_z" color="#bcbd22"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range right="19.032500" top="622776.225000" bottom="-644205.225000" left="4.032500"/>
+       <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="137.427500" left="107.428500" bottom="-5766.825500" top="5423.045500"/>
         <limitY/>
-        <curve color="#1ac938" name="/sensors/gyro_p"/>
-        <curve color="#ff7f0e" name="/sensors/gyro_q"/>
-        <curve color="#f14cc1" name="/sensors/gyro_r"/>
+        <curve name="/sensors/gyro_p" color="#1ac938"/>
+        <curve name="/sensors/gyro_q" color="#ff7f0e"/>
+        <curve name="/sensors/gyro_r" color="#f14cc1"/>
        </plot>
       </DockArea>
      </DockSplitter>
      <DockSplitter orientation="|" sizes="0.5;0.5" count="2">
       <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range right="19.032500" top="157.857642" bottom="-5.255312" left="4.032500"/>
+       <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="137.427500" left="107.428500" bottom="-3.900374" top="157.813326"/>
         <limitY/>
-        <curve color="#1f77b4" name="/sensors/gps_hmsl"/>
-        <curve color="#d62728" name="/sensors/gps_vx"/>
-        <curve color="#1ac938" name="/sensors/gps_vy"/>
-        <curve color="#ff7f0e" name="/sensors/gps_vz"/>
+        <curve name="/sensors/gps_hmsl" color="#1f77b4"/>
+        <curve name="/sensors/gps_vx" color="#d62728"/>
+        <curve name="/sensors/gps_vy" color="#1ac938"/>
+        <curve name="/sensors/gps_vz" color="#ff7f0e"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range right="19.032500" top="350.375000" bottom="-6091.375000" left="4.032500"/>
+       <plot line_width="1.0" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="137.427500" left="107.428500" bottom="-4264.050000" top="232.050000"/>
         <limitY/>
-        <curve color="#bcbd22" name="/sensors/acc_x"/>
-        <curve color="#1f77b4" name="/sensors/acc_y"/>
-        <curve color="#d62728" name="/sensors/acc_z"/>
+        <curve name="/sensors/acc_x" color="#bcbd22"/>
+        <curve name="/sensors/acc_y" color="#1f77b4"/>
+        <curve name="/sensors/acc_z" color="#d62728"/>
        </plot>
       </DockArea>
      </DockSplitter>
-    </DockSplitter>
-   </Container>
-  </Tab>
-  <Tab tab_name="ACT" containers="1">
-   <Container>
-    <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
-     <!-- INDI actuators -->
-     <DockArea name="...">
-      <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-       <range right="19.032500" top="3291.275000" bottom="-80.275000" left="4.032500"/>
-       <limitY/>
-       <curve color="#ff7f0e" name="/indi/act0"/>
-       <curve color="#f14cc1" name="/indi/act1"/>
-       <curve color="#9467bd" name="/indi/act2"/>
-       <curve color="#17becf" name="/indi/act3"/>
-      </plot>
-     </DockArea>
-     <!-- MFC actuators -->
-     <DockArea name="...">
-      <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-       <range right="19.032500" top="3291.275000" bottom="-80.275000" left="4.032500"/>
-       <limitY/>
-       <curve color="#ff7f0e" name="/mfc/act0"/>
-       <curve color="#f14cc1" name="/mfc/act1"/>
-       <curve color="#9467bd" name="/mfc/act2"/>
-       <curve color="#17becf" name="/mfc/act3"/>
-      </plot>
-     </DockArea>
     </DockSplitter>
    </Container>
   </Tab>
@@ -684,17 +481,17 @@
   </plugin>
   <plugin ID="DataLoad MCAP"/>
   <plugin ID="DataLoad Parquet">
-   <default dateFromat="yyyy-MM-dd hh:mm:ss" parseDateTime="0" prevTimestamp="" radioIndexChecked="0"/>
+   <default parseDateTime="0" radioIndexChecked="0" prevTimestamp="" dateFromat="yyyy-MM-dd hh:mm:ss"/>
   </plugin>
   <plugin ID="DataLoad ULog"/>
   <plugin ID="Foxglove ROS2 Bridge">
-   <foxglove_client clamp_large_arrays="0" port="8765" address="127.0.0.1" max_array_size="500" use_timestamp="0">
+   <foxglove_client port="8765" max_array_size="500" use_timestamp="0" address="127.0.0.1" clamp_large_arrays="0">
     <topics/>
    </foxglove_client>
   </plugin>
   <plugin ID="MQTT Subscriber (Mosquitto)"/>
   <plugin ID="PlotJuggler ROS2 Bridge">
-   <websocket_client clamp_large_arrays="0" port="9090" address="127.0.0.1" max_array_size="500" use_timestamp="0">
+   <websocket_client port="9090" max_array_size="500" use_timestamp="0" address="127.0.0.1" clamp_large_arrays="0">
     <topics/>
    </websocket_client>
   </plugin>
@@ -711,9 +508,11 @@
  </Plugins>
  <!-- - - - - - - - - - - - - - - -->
  <previouslyLoaded_Datafiles/>
+ <previouslyLoaded_Streamer name="UDP Server"/>
  <!-- - - - - - - - - - - - - - - -->
  <customMathEquations/>
  <snippets/>
  <colorMaps/>
  <!-- - - - - - - - - - - - - - - -->
 </root>
+
