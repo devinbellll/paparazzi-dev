@@ -1854,6 +1854,564 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-19T14:05:40.737Z"
+    },
+    {
+      "id": "bug-108",
+      "timestamp": "2026-06-19T16:02:29.383Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/modules/control_dual/oneloop_mfc.c",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 18→39 lines (3 removed) | Also: #ifndef STABILIZATION_MFC_SHADOW; /* Shared-message telemetry. In the dual (shadow)  | Also: #if !STABILIZATION_MFC_ALLOCATION_PSEUDO_INVERSE; static void send_wls_v_stab(struct transport_tx *t | Also: static void send_att_full_mfc(struct transport_tx ; { | Also: * horizontal. Writes the (raw physical) thrust set; * returns the attitude setpoint. The guidance wrap",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 5,
+      "last_seen": "2026-06-19T16:07:05.550Z"
+    },
+    {
+      "id": "bug-109",
+      "timestamp": "2026-06-19T16:04:23.373Z",
+      "error_message": "Wrong reference: stabilization_mfc_enter should be oneloop_mfc_attitude_enter",
+      "file": "paparazzi/sw/airborne/modules/control_dual/oneloop_mfc.c",
+      "root_cause": "Used \"stabilization_mfc_enter\" instead of \"oneloop_mfc_attitude_enter\"",
+      "fix": "Changed stabilization_mfc_enter → oneloop_mfc_attitude_enter",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-19T16:04:34.698Z"
+    },
+    {
+      "id": "bug-110",
+      "timestamp": "2026-06-19T16:09:41.908Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/conf/modules/stabilization_dual_mfc_indi.xml",
+      "root_cause": "14 lines replaced/restructured",
+      "fix": "Rewrote 40→30 lines (14 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T16:09:41.908Z"
+    },
+    {
+      "id": "bug-111",
+      "timestamp": "2026-06-19T16:12:34.617Z",
+      "error_message": "Wrong reference: mode should be message",
+      "file": "paparazzi/conf/telemetry/default_rotorcraft.xml",
+      "root_cause": "Used \"mode\" instead of \"message\"",
+      "fix": "Changed mode → message",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T16:12:34.617Z"
+    },
+    {
+      "id": "bug-112",
+      "timestamp": "2026-06-19T16:14:28.697Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/conf_enac.xml",
+      "root_cause": "Had \"modules/air_data.xml modules/electrical.xml modul",
+      "fix": "Changed to \"modules/air_data.xml modules/electrical.xml modul",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T16:14:28.697Z"
+    },
+    {
+      "id": "bug-113",
+      "timestamp": "2026-06-19T21:55:14.641Z",
+      "error_message": "Wrong reference: guidance_dual_set_active should be guidance_dual_mfc_indi_set_active",
+      "file": "paparazzi/sw/airborne/modules/control_dual/guidance_dual_mfc_indi.c",
+      "root_cause": "Used \"guidance_dual_set_active\" instead of \"guidance_dual_mfc_indi_set_active\"",
+      "fix": "Changed guidance_dual_set_active → guidance_dual_mfc_indi_set_active",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T21:55:14.641Z"
+    },
+    {
+      "id": "bug-114",
+      "timestamp": "2026-06-19T23:59:00.000Z",
+      "error_message": "'MFC_G_SCALING' undeclared in oneloop_mfc.c sum_g1_g2()",
+      "file": "sw/airborne/modules/control_dual/oneloop_mfc.c",
+      "root_cause": "MFC_G_SCALING was #defined in stabilization_mfc.h, which oneloop_mfc.c no longer includes after the namespacing split",
+      "fix": "Added #define MFC_G_SCALING 1000.0 locally in oneloop_mfc.c",
+      "tags": [
+        "oneloop_mfc",
+        "mfc",
+        "build",
+        "undeclared"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T23:59:00.000Z"
+    },
+    {
+      "id": "bug-115",
+      "timestamp": "2026-06-19T23:59:00.000Z",
+      "error_message": "settings.h: 'guidance_indi_pos_gain/speed_gain/max_bank' undeclared",
+      "file": "sw/airborne/modules/control_dual/guidance_dual_mfc_indi.h",
+      "root_cause": "guidance_dual_mfc_indi.xml carries the guidance_indi settings panel but its module header did not include guidance_indi.h, so the settings generator had no extern decls",
+      "fix": "Included firmwares/rotorcraft/guidance/guidance_indi.h from guidance_dual_mfc_indi.h",
+      "tags": [
+        "settings",
+        "dl_setting",
+        "guidance_indi",
+        "build",
+        "header"
+      ],
+      "related_bugs": [
+        "bug-072"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T23:59:00.000Z"
+    },
+    {
+      "id": "bug-116",
+      "timestamp": "2026-06-19T23:59:00.000Z",
+      "error_message": "implicit declaration of 'guidance_dual_mfc_indi_set_active'",
+      "file": "sw/airborne/modules/control_dual/guidance_dual_mfc_indi.c",
+      "root_cause": "dl_setting handler generates <module_basename>_<handler> (guidance_dual_mfc_indi_set_active); the function was named guidance_dual_set_active",
+      "fix": "Renamed setter to guidance_dual_mfc_indi_set_active to match the handler convention",
+      "tags": [
+        "settings",
+        "dl_setting",
+        "handler",
+        "naming"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T23:59:00.000Z"
+    },
+    {
+      "id": "bug-117",
+      "timestamp": "2026-06-19T23:59:00.000Z",
+      "error_message": "periodic_telemetry.h references PPRZ_MSG_ID_GUIDANCE_DUAL but var/messages.xml lacks it",
+      "file": "sw/ext/pprzlink/message_definitions/v1.0/messages.xml",
+      "root_cause": "Editing pprzlink messages.xml does not auto-regenerate var/messages.xml or the C headers (recurrence of bug-096). pprzlink is a git submodule, so make pprzlink_protocol/libpprzlink.update would git-revert the edit.",
+      "fix": "Ran the generator directly, bypassing the submodule update: pprz_run -- make -C sw/ext/pprzlink pymessages MESSAGES_INSTALL=/workspace/paparazzi/var PPRZLINK_LIB_VERSION=2.0 VALIDATE_XML=FALSE",
+      "tags": [
+        "pprzlink",
+        "messages",
+        "codegen",
+        "submodule"
+      ],
+      "related_bugs": [
+        "bug-096"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-19T23:59:00.000Z"
+    },
+    {
+      "id": "bug-118",
+      "timestamp": "2026-06-22T12:33:16.261Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/modules/oneloop_mfc.xml",
+      "root_cause": "Had \"$(SRC_FIRMWARE)/oneloop\"",
+      "fix": "Changed to \"firmwares/rotorcraft/oneloop\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T12:33:16.261Z"
+    },
+    {
+      "id": "bug-119",
+      "timestamp": "2026-06-22T15:00:24.730Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/quadrotor/anton_dual.xml",
+      "root_cause": "Had \"Quadricopter ANTON MFC\"",
+      "fix": "Changed to \"Quadricopter ANTON DUAL\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T15:00:24.730Z"
+    },
+    {
+      "id": "bug-120",
+      "timestamp": "2026-06-22T15:00:44.048Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/conf/airframes/ENAC/quadrotor/anton_mfc.xml",
+      "root_cause": "22 lines replaced/restructured",
+      "fix": "Rewrote 35→18 lines (22 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T15:00:44.048Z"
+    },
+    {
+      "id": "bug-121",
+      "timestamp": "2026-06-22T15:09:30.195Z",
+      "error_message": "Wrong reference: stabilization_rotorcraft should be depends",
+      "file": "paparazzi/conf/modules/oneloop_mfc.xml",
+      "root_cause": "Used \"stabilization_rotorcraft\" instead of \"depends\"",
+      "fix": "Changed stabilization_rotorcraft → depends",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-22T15:09:54.226Z"
+    },
+    {
+      "id": "bug-122",
+      "timestamp": "2026-06-22T00:00:00.000Z",
+      "error_message": "Standalone ANTON_MFC (oneloop_mfc) diverges in NPS (climbs/tumbles, FDM NaN ~t17s); ANTON_DUAL with same MFC->MFC defaults is stable.",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "Proven by SITL instrumentation + head-to-head NPS runs. ANTON_DUAL is stable ONLY because the dual stabilization wrapper's RC-really-lost failsafe forces dual_ctrl_active=INDI in NPS (no RC), so DUAL runs INDI stabilization and MFC is a passive shadow fed real actuator_state via oneloop_mfc_set_shadow_actuator_state(). DUAL never actually runs MFC->MFC in sim. Standalone runs the real MFC stabilizer, exposing two masked bugs: (1) oneloop_mfc_stab_active defaults false (shadow) and the standalone dispatch never set it, so get_actuator_state copies mfc_shadow_act_obs which is never populated => actuator_state stuck at 0 => runaway. (2) standalone guidance emitted physical-float thrust (thrust_as_pprz=false) but oneloop_mfc_attitude_run reads it via th_sp_to_thrust_i; ThrustSetpoint is a union{int32 thrust_i; float thrust_f} so the float bits are read as int => garbage thrust objective (vthz=-552960). DUAL's MFC shadow never hit this because stab=INDI => mfc_thrust_pprz=true => pprz-int path.",
+      "fix": "Standalone dispatch in oneloop_mfc.c: set oneloop_mfc_stab_active=true in stabilization_attitude_enter() and run() (integrate own command); and emit pprz-int thrust (oneloop_mfc_guidance_run(...,true)) in guidance_h_run_* so it uses the same Bwls thrust path that works in DUAL's shadow. Eliminates the NaN divergence (NPS runs clean). NOT fully flight-ready: MFC vertical guidance (gz SISO) still saturates and does not hold altitude — needs tuning. The physical-float thrust path in the attitude run (th_sp_to_thrust_i + commented-out thrust_f line) remains a latent bug.",
+      "tags": [
+        "mfc",
+        "oneloop",
+        "standalone",
+        "dual",
+        "failsafe",
+        "rc-lost",
+        "shadow-mode",
+        "actuator-state",
+        "thrust-union",
+        "type-pun",
+        "nps",
+        "verified-in-sim"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T00:00:00.000Z"
+    },
+    {
+      "id": "bug-123",
+      "timestamp": "2026-06-22T16:42:56.478Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 20→11 lines (9 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T16:42:56.478Z"
+    },
+    {
+      "id": "bug-124",
+      "timestamp": "2026-06-22T19:10:28.807Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "16 lines replaced/restructured",
+      "fix": "Rewrote 21→3 lines (16 removed) | Also: #ifdef SITL; {",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-22T19:10:39.933Z"
+    },
+    {
+      "id": "bug-125",
+      "timestamp": "2026-06-22T19:57:03.112Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "11 lines replaced/restructured",
+      "fix": "Rewrote 21→6 lines (11 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T19:57:03.112Z"
+    },
+    {
+      "id": "bug-123",
+      "timestamp": "2026-06-22T00:00:00.000Z",
+      "error_message": "anton_dual.xml sets DUAL_CTRL_DEFAULT=MFC but ANTON_DUAL runs INDI stabilization in the NPS sim (looked stable, unlike standalone ANTON_MFC).",
+      "file": "paparazzi/sw/airborne/modules/control_dual/stabilization_dual_mfc_indi.c",
+      "root_cause": "The RC-really-lost failsafe (stabilization_attitude_run) forces dual_ctrl_active=INDI on a rc_lost transition. NPS has no RC so radio_control.status==RC_REALLY_LOST (=2) from boot; the false->true transition on tick 1 overrides the configured MFC default. Verified by printing dual_ctrl_active (=0/INDI) with default=1/MFC, rc.status=2.",
+      "fix": "Guard the failsafe under #ifndef SITL so the sim honors DUAL_CTRL_DEFAULT (hardware ap target keeps the RC-loss safety fallback). With this, ANTON_DUAL runs MFC and diverges with NaN at t=18.7s IDENTICALLY to standalone ANTON_MFC — proving the two were never behaving differently in their MFC path; the failsafe was masking MFC in DUAL. Remaining real issue: MFC attitude controller is unstable (needs tuning; attitude gains hardcoded in oneloop_mfc_init override the airframe STABILIZATION_MFC_* defines).",
+      "tags": [
+        "dual",
+        "failsafe",
+        "rc-lost",
+        "sitl",
+        "mfc",
+        "stabilization",
+        "verified-in-sim",
+        "config-override"
+      ],
+      "related_bugs": [
+        "bug-122"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T00:00:00.000Z"
+    },
+    {
+      "id": "bug-127",
+      "timestamp": "2026-06-22T20:48:31.335Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→10 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T20:48:31.335Z"
+    },
+    {
+      "id": "bug-128",
+      "timestamp": "2026-06-22T20:50:27.531Z",
+      "error_message": "Wrong reference: true should be false",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "Used \"true\" instead of \"false\"",
+      "fix": "Changed true → false",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 4,
+      "last_seen": "2026-06-22T20:53:25.431Z"
+    },
+    {
+      "id": "bug-129",
+      "timestamp": "2026-06-22T20:53:33.966Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 12→3 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T20:53:33.966Z"
+    },
+    {
+      "id": "bug-124",
+      "timestamp": "2026-06-22T00:00:00.000Z",
+      "error_message": "MFC 'crazy Z': vertical guidance saturates/blows up; standalone MFC NaN-diverges at a consistent ~17-18s.",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/mfc_core.c",
+      "root_cause": "mfc_siso_run uses mfc_stt->time = wallclock since reset (unbounded [0,t]) directly in the algebraic estimator (de=-t*e, d2e=t^2*e, den=t^2, d2u=t^2*u...). As t grows the t^2 terms dominate and the control law command[0]=-F_k/alpha+ddot/alpha asymptotically degenerates to command[0]≈command[1]+(...) = a wind-up integrator -> saturation/NaN. Verified in sim: capping mfc_stt->time at 2.0s made MFC vertical track altitude with INDI-quality (z_meas≈z_sp, gz_cmd sane) where before it saturated. Secondary: even with the vertical fixed, the MFC ATTITUDE controller (mfc_roll/pitch/yaw, hardcoded alpha=147 kp=4 command_filter=1 int_window=1) still tumbles from a level setpoint -> needs tuning. Also: ALL MFC gains are hardcoded in oneloop_mfc_init()/oneloop_mfc_guidance_init(), so the airframe STABILIZATION_MFC_/GUIDANCE_MFC_ defines are ignored; gx/gy are enabled despite the airframe comment claiming disabled.",
+      "fix": "DIAGNOSED, not committed. Proper fix: implement a bounded sliding-window estimator in mfc_core.c (opt-in, validate against Darko which also uses this core) instead of [0,t]; then tune the MFC attitude axes; then wire init to read the airframe XML gains. The 2s cap is a proven diagnostic, not committed (shared core, affects all MFC aircraft).",
+      "tags": [
+        "mfc",
+        "mfc-core",
+        "estimator",
+        "unbounded-time",
+        "integrator-windup",
+        "vertical",
+        "attitude",
+        "tuning",
+        "verified-in-sim"
+      ],
+      "related_bugs": [
+        "bug-122",
+        "bug-123"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T00:00:00.000Z"
+    },
+    {
+      "id": "bug-131",
+      "timestamp": "2026-06-22T21:12:10.937Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/modules/control_dual/stabilization_dual_mfc_indi.c",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 16→26 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T21:12:10.937Z"
+    },
+    {
+      "id": "bug-132",
+      "timestamp": "2026-06-22T21:12:19.959Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/modules/control_dual/guidance_dual_mfc_indi.c",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 3→6 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T21:12:19.959Z"
+    },
+    {
+      "id": "bug-133",
+      "timestamp": "2026-06-22T21:18:06.191Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 12→3 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T21:18:06.191Z"
+    },
+    {
+      "id": "bug-134",
+      "timestamp": "2026-06-22T21:51:12.672Z",
+      "error_message": "Wrong condition in logic",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/mfc_core.c",
+      "root_cause": "Condition was: if (mfc_stt->command[0] >  9600.f)",
+      "fix": "Changed to: if (mfc_stt->command[0] > mfc_stt->u_max)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T21:51:12.672Z"
+    },
+    {
+      "id": "bug-135",
+      "timestamp": "2026-06-22T21:51:44.639Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "26 lines replaced/restructured",
+      "fix": "Rewrote 40→33 lines (26 removed) | Also: init_butterworth_2_low_pass(&filt_thrust, tau, dt,; mfc_gx.alpha          = 15;",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-22T21:52:06.690Z"
+    },
+    {
+      "id": "bug-136",
+      "timestamp": "2026-06-22T21:53:17.448Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/conf/airframes/ENAC/quadrotor/anton_mfc.xml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 17→23 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T21:53:17.448Z"
+    },
+    {
+      "id": "bug-137",
+      "timestamp": "2026-06-24T07:54:34.486Z",
+      "error_message": "Wrong reference: 600 should be 10",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
+      "root_cause": "Used \"600\" instead of \"10\"",
+      "fix": "Changed 600 → 10",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-24T07:54:39.730Z"
+    },
+    {
+      "id": "bug-138",
+      "timestamp": "2026-06-24T07:56:15.723Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "27 lines replaced/restructured",
+      "fix": "Rewrote 36→29 lines (27 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-24T07:56:15.723Z"
+    },
+    {
+      "id": "bug-139",
+      "timestamp": "2026-06-24T07:56:44.695Z",
+      "error_message": "Wrong reference: filt_thrust should be GUIDANCE_MFC_GZ_NOMINAL_HOVER_THROTTLE",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "Used \"filt_thrust\" instead of \"GUIDANCE_MFC_GZ_NOMINAL_HOVER_THROTTLE\"",
+      "fix": "Changed filt_thrust → GUIDANCE_MFC_GZ_NOMINAL_HOVER_THROTTLE",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-24T07:56:44.695Z"
+    },
+    {
+      "id": "bug-140",
+      "timestamp": "2026-06-24T00:00:00.000Z",
+      "error_message": "ANTON_ONELOOP and ANTON_DUAL crash — mfc_roll/pitch/yaw u_min/u_max left at 0 in oneloop_mfc.c",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.c",
+      "root_cause": "During gain propagation, u_max/u_min assignments for mfc_roll, mfc_pitch, mfc_yaw were present in stabilization_mfc.c but were never copied into the matching stab init block in oneloop_mfc.c. With both bounds at 0, the WLS allocator constrains every MFC stab command to zero, causing immediate loss of attitude control.",
+      "fix": "Added u_max/u_min to all three stab axes in oneloop_mfc_stab_init(): roll and pitch use GUIDANCE_MFC_TILT_PPRZ_SCALE, yaw uses GUIDANCE_MFC_TWIST_PPRZ_SCALE — matching stabilization_mfc.c exactly.",
+      "tags": ["crash", "wls", "u_min", "u_max", "oneloop", "dual", "stabilization"],
+      "related_bugs": ["bug-139"],
+      "occurrences": 1,
+      "last_seen": "2026-06-24T00:00:00.000Z"
     }
   ]
 }

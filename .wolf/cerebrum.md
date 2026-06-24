@@ -170,3 +170,52 @@
 - [2026-06-18] **Incremental codegen does NOT detect module-XML changes** (keys off airframe/conf hash). After editing a module XML (settings/defines), `touch` the airframe XML to force regen, or the generated settings.h/airframe.h stay stale.
 - [2026-06-18] **`pprz_run` injects `-e CONF=""`** — sim/test scripts must use `os.environ.get("CONF") or "<default>"`, not `get("CONF", "<default>")`, or the empty string wins (bug-074).
 - [2026-06-18] **An Ivy python script with a non-daemon Ivy thread won't exit after main() returns, and block-buffered stdout never flushes** → looks hung with an empty output file. Print with `flush=True` as you go (like sim_anton's snap()), and/or `os._exit()` at the end. Don't write end-only-print Ivy probes.
+
+## Key Learnings additions (2026-06-19 — oneloop_mfc dual stack)
+- To run two controllers of the same lineage (MFC forked from INDI) in one
+  firmware, the clean approach is a self-contained module with file-local
+  (static) globals + an `oneloop_<x>_` public API — NOT static-ifying the shared
+  core or adding `#ifdef` shadow branches to the incumbent. `oneloop_mfc.{c,h}`
+  (in modules/control_dual/) holds the whole MFC stack (attitude + guidance) this
+  way and links beside stock INDI with zero edits to INDI.
+- INDI guidance already supports being a non-owner of the framework plug symbols:
+  `guidance_indi_run_mode()` is always compiled; the plug fns
+  (`guidance_h/v_run_*`) are gated by `#if GUIDANCE_INDI_USE_AS_DEFAULT`. A
+  guidance wrapper compiles guidance_indi.c with that FALSE, owns the plug
+  symbols, and calls run_mode() directly. INDI's vertical output is the file-
+  global `thrust_sp` (extern it; not in the header).
+- Framework calls guidance_v_run* BEFORE guidance_h_run* each tick. The V call
+  returns the previous tick's thrust (one-tick latency, inherent to the stock
+  INDI plug); do the real compute in the H call.
+- A module that carries a dl_settings panel must include (via its <header>) the
+  header declaring the panel's variables, or generated settings.h fails to
+  compile (bug-115). And `dl_setting handler="H" module=".../foo"` calls
+  `foo_H()` — the function name must match exactly (bug-116).
+- Single-owner symbol contract is self-checking: if two TUs define
+  stabilization_attitude_run / guidance_h_run_pos, the LINK fails. A successful
+  link proves single ownership; confirm with `nm simsitl` (the NPS binary is
+  `var/aircrafts/<AC>/nps/simsitl`, not obj/nps.elf).
+
+## Decision Log additions (2026-06-19)
+- Chose independent per-layer switching (guidance{INDI|MFC} × stab{INDI|MFC}, 4
+  combos) over fused "oneloop" presets, because the user's required combos include
+  the cross pairs (g_mfc→s_indi, g_indi→s_mfc). "oneloop_mfc" therefore means a
+  self-contained MFC *module*, not a fused single loop.
+- Left stabilization_indi.c/.h untouched (dormant SHADOW #ifdefs, never enabled →
+  functionally stock) rather than reverting them, to honour "INDI untouched" with
+  zero risk. Kept the inert `actuator_state` export (wrapper reads it).
+- INDI-as-shadow integrates its own command (no shadow branch compiled); accepted
+  as a documented asymmetry — INDI is the trusted incumbent, its shadow output is
+  telemetry-only.
+
+## Do-Not-Repeat additions (2026-06-19)
+- [2026-06-22] **`$(SRC_FIRMWARE)` in a module `<header>` block is NOT expanded** — the generator writes the literal string into a C `#include`. Use the expanded literal: `dir="firmwares/rotorcraft/oneloop"`. Makefile variables are only safe in `<makefile>` blocks.
+- [2026-06-22] **When moving a `.c` file, also update its own self-include** — updating wrapper includes is not enough; the moved `.c` includes its own header and needs updating too.
+- Don't run `make pprzlink_protocol` / `libpprzlink.update` to regen messages —
+  pprzlink is a submodule and `*.update` does `git submodule update`, REVERTING
+  uncommitted messages.xml edits. Regen directly:
+  `pprz_run -- make -C sw/ext/pprzlink pymessages MESSAGES_INSTALL=/workspace/paparazzi/var PPRZLINK_LIB_VERSION=2.0 VALIDATE_XML=FALSE` (bug-117/bug-096).
+
+- oneloop_mfc has two operating modes via `oneloop_mfc_stab_active`: ACTIVE (integrates its own command in get_actuator_state) vs SHADOW (copies mfc_shadow_act_obs, populated only by the dual wrapper). Any STANDALONE use of oneloop_mfc MUST set oneloop_mfc_stab_active=true, else actuator_state stays zero and the allocator commands runaway thrust. Same trap applies if a new wrapper reuses oneloop_mfc. (bug-122, 2026-06-22)
+
+- CRITICAL (verified in NPS sim): ANTON_DUAL appears to fly MFC->MFC but in the sim it does NOT — the dual stabilization wrapper's RC-really-lost failsafe forces dual_ctrl_active=INDI (NPS has no RC), so DUAL runs INDI stab with MFC as a passive shadow. To actually test/tune MFC->MFC you must run with RC present (or disable the failsafe); use standalone ANTON_MFC (oneloop_mfc) as the real MFC->MFC test bed. The MFC stabilizer's thrust path only supports pprz-int thrust (th_sp_to_thrust_i + Bwls); the physical-float path is a union type-pun bug. (bug-122, 2026-06-22)

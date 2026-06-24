@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T14:31:06.359Z
-> Files: 706 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-24T10:04:04.340Z
+> Files: 730 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -17,6 +17,7 @@
 - `look-at-build-fw-sh-and-async-kettle.md` — Plan: Decouple Claude/VSCode from the Paparazzi build env via ephemeral arm64 containers (~2405 tok)
 - `purrfect-sprouting-lovelace.md` — Plan: sim_anton cleanup + GCS shell + dual-ctrl flight plan (~1571 tok)
 - `resource-users-devinbellll-workspace-en-prancy-cupcake.md` — Plan: Fix IntelliSense — two separate root causes (~906 tok)
+- `the-complete-mfc-stack-mutable-whistle.md` — Plan: Complete parallel MFC stack (guidance + stabilization) alongside INDI (~3363 tok)
 
 ## ../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/
 
@@ -41,8 +42,9 @@
 - `.clangd` — clangd configuration for Paparazzi firmware IntelliSense. (~324 tok)
 - `.claudeignore` — Secrets and credentials (~56 tok)
 - `.DS_Store` (~2186 tok)
-- `.gitignore` — Git ignore rules (~76 tok)
+- `.gitignore` — Git ignore rules (~80 tok)
 - `.gitmodules` (~52 tok)
+- `analyze_mfc.py` — rms, fmt_bar, count_saturated, grade (~2502 tok)
 - `build_image.sh` — ── Build the Paparazzi toolchain image (arm64-native) ──────────────────────── (~474 tok)
 - `CLAUDE.md` — OpenWolf (~3209 tok)
 - `Dockerfile.build` — ── Paparazzi headless build/sim toolchain — arm64-native ───────────────────── (~1295 tok)
@@ -55,8 +57,9 @@
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2266 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — pprz_block_frame, pprz_setting_frame, on_rate_attitude, on_pos_llh (~6278 tok)
+- `sim_anton.py` — NPS sim runner: Ivy telemetry, CSV logger (to sim_logs/), takeoff/switch cmds (~6400 tok)
 - `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1129 tok)
+- `tune_mfc.sh` — build ANTON_MFC nps, run timed sim, auto-analyze CSV with analyze_mfc.py (~600 tok)
 
 ## .claude/
 
@@ -206,6 +209,9 @@
 - `2026-06-18-dual-controller-phase2-handover.md` — Session — 2026-06-18: Dual-Controller Phase 2 (runtime handover MFC ↔ INDI) (~1251 tok)
 - `2026-06-18-dual-controller-research-and-plans.md` — 2026-06-18 — Dual-controller research & plans (MFC alongside INDI) (~731 tok)
 - `2026-06-18-git-worktree-submodules.md` — Git Worktree Setup with Nested Submodules (2026-06-18) (~852 tok)
+- `2026-06-19-oneloop-mfc-dual-stack.md` — 2026-06-19 — oneloop_mfc: complete parallel MFC stack + independent layer switching (~1333 tok)
+- `2026-06-22-standalone-mfc-shadow-mode-bug.md` — 2026-06-22 — Why standalone ANTON_MFC diverges but ANTON_DUAL doesn't (MFC→MFC) (~1756 tok)
+- `2026-06-24-mfc-gain-propagation.md` — 2026-06-24 — MFC Gain Propagation (~896 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -219,9 +225,12 @@
 
 ## dual-controller Phase 0 (2026-06-18)
 
-- `paparazzi/conf/modules/stabilization_dual_mfc_indi.xml` — compiles stabilization_indi.c + stabilization_mfc.c + the wrapper (NOT the quat_*.c dispatchers); provides commands; defines INDI_OUTPUTS/INDI_NUM_ACT + MFC_OUTPUTS/MFC_NUM_ACT. Select via `<module name="stabilization" type="dual_mfc_indi"/>`. (~400 tok)
-- `paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.c` — dual stabilization wrapper: owns the single stabilization_attitude_run/_enter; runs INDI (active, drives motors) + MFC (shadow, into inert mfc_shadow_cmd[]) each tick; stabilization_dual_init calls both cores' init. (~500 tok)
-- `paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.h` — DUAL_CTRL_{INDI,MFC}, dual_ctrl_active, mfc_shadow_cmd; declares extern actuators_pprz[] for the NPS glue (NOT full indi.h — would leak externs into the MFC TU via modules.h). (~250 tok)
+- `paparazzi/conf/modules/guidance_dual_mfc_indi.xml` — guidance wrapper module: compiles guidance_indi.c+guidance_indi_quadrotor.c with GUIDANCE_INDI_USE_AS_DEFAULT=FALSE; provides guidance,attitude_command; carries GuidanceCtrl + guidance_indi settings. Select via `<module name="guidance" type="dual_mfc_indi"/>`. (~350 tok)
+- `paparazzi/conf/modules/stabilization_dual_mfc_indi.xml` — STAB wrapper module: compiles stabilization_indi.c (stock) + the wrapper; depends on oneloop_mfc (the MFC side). Provides commands; defines INDI/MFC _OUTPUTS/_NUM_ACT. NO SHADOW defines anymore. Select via `<module name="stabilization" type="dual_mfc_indi"/>`. (~400 tok)
+- `paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.{c,h}` — self-contained MFC stack (attitude + position guidance) with file-local globals (own WLS/g1g2/Bwls/filters); merged from the tuned stabilization_mfc.c + guidance_mfc.c. Public API oneloop_mfc_{init,attitude_enter,attitude_run,guidance_enter,guidance_run}, shadow accessors, bool oneloop_mfc_stab_active. Links beside stock INDI with zero collisions. (~13000 tok)
+- `paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.c` — STAB wrapper: owns the single stabilization_attitude_run/_enter; routes between untouched stabilization_indi_attitude_run and oneloop_mfc_attitude_run via dual_ctrl_active (GCS StabCtrl); both run each tick; MFC copies INDI's operating point when shadow (oneloop_mfc_stab_active). Failsafe→INDI on RC loss. DUAL_CTRL (194) telemetry. (~500 tok)
+- `paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.h` — DUAL_CTRL_{INDI,MFC}, dual_ctrl_active, mfc_shadow_cmd; extern actuators_pprz[] for the NPS glue. (~250 tok)
+- `paparazzi/sw/airborne/modules/control_dual/guidance_dual_mfc_indi.{c,h}` — GUIDANCE wrapper: owns the framework plug symbols guidance_h/v_run_*; routes guidance_indi_run_mode() (INDI, USE_AS_DEFAULT=FALSE) vs oneloop_mfc_guidance_run() via guidance_ctrl_active (GCS GuidanceCtrl). v-before-h latch; MFC thrust formatted for the active stab. GUIDANCE_DUAL (195) telemetry. (~600 tok)
 
 ## enac_paparazzi/
 
@@ -881,7 +890,7 @@
 
 ## paparazzi/conf/airframes/ENAC/
 
-- `conf_enac.xml` (~2013 tok)
+- `conf_enac.xml` (~2150 tok)
 
 ## paparazzi/conf/airframes/ENAC/hybrid/
 
@@ -890,8 +899,10 @@
 
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
+- `anton_dual.xml` (~4403 tok)
 - `anton_indi_aruco.xml` (~2774 tok)
-- `anton_mfc.xml` (~4286 tok)
+- `anton_mfc.xml` (~4182 tok)
+- `anton_oneloop.xml` (~4260 tok)
 - `cobraV2.xml` (~2527 tok)
 - `crow_indoor.xml` (~2351 tok)
 - `goose.xml` (~2697 tok)
@@ -912,9 +923,13 @@
 
 ## paparazzi/conf/modules/
 
+- `guidance_dual_mfc_indi.xml` (~766 tok)
+- `guidance_mfc_oneloop.xml` (~215 tok)
 - `guidance_mfc.xml` (~1762 tok)
 - `nps_scope_state.xml` (~240 tok)
-- `stabilization_dual_mfc_indi.xml` (~1026 tok)
+- `oneloop_mfc.xml` (~1074 tok)
+- `stabilization_dual_mfc_indi.xml` (~903 tok)
+- `stabilization_mfc_oneloop.xml` (~272 tok)
 - `stabilization_mfc.xml` (~2727 tok)
 
 ## paparazzi/conf/simulator/flightgear/
@@ -923,7 +938,7 @@
 
 ## paparazzi/conf/telemetry/
 
-- `default_rotorcraft.xml` (~2775 tok)
+- `default_rotorcraft.xml` (~2791 tok)
 
 ## paparazzi/sw/airborne/
 
@@ -935,20 +950,32 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6074 tok)
-- `guidance_mfc.c` (~4997 tok)
+- `guidance_mfc.c` (~5435 tok)
 - `guidance_mfc.h` (~432 tok)
+
+## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
+
+- `oneloop_mfc.c` (~16673 tok)
+- `oneloop_mfc.h` — Declares float (~1079 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
+- `mfc_core.c` (~1370 tok)
+- `mfc_core.h` (~671 tok)
 - `stabilization_indi.c` (~12054 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
-- `stabilization_mfc.c` (~11894 tok)
+- `stabilization_mfc.c` (~11310 tok)
 - `stabilization_mfc.h` — ifndef STABILIZATION_MFC (~827 tok)
 
 ## paparazzi/sw/airborne/modules/control_dual/
 
-- `control_dual_mfc_indi.c` — Declares int16_t (~2794 tok)
+- `control_dual_mfc_indi.c` — Declares int16_t (~2238 tok)
 - `control_dual_mfc_indi.h` (~710 tok)
+- `guidance_dual_mfc_indi.c` — Declares GuidanceIndi_VMode (~2043 tok)
+- `guidance_dual_mfc_indi.h` (~595 tok)
+- `guidance_mfc_oneloop.c` (~707 tok)
+- `stabilization_dual_mfc_indi.c` — Declares int16_t (~2479 tok)
+- `stabilization_mfc_oneloop.c` (~374 tok)
 
 ## paparazzi/sw/airborne/modules/ctrl/
 
@@ -965,7 +992,7 @@
 
 ## paparazzi/sw/ext/pprzlink/message_definitions/v1.0/
 
-- `messages.xml` — Declares name (~50532 tok)
+- `messages.xml` — Declares name (~50742 tok)
 
 ## paparazzi/sw/simulator/nps/
 
