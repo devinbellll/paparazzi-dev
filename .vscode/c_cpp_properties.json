@@ -9,7 +9,9 @@
         { "name": "ANTON_MFC (nps)" },
         { "name": "ANTON (ap)" },
         { "name": "ANTON (nps)" },
-        { "name": "ANTON_MFC_THRUST (ap)" },
-        { "name": "ANTON_MFC_THRUST (nps)" }
+        { "name": "ANTON_ONELOOP (ap)" },
+        { "name": "ANTON_ONELOOP (nps)" },
+        { "name": "ANTON_DUAL (ap)" },
+        { "name": "ANTON_DUAL (nps)" }
     ]
 }
