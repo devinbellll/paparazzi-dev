@@ -85,11 +85,7 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/stop.js\"",
             "timeout": 10
-          },
-          // {
-          //   "type": "command",
-          //   "command": "bash .claude/hooks/prompt-retro.sh"
-          // }
+          }
         ]
       }
     ]

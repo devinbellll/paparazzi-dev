@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-24T14:28:25.730Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-25T09:02:07.579Z
 > Files: 738 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
@@ -55,7 +55,7 @@
 - `plotjuggler_mfc.xml` (~8841 tok)
 - `pprz_ctrl.py` — find_sim_container, send_cmd, main (~760 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~811 tok)
-- `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2266 tok)
+- `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2345 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
 - `sim_anton.py` — NPS sim runner: Ivy telemetry, CSV logger (to sim_logs/), takeoff/switch cmds (~6400 tok)

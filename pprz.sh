@@ -78,7 +78,11 @@ _guard_target_switch() {
   fi
 }
 
-_lto() { [[ "$TARGET" == "ap" ]] && echo "USE_LTO=no"; }   # off for fast iteration
+# ap is only ever built for hardware (release), so optimize for the flight binary:
+# LTO does cross-file inlining/dead-code elimination -> smaller, faster firmware.
+# (Was USE_LTO=no for fast incremental dev rebuilds + an old Rosetta LTO-ICE
+# workaround; arm64-native no longer hits the ICE, and we never iterate on ap.)
+_lto() { [[ "$TARGET" == "ap" ]] && echo "USE_LTO=yes"; }
 
 _in_build() {
   parse_ac_target "$@"
