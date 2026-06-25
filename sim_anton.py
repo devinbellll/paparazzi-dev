@@ -398,10 +398,10 @@ def send_switch(sock: socket.socket, law: int, label: str):
     print(f"[ctrl] switching to {label}", flush=True)
 
 def takeoff_sequence(sock: socket.socket):
-    time.sleep(1.0)
-    send_block(sock, 3, "Start Engine")
+    time.sleep(5.0)
+    send_block(sock, 2, "Start Engine")
     time.sleep(0.5)
-    send_block(sock, 4, "Takeoff")
+    send_block(sock, 3, "Takeoff")
 
     if _SWITCH_AFTER is not None:
         time.sleep(_SWITCH_AFTER)

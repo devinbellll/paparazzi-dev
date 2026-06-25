@@ -16,4 +16,4 @@ enac_paparazzi/
 **/.obsidian/
 
 compile_commands.json
-sim_logs/*.csv
+sim_logs/

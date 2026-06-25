@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-24T12:48:53.720Z
-> Files: 736 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-24T14:28:25.730Z
+> Files: 738 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -15,6 +15,7 @@
 ## ../../../../../../home/agent/.claude/plans/
 
 - `look-at-build-fw-sh-and-async-kettle.md` — Plan: Decouple Claude/VSCode from the Paparazzi build env via ephemeral arm64 containers (~2405 tok)
+- `purrfect-inventing-cascade.md` — Plan: Honor `use_trajec_sp` and add guarded `use_Kd` in mfc_core (~1304 tok)
 - `purrfect-sprouting-lovelace.md` — Plan: sim_anton cleanup + GCS shell + dual-ctrl flight plan (~1571 tok)
 - `resource-users-devinbellll-workspace-en-prancy-cupcake.md` — Plan: Fix IntelliSense — two separate root causes (~906 tok)
 - `the-complete-mfc-stack-mutable-whistle.md` — Plan: Complete parallel MFC stack (guidance + stabilization) alongside INDI (~3363 tok)
@@ -218,6 +219,7 @@
 - `2026-06-19-oneloop-mfc-dual-stack.md` — 2026-06-19 — oneloop_mfc: complete parallel MFC stack + independent layer switching (~1333 tok)
 - `2026-06-22-standalone-mfc-shadow-mode-bug.md` — 2026-06-22 — Why standalone ANTON_MFC diverges but ANTON_DUAL doesn't (MFC→MFC) (~1756 tok)
 - `2026-06-24-mfc-gain-propagation.md` — 2026-06-24 — MFC Gain Propagation (~896 tok)
+- `2026-06-24-mfc-usekd-trajec-sp.md` — 2026-06-24 — MFC core: honor `use_trajec_sp`, add guarded `use_Kd` (~547 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -961,13 +963,13 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
 
-- `oneloop_mfc.c` (~16673 tok)
+- `oneloop_mfc.c` (~16775 tok)
 - `oneloop_mfc.h` — Declares float (~1079 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
-- `mfc_core.c` (~1370 tok)
-- `mfc_core.h` (~671 tok)
+- `mfc_core.c` (~1553 tok)
+- `mfc_core.h` (~746 tok)
 - `stabilization_indi.c` (~12054 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
 - `stabilization_mfc.c` (~11310 tok)
