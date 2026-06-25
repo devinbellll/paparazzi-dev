@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-25T09:02:07.579Z
-> Files: 738 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-25T14:40:24.536Z
+> Files: 749 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -22,7 +22,8 @@
 
 ## ../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/
 
-- `MEMORY.md` (~38 tok)
+- `MEMORY.md` (~84 tok)
+- `mfc-flight-test-enablement.md` (~470 tok)
 - `runtime-sandbox-and-build-model.md` (~1062 tok)
 
 ## ../home/vscode/.claude/plans/
@@ -45,22 +46,23 @@
 - `.DS_Store` (~2186 tok)
 - `.gitignore` — Git ignore rules (~80 tok)
 - `.gitmodules` (~52 tok)
-- `analyze_mfc.py` — rms, fmt_bar, count_saturated, grade (~2502 tok)
+- `analyze_mfc.py` — gv, rms, fmt_bar, count_saturated (~3549 tok)
 - `build_image.sh` — ── Build the Paparazzi toolchain image (arm64-native) ──────────────────────── (~474 tok)
 - `CLAUDE.md` — OpenWolf (~3209 tok)
 - `Dockerfile.build` — ── Paparazzi headless build/sim toolchain — arm64-native ───────────────────── (~1295 tok)
 - `Dockerfile.paparazzi` — ── Layer 5: Paparazzi UAV Toolchains (legacy devcontainer base) ─────────────── (~636 tok)
 - `handover_bumptest.py` — ac_id, frame, block, setting (~1298 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
+- `mfc_ivy_probe.py` — Temporary probe: tap the Ivy bus for STAB_MFC + GUIDANCE_MFC, print decoded (~535 tok)
 - `plotjuggler_mfc.xml` (~8841 tok)
 - `pprz_ctrl.py` — find_sim_container, send_cmd, main (~760 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~811 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2345 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — NPS sim runner: Ivy telemetry, CSV logger (to sim_logs/), takeoff/switch cmds (~6400 tok)
-- `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1129 tok)
-- `tune_mfc.sh` — build ANTON_MFC nps, run timed sim, auto-analyze CSV with analyze_mfc.py (~600 tok)
+- `sim_anton.py` — pprz_block_frame, pprz_setting_frame, on_rate_attitude, on_pos_llh (~6636 tok)
+- `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1255 tok)
+- `tune_mfc.sh` — tune_mfc.sh — grade an MFC run with analyze_mfc.py, from any of three feeds: (~921 tok)
 
 ## .claude/
 
@@ -184,11 +186,14 @@
 - `2026-06-19.md` — Today (~370 tok)
 - `2026-06-22.md` — Today (~499 tok)
 - `2026-06-24.md` — Today (~309 tok)
+- `2026-06-25.md` — Today (~319 tok)
 
 ## Knowledge/Plans/
 
 - `Dual-Controller Handover Mode.md` — Plan — Dual-Controller Handover Mode (switch MFC ↔ INDI in flight) (~1755 tok)
 - `Dual-Controller Shadow Mode.md` — Plan — Dual-Controller Shadow Mode (MFC alongside INDI) (~2092 tok)
+- `MFC Flight-Test Enablement.md` — Plan — MFC Flight-Test Enablement (telemetry + SD fast-logging + analysis) (~3709 tok)
+- `sim_anton Paparazzi-Native Rework.md` — Plan — `sim_anton.py` Paparazzi-Native Rework (~1992 tok)
 
 ## Knowledge/Sessions/
 
@@ -220,6 +225,8 @@
 - `2026-06-22-standalone-mfc-shadow-mode-bug.md` — 2026-06-22 — Why standalone ANTON_MFC diverges but ANTON_DUAL doesn't (MFC→MFC) (~1756 tok)
 - `2026-06-24-mfc-gain-propagation.md` — 2026-06-24 — MFC Gain Propagation (~896 tok)
 - `2026-06-24-mfc-usekd-trajec-sp.md` — 2026-06-24 — MFC core: honor `use_trajec_sp`, add guarded `use_Kd` (~547 tok)
+- `2026-06-25-mfc-flight-test-enablement.md` — 2026-06-25 — MFC Flight-Test Enablement (Hoops_111_MFC) (~1422 tok)
+- `2026-06-25-nps-rc-script-attitude-zhold.md` — NPS RC emulation → ANTON_MFC takeoff + ATTITUDE_Z_HOLD via rc_script (~965 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -898,7 +905,7 @@
 
 ## paparazzi/conf/airframes/ENAC/
 
-- `conf_enac.xml` (~2150 tok)
+- `conf_enac.xml` (~2311 tok)
 
 ## paparazzi/conf/airframes/ENAC/hybrid/
 
@@ -909,11 +916,12 @@
 
 - `anton_dual.xml` (~4403 tok)
 - `anton_indi_aruco.xml` (~2774 tok)
-- `anton_mfc.xml` (~4182 tok)
+- `anton_mfc.xml` (~4223 tok)
 - `anton_oneloop.xml` (~4260 tok)
 - `cobraV2.xml` (~2527 tok)
 - `crow_indoor.xml` (~2351 tok)
 - `goose.xml` (~2697 tok)
+- `hoops_111_indoor.xml` (~4032 tok)
 - `maya_outdoor.xml` (~2343 tok)
 - `robobee.xml` (~2518 tok)
 
@@ -947,6 +955,7 @@
 ## paparazzi/conf/telemetry/
 
 - `default_rotorcraft.xml` (~2791 tok)
+- `mfc_flight_test.xml` (~3195 tok)
 
 ## paparazzi/sw/airborne/
 
@@ -958,7 +967,7 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6074 tok)
-- `guidance_mfc.c` (~5435 tok)
+- `guidance_mfc.c` (~5788 tok)
 - `guidance_mfc.h` (~432 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
@@ -1000,10 +1009,11 @@
 
 ## paparazzi/sw/ext/pprzlink/message_definitions/v1.0/
 
-- `messages.xml` — Declares name (~50742 tok)
+- `messages.xml` — Declares name (~51082 tok)
 
 ## paparazzi/sw/simulator/nps/
 
+- `nps_radio_control.c` — Declares NpsRadioControlType (~2134 tok)
 - `nps_scope.c` — ifndef _GNU_SOURCE (~1641 tok)
 
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
@@ -1019,3 +1029,7 @@
 - `sw/airborne/nps_scope_var.h` — firmware-facing shim (always-on include path). `NPS_SCOPE_VAR`/`NPS_SCOPE_VARN` macros register a global by address via `__attribute__((constructor))`; gated on `USE_NPS`, no-op on real targets. (~250 tok)
 - `sw/simulator/nps/nps_scope.c` — now controller-agnostic: fdm `truth` block + generic variable registry (`nps_scope_register`/`_array`), emits each registered var as a top-level JSON key. No MFC/controller references. (~900 tok)
 - `sw/simulator/nps/nps_scope.h` — adds `nps_scope_type_t` enum + register prototypes. (~250 tok)
+
+## tools/
+
+- `sdlog2scope.py` — convert, set_key, main (~1944 tok)

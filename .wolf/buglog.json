@@ -2454,6 +2454,184 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-24T14:20:15.216Z"
+    },
+    {
+      "id": "bug-143",
+      "timestamp": "2026-06-25T09:34:53.862Z",
+      "error_message": "Incorrect value in code",
+      "file": "sim_anton.py",
+      "root_cause": "Had \"Usage: {sys.argv[0]} AIRCRAFT [--gdb] [--fg] [--r",
+      "fix": "Changed to \"Usage: {sys.argv[0]} AIRCRAFT [--gdb] [--fg] [--r",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T09:34:53.862Z"
+    },
+    {
+      "id": "bug-144",
+      "timestamp": "2026-06-25T12:31:40.703Z",
+      "error_message": "Significant refactor of ",
+      "file": "Knowledge/Plans/MFC Flight-Test Enablement.md",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 4→6 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T12:31:40.703Z"
+    },
+    {
+      "id": "bug-145",
+      "timestamp": "2026-06-25T12:31:48.795Z",
+      "error_message": "Incorrect value in code",
+      "file": "Knowledge/Plans/MFC Flight-Test Enablement.md",
+      "root_cause": "Had `STAB_MFC`",
+      "fix": "Changed to `mfc/*`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T12:31:48.795Z"
+    },
+    {
+      "id": "bug-146",
+      "timestamp": "2026-06-25T13:43:01.867Z",
+      "error_message": "Incorrect value in code",
+      "file": "Knowledge/Plans/sim_anton Paparazzi-Native Rework.md",
+      "root_cause": "Had `messages`",
+      "fix": "Changed to `--render`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-25T13:43:38.450Z"
+    },
+    {
+      "id": "bug-147",
+      "timestamp": "2026-06-25T13:55:38.803Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/conf_enac.xml",
+      "root_cause": "Had \"modules/electrical.xml modules/gps.xml modules/gu",
+      "fix": "Changed to \"modules/electrical.xml modules/gps.xml modules/gu",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T13:55:38.803Z"
+    },
+    {
+      "id": "bug-148",
+      "timestamp": "2026-06-25T13:59:28.408Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c",
+      "root_cause": "Had \"firmwares/rotorcraft/navigation.h\"",
+      "fix": "Changed to \"generated/airframe.h\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T13:59:28.408Z"
+    },
+    {
+      "id": "bug-149",
+      "timestamp": "2026-06-25T14:00:01.111Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/conf/telemetry/mfc_flight_test.xml",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 8→20 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T14:00:01.111Z"
+    },
+    {
+      "id": "bug-150",
+      "timestamp": "2026-06-25T14:07:19.434Z",
+      "error_message": "Significant refactor of ",
+      "file": "analyze_mfc.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 16→112 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T14:07:19.434Z"
+    },
+    {
+      "id": "bug-151",
+      "timestamp": "2026-06-25T14:08:14.607Z",
+      "error_message": "Wrong reference: CSV should be Input",
+      "file": "analyze_mfc.py",
+      "root_cause": "Used \"CSV\" instead of \"Input\"",
+      "fix": "Changed CSV → Input",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T14:08:14.607Z"
+    },
+    {
+      "id": "bug-mfc-hoops-g1-comma",
+      "timestamp": "2026-06-25T00:00:00.000Z",
+      "error_message": "Hoops INDI G1 thrust row had a missing comma: { -0.7, -0.7 -0.7, -0.7} parses as 3 elements with middle = -1.4",
+      "file": "conf/airframes/ENAC/quadrotor/hoops_111_indoor.xml",
+      "root_cause": "Typo in the existing STABILIZATION_ATTITUDE_INDI G1 matrix thrust row (missing comma between the 2nd and 3rd elements)",
+      "fix": "Corrected to {-0.7,-0.7,-0.7,-0.7} when writing the new STABILIZATION_MFC G1 section (the active stabilizer); INDI section left as-is since it is now unused",
+      "tags": [
+        "airframe",
+        "G1",
+        "mfc",
+        "typo",
+        "hoops"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T00:00:00.000Z"
+    },
+    {
+      "id": "bug-153",
+      "timestamp": "2026-06-25T14:40:24.587Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/mfc-flight-test-enablement.md",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 3→10 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T14:40:24.587Z"
     }
   ]
 }

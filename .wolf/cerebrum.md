@@ -229,6 +229,69 @@
 - `AP_MODE_ATTITUDE_Z_HOLD`: horizontal = attitude sticks, vertical = `GUIDANCE_V_MODE_HOVER` which captures z on entry and **ignores the throttle stick**. So you can't "throttle up to climb" in Z-hold; climb must happen in another mode (NAV) first.
 - Added `radio_control_script_fp_takeoff_zhold` (index 5) for ANTON_MFC: AUTO2/NAV climb window (NPS_FP_CLIMB_TIME=15s) then AUTO1/ATTITUDE_Z_HOLD with a cycled roll/pitch/yaw step schedule. ANTON_MFC airframe maps AUTO1=ATTITUDE_Z_HOLD.
 
+## Key Learnings (appended 2026-06-25 — host-side flashing)
+- Hoops_111_MFC → airframe `hoops_111_indoor.xml` → board **tawaki_2.0** = STM32H743xI (Cortex-M7, Device ID 0x450), flash base 0x08000000. Default `FLASH_MODE ?= DFU-UTIL` (`conf/boards/tawaki_2.0.makefile:60`). ITCM mode (USE_ITCM=1) flashes 0x00200000 and CANNOT use dfu-util (SWD/ST-Link only); default USE_ITCM=0.
+- Flashing happens on the **Mac/host**, never the sandbox (USB device is physical). Build runs in container → `.elf/.bin/.hex` land in `var/aircrafts/<AC>/<TARGET>/obj/`.
+- DON'T flash the `.elf` with STM32CubeProgrammer — its zero-size RAM segments (0x20000000, 0x2402xxxx) trigger "File corrupted. Two or more segments define the same memory zone". Flash `.hex` or `.bin`+addr instead.
+- `make ... -f Makefile.ac ap.upload` fails on the lean Mac with "No rule to make target ap.upload" — NOT because the rule is missing (it's at Makefile.ac:220) but because its prereq chain `%.upload→%.compile→%.ac_h→$(GENERATORS)/gen_aircraft.out` needs the OCaml codegen binary the Mac doesn't have; GNU make drops the unsatisfiable pattern rule. Bypass it: call the airborne upload target directly: `make -C $PPRZ/sw/airborne TARGET=ap AIRCRAFT=<AC> PAPARAZZI_SRC=$PPRZ PAPARAZZI_HOME=$PPRZ upload` (needs only the generated `var/aircrafts/<AC>/Makefile.ac` + the bin). Pick flasher with `FLASH_MODE=` (STLINK→st-flash, DFU_CUBE→STM32_Programmer_CLI, default DFU-UTIL→dfu-util). For DFU_CUBE on Mac also override `CUBE_PROGRAMMER=$(which STM32_Programmer_CLI)` (makefile hardcodes /usr/local path).
+
 ## Do-Not-Repeat (2026-06-25)
 - Don't claim NPS flight behavior works from compile-only. The headless CSV/debug logs from sim_anton.py read all-zero/frozen-t in this sandbox (its in-container Ivy client doesn't bind telemetry), so they are NOT a witness. Verify by probing the Ivy bus directly: run a python ivy listener inside a sibling `--network host` container on 127.255.255.255:2010 and decode ROTORCRAFT_STATUS (ap_mode field is the 6th payload value; 9=ATTITUDE_Z_HOLD) + ROTORCRAFT_FP (up*0.0039063 = metres).
 - rc_script 5 result: takeoff via NAV + ATTITUDE_Z_HOLD entry CONFIRMED (motors on, armed, in_flight, ap_mode=9). USER CONFIRMED THE FEATURE WORKS in their own test (2026-06-25). My headless probe saw a continuous altitude climb (~164->195m) but that was most likely a probe/altitude-reference misread or transient, NOT a real defect - do not assert it's broken. If altitude hold ever does misbehave, trace whether stabilization_mfc consumes guidance_v's HOVER thrust or its own GUIDANCE_MFC_GZ_* path.
+- MFC internals are ALREADY registered in NPS_SCOPE by their owning modules — don't propose adding them or editing `nps_scope_state.c` (it is generic). Stab: `stabilization_mfc.c:370-391` → `mfc/{roll,pitch,yaw}/{sp,sp_traj,meas,err,fk,cmd}`, `mfc/act`, `wls/{v,u}`. Guidance: `guidance_mfc.c:168-192` → `mfc_g/{x,y,z}/{sp,sp_traj,meas,fk,cmd}`, `mfc_g/acc2att/*`. These key names ARE the unified JSON schema contract. (Always grep for existing `NPS_SCOPE_VAR` before claiming a signal is missing.) Note: guidance_mfc has scope vars but NO downlink/SD telemetry message — a `GUIDANCE_MFC` pprzlink message is still needed for the flight/SD path.
+
+## Key Learnings (appended 2026-06-25 — MFC flight-test enablement)
+- `GUIDANCE_MFC` telemetry message now EXISTS: **id 57**, mirrors STAB_MFC for the
+  guidance layer (per-axis sp/meas/err/fk + cmd). `send_guidance_mfc()` +
+  register in `guidance_mfc.c` (gated `#if PERIODIC_TELEMETRY`). Free telemetry
+  ids were 7/13/51/57 on feat/shadow-handoff (251/255 used). Don't forget the
+  pprzlink header regen (`make ... pymessages`) before building — `pprz.sh build`
+  does NOT regen, you get `PPRZ_MSG_ID_GUIDANCE_MFC undeclared`.
+- **`stabilization_mfc.c` consumes `GUIDANCE_MFC_TILT_PPRZ_SCALE` /
+  `GUIDANCE_MFC_TWIST_PPRZ_SCALE`** (not just guidance) — they set the roll/pitch
+  (TILT) and yaw (TWIST) virtual-command u_min/u_max clamps = ±MAX_PPRZ/scale.
+  `THRUST_PPRZ_SCALE` sets the gz clamp in guidance_mfc.c. All three are
+  structural: derive from the airframe G1 as 1000/(2·roll_eff), 1000/(2·yaw_eff),
+  1000/(4·thrust_eff). Convention numerator is 1000 (matches anton_mfc).
+- **A stab=mfc airframe needs `STABILIZATION_MFC_COMMANDS` ONLY if it uses named
+  motor commands.** `stabilization_mfc.c:856` writes the global `actuators_pprz[]`
+  unconditionally; it ALSO sets `cmd[act_to_commands[i]]` only when COMMANDS is
+  defined. Airframes whose command_laws read `actuators_pprz[0..3]` directly
+  (Hoops, INDI-style) need NO COMMANDS map. anton_mfc DOES (it uses `@FR` laws +
+  COMMAND_FR). bug-122's note that stab=mfc "doesn't compile" is stale — Hoops
+  builds both ap+nps with stab=mfc+guidance=mfc.
+- **`flight_recorder` module `<depends>logger_sd_chibios,pprzlog</depends>`** — one
+  `<module name="flight_recorder"/>` line pulls in the whole SD binary-log chain;
+  no need to declare logger_sd_chibios separately unless overriding SDLOG_* config.
+  It logs the telemetry `FlightRecorder` process; TELEMETRY_FREQUENCY defaults to
+  PERIODIC_FREQUENCY (500 Hz cap). Tawaki v2 uses default SDLOG_SDIO=SDCD1.
+- **Unified MFC analysis schema is live**: `tools/sdlog2scope.py` maps a decoded
+  `.data` (sd2log output) → NPS_SCOPE ndjson keyed `mfc/*`,`mfc_g/*`,`wls/*`,
+  `truth/*` (truth from MFC measured attitude/position — no JSBSim truth in
+  flight). `analyze_mfc.py` auto-detects CSV vs scope-JSON; `tune_mfc.sh` gained
+  `--scope FILE` + `--flight LOG.data`. Unit gotcha: scope truth angles are
+  DEGREES but analyze_mfc's phi/theta path applies *R2D, so the JSON loader feeds
+  radians (truth_deg/R2D); errors/fk/cmd pass through (radians/unitless).
+
+## Decision Log additions (2026-06-25)
+- Defaulted Hoops_111_MFC to the FULL MFC stack (guidance+stab=mfc, == anton_mfc)
+  rather than the plan's attitude-only first config, because it's the proven
+  buildable config and "everything in place" was the goal; attitude-only is a
+  documented 1-line guidance→indi swap. The cross pair guidance=indi+stab=mfc
+  risks the bug-122 thrust-unit union path, so it's NOT the default.
+
+## Do-Not-Repeat additions (2026-06-25 — SITL test of MFC enablement)
+- **`ins ext_pose` (OptiTrack) gets NO state feed in stock NPS** → an airframe on
+  ext_pose flies on a garbage estimate in SITL (Hoops_111_MFC NPS: `me_z` started
+  at -44 m, attitude diverged 60-70°). It is NOT an MFC/controller fault. No NPS
+  ext_pose sender exists; `ins_ext_pose.c` has no SITL path; only hoops_111_indoor
+  + hexa_tilted_motors use ext_pose, every other ENAC quad uses `ekf2` for nps. To
+  test MFC *flight behaviour* in SITL, override the **nps target** INS to `ekf2`
+  (keep `ext_pose` on `ap`), or wire a mocap feed. Don't chase MFC gains for an
+  ext_pose airframe's NPS divergence until the state estimate is valid.
+- **Tap MFC telemetry in NPS via a sibling `--network host` container Ivy listener**
+  on `127.255.255.255:2010` binding `(\d+ STAB_MFC .*)` / `(\d+ GUIDANCE_MFC .*)`.
+  `link` re-emits firmware binary PPRZ as Ivy text `<ac_id> MSG f1 f2 …`. Reformat
+  to paparazzi `.data` (`<t> <ac_id> MSG fields`) — same format `sd2log` emits — to
+  exercise tools/sdlog2scope.py + analyze_mfc.py without hardware. VERIFIED 2026-06-25:
+  STAB_MFC@20Hz/19f + GUIDANCE_MFC(id57)@10Hz/15f decode, full analysis chain runs.

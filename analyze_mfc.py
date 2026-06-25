@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 """
-analyze_mfc.py — Read an mfc_sim_*.csv produced by sim_anton.py and print
-a concise per-axis stability report to guide tuning.
+analyze_mfc.py — print a concise per-axis MFC stability report to guide tuning.
+
+Accepts EITHER feed (same metrics for sim and real flight — the whole point of
+the unified NPS_SCOPE schema):
+  • a wide CSV from sim_anton.py            (legacy keys: mfc_err_phi, agl, …)
+  • a unified scope-JSON stream / capture   (keys: mfc/roll/err, truth/agl, …)
+    — i.e. a recorded NPS scope capture, or the output of tools/sdlog2scope.py
+      on a downloaded SD flight log. One analyser, three feeds.
+
+Format is auto-detected from the file extension / first byte.
 
 Usage:
-    python3 analyze_mfc.py /tmp/mfc_sim_20260622_123456.csv [--skip SEC]
+    python3 analyze_mfc.py CAPTURE.csv  [--skip SEC] [--steady]
+    python3 analyze_mfc.py CAPTURE.json [--skip SEC] [--steady]   # scope ndjson
 
 Options:
     --skip SEC   Ignore the first SEC seconds (startup transient). Default: 5.0
@@ -12,12 +21,99 @@ Options:
 """
 
 import csv
+import json
 import math
 import sys
 
+R2D = math.degrees(1)
+
+# ── scope-key -> legacy-CSV-key mapping ───────────────────────────────────────
+# The rest of this script speaks the CSV keys (mfc_err_phi, …). A scope-JSON row
+# ({"t":…, "truth":{…}, "mfc/roll/err":…}) is translated into the same keys here,
+# preserving the CSV's UNIT conventions:
+#   • errors / fk / cmd  : radians / unitless — passed through as-is
+#   • phi/theta          : the script multiplies by R2D, so feed RADIANS
+#                          (truth/* angles are degrees in the scope → /R2D)
+#   • agl                : metres, as-is
+#   • rc_thrust          : motor-output proxy = mean(mfc/act) (pprz 0..9600)
+def _scope_row_to_csv(o):
+    """Flatten one scope-JSON object (truth nested or flat slash-keys) to the
+    legacy CSV key space used by the metrics below."""
+    g = {}
+
+    def gv(k):
+        if k in o:
+            return o[k]
+        # truth.* may be nested under "truth"
+        if k.startswith("truth/") and isinstance(o.get("truth"), dict):
+            return o["truth"].get(k.split("/", 1)[1])
+        return None
+
+    r = {}
+    r["wall"] = o.get("t")
+    r["mfc_err_phi"]   = gv("mfc/roll/err")
+    r["mfc_err_theta"] = gv("mfc/pitch/err")
+    r["mfc_err_psi"]   = gv("mfc/yaw/err")
+    r["mfc_fk_phi"]    = gv("mfc/roll/fk")
+    r["mfc_fk_theta"]  = gv("mfc/pitch/fk")
+    r["mfc_fk_psi"]    = gv("mfc/yaw/fk")
+    r["mfc_cmd_phi"]   = gv("mfc/roll/cmd")
+    r["mfc_cmd_theta"] = gv("mfc/pitch/cmd")
+    r["mfc_cmd_psi"]   = gv("mfc/yaw/cmd")
+
+    act = gv("mfc/act")
+    if isinstance(act, list):
+        for i in range(4):
+            r[f"mfc_u{i}"] = act[i] if i < len(act) else None
+        thr = [a for a in act[:4] if a is not None]
+        r["rc_thrust"] = sum(thr) / len(thr) if thr else None
+    else:
+        r["rc_thrust"] = None
+
+    agl = gv("truth/agl")
+    r["agl"] = agl
+    phi_deg   = gv("truth/phi")
+    theta_deg = gv("truth/theta")
+    # script expects radians (it applies *R2D); scope truth angles are degrees
+    r["phi"]   = (phi_deg   / R2D) if phi_deg   is not None else None
+    r["theta"] = (theta_deg / R2D) if theta_deg is not None else None
+    return r
+
+
+def _load_rows(path):
+    """Return list of CSV-key row dicts from a .csv or scope-.json/.ndjson file."""
+    # sniff: extension first, then first non-space byte
+    is_json = path.lower().endswith((".json", ".ndjson", ".jsonl"))
+    if not is_json:
+        with open(path) as f:
+            for ch in f.read(64):
+                if ch.isspace():
+                    continue
+                is_json = ch in "{["
+                break
+
+    rows = []
+    if is_json:
+        with open(path) as f:
+            for line in f:
+                line = line.strip().rstrip(",")
+                if not line or line in ("[", "]"):
+                    continue
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                rows.append(_scope_row_to_csv(obj))
+    else:
+        with open(path, newline="") as f:
+            for row in csv.DictReader(f):
+                rows.append({k: float(v) if v not in ("", "None") else None
+                             for k, v in row.items()})
+    return rows
+
 # ── parse args ────────────────────────────────────────────────────────────────
 args = sys.argv[1:]
-csv_path  = None
+in_path  = None
 skip_sec  = 5.0
 steady_only = False
 
@@ -28,28 +124,25 @@ while i < len(args):
         skip_sec = float(args[i+1]); i += 2
     elif a == "--steady":
         steady_only = True; i += 1
-    elif csv_path is None:
-        csv_path = a; i += 1
+    elif in_path is None:
+        in_path = a; i += 1
     else:
         i += 1
 
-if csv_path is None:
-    print(f"Usage: {sys.argv[0]} <csv_path> [--skip SEC] [--steady]", file=sys.stderr)
+if in_path is None:
+    print(f"Usage: {sys.argv[0]} <capture.csv|capture.json> [--skip SEC] [--steady]",
+          file=sys.stderr)
     sys.exit(1)
+csv_path = in_path   # kept for the report header below
 
-# ── load CSV ─────────────────────────────────────────────────────────────────
-rows = []
-with open(csv_path, newline="") as f:
-    reader = csv.DictReader(f)
-    for row in reader:
-        rows.append({k: float(v) if v not in ("", "None") else None
-                     for k, v in row.items()})
+# ── load (CSV or unified scope JSON, auto-detected) ──────────────────────────
+rows = _load_rows(in_path)
 
 if not rows:
-    print("CSV is empty.", file=sys.stderr)
+    print("Capture is empty (no rows parsed).", file=sys.stderr)
     sys.exit(1)
 
-# Reconstruct a sim-time column from the wall clock
+# Reconstruct a sim-time column from the wall clock / scope timestamp
 t0 = rows[0].get("wall") or 0.0
 for row in rows:
     row["sim_t"] = (row.get("wall") or t0) - t0
@@ -168,7 +261,7 @@ def grade(rms_deg):
 
 print(LINE)
 print(f"  MFC Stability Report")
-print(f"  CSV    : {csv_path}")
+print(f"  Input  : {csv_path}")
 print(f"  Duration: {total_sec:.1f} s   Analysis window: {skip_sec:.1f}–{total_sec:.1f} s  ({n} rows)")
 print(LINE)
 
