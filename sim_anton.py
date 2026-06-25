@@ -3,7 +3,7 @@
 Launch a Paparazzi NPS simulation and print live aircraft state to the terminal.
 Sends a takeoff command sequence 1 second after the sim is ready.
 
-Usage:  python3 sim_anton.py AIRCRAFT [--gdb] [--fg] [--render] [--switch-after SEC]
+Usage:  python3 sim_anton.py AIRCRAFT [--gdb] [--fg] [--render] [--switch-after SEC] [--rc_script N]
         Ctrl-C to stop (kills child processes cleanly).
 
   AIRCRAFT  Aircraft name as registered in the conf XML (e.g. ANTON_MFC).
@@ -14,6 +14,10 @@ Flags:
   --render          Enable the live TUI dashboard (default: plain debug log to stdout).
   --fg              Stream NET_FDM pose to FlightGear on the Mac host (host.docker.internal:5501).
   --switch-after N  Switch to MFC N seconds after takeoff, then back to INDI N seconds later.
+  --rc_script N     Drive RC from a compiled-in NPS stick script instead of --norc
+                    (0=hover 1=step_roll 2=step_pitch 3=step_yaw 4=ff; auto-takeoff for first 8 s).
+                    Script 5 = FP takeoff (NAV) then ATTITUDE_Z_HOLD with a scheduled
+                    roll/pitch/yaw step sequence (ANTON_MFC: AUTO1=ATTITUDE_Z_HOLD).
 
 Interactive commands (type in the sim terminal, or pipe via pprz_ctrl.py):
   block <id>              jump to flight plan block
@@ -71,6 +75,9 @@ while i < len(_args):
     if a == "--switch-after" and i + 1 < len(_args):
         _flags["switch_after"] = float(_args[i + 1])
         i += 2
+    elif a == "--rc_script" and i + 1 < len(_args):
+        _flags["rc_script"] = int(_args[i + 1])
+        i += 2
     elif a.startswith("-"):
         _flags[a] = True
         i += 1
@@ -81,7 +88,7 @@ while i < len(_args):
         i += 1
 
 if AC_NAME is None:
-    print(f"Usage: {sys.argv[0]} AIRCRAFT [--gdb] [--fg] [--render] [--switch-after SEC]",
+    print(f"Usage: {sys.argv[0]} AIRCRAFT [--gdb] [--fg] [--render] [--switch-after SEC] [--rc_script N]",
           file=sys.stderr)
     sys.exit(1)
 
@@ -90,6 +97,7 @@ _GDB          = "--gdb"      in _flags
 _USE_FG       = "--fg"       in _flags
 _USE_SCOPE    = "--no-scope" not in _flags
 _SWITCH_AFTER = _flags.get("switch_after")   # seconds after takeoff, or None
+_RC_SCRIPT    = _flags.get("rc_script")      # NPS compiled RC script index, or None
 
 # ── Look up AC_ID from the conf XML ──────────────────────────────────────────
 def _lookup_ac_id(pprz_home: str, conf_rel: str, name: str) -> int | None:
@@ -457,7 +465,12 @@ def main():
         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
 
-    _sim_cmd = [SIMSITL, "--norc"]
+    # RC source: a compiled-in NPS script (--rc_script N) drives the sticks
+    # (script 0=hover, 1=step_roll, 2=step_pitch, 3=step_yaw, 4=ff; all auto-
+    # take off for the first 8 s — see sw/simulator/nps/nps_radio_control.c).
+    # Otherwise RC is disabled (--norc) and control comes from the flight plan.
+    _sim_cmd = [SIMSITL]
+    _sim_cmd += ["--rc_script", str(_RC_SCRIPT)] if _RC_SCRIPT is not None else ["--norc"]
     if _USE_FG:
         _sim_cmd += ["--fg_host", FG_HOST, "--fg_port", str(FG_PORT), "--fg_fdm"]
     if _USE_SCOPE:
