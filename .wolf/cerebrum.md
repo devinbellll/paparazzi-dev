@@ -295,3 +295,15 @@
   to paparazzi `.data` (`<t> <ac_id> MSG fields`) — same format `sd2log` emits — to
   exercise tools/sdlog2scope.py + analyze_mfc.py without hardware. VERIFIED 2026-06-25:
   STAB_MFC@20Hz/19f + GUIDANCE_MFC(id57)@10Hz/15f decode, full analysis chain runs.
+
+## Key Learnings additions (2026-06-29 — NPS-scope ↔ ivy PlotJuggler parity)
+
+- The NPS scope JSON now mirrors the ivy-server tree: every datagram is `{ "<AIRFRAME_NAME> (sim)": { "TRUTH":{…}, "<MSG>/<field>":v, … }, "timestamp": fdm.time }`. ivy uses root `"<name> (<id>)"` (Hoops_111_MFC → `Hoops_111_MFC (111)`, NOT 177 — the plan's 177 was stale ANTON). Registration keys are the message schema: `STAB_MFC/sp_phi`, `GUIDANCE_MFC/sp_traj_x`, `WLS_U/u/u_0`, `WLS_V/v/v_0`, acc2att in its own `ACC2ATT/*` branch. nps_scope_state.c extras uppercased to EST/SENSORS/SP/MODE. nps_scope.c includes generated/airframe.h for AIRFRAME_NAME (a string literal → usable in the format via literal concat).
+- pprzlink array fields render in PlotJuggler as `field/field_N`, so the scope prefix to match ivy is `WLS_U/u/u_` → `WLS_U/u/u_0` (tree WLS_U→u→u_0). PlotJuggler's UDP/JSON parser prepends a leading `/` to the top-level key, so series names are `/Hoops_111_MFC (sim)/STAB_MFC/sp_phi`.
+- STAB_MFC u0..u3 are the WLS solution `mfc_u[]` (float), not the int16 `actuators_pprz` — both the send site and the scope register `mfc_u`.
+- To regenerate pprzlink C message headers after editing the submodule messages.xml WITHOUT reverting edits: `make -C sw/ext/pprzlink pymessages MESSAGES_INSTALL=$PAPARAZZI_HOME/var PPRZLINK_LIB_VERSION=2.0 VALIDATE_XML=FALSE` (uses gen_messages.py; writes var/include/pprzlink/* + copies var/messages.xml; no git submodule update). `pprz.sh build` does NOT auto-regen these on a messages.xml change.
+- Free pprzlink telemetry ids are scarce (only 7, 13, 51 free as of this branch). GUIDANCE_MFC id=57 is UNIQUE within the telemetry class; TARGET_POS id=57 is in the *datalink* class — different class, so NO real collision. Did NOT reassign GUIDANCE_MFC (would burn a scarce id + break compatibility for no benefit), contra the plan's id-57 item.
+
+## Decision Log additions (2026-06-29)
+- Kept GUIDANCE_MFC at telemetry id 57: per-class id space means the datalink TARGET_POS(57) does not collide. Reassigning would waste one of only three free telemetry ids and is unnecessary. Flagged to user.
+- Made guidance_mfc.c nps_* acc2att globals + their assignment unconditional (were #ifdef SITL) so the new GUIDANCE_MFC_ACC2ATT flight-test (ap) telemetry/SD message can read them; only the NPS_SCOPE_VAR registrations stay under SITL.

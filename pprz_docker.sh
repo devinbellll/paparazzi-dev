@@ -77,6 +77,7 @@ pprz_run() {
     -e HOME=/tmp \
     -e PAPARAZZI_HOME=/workspace/paparazzi \
     -e PAPARAZZI_SRC=/workspace/paparazzi \
+    -e CAML_LD_LIBRARY_PATH=/workspace/paparazzi/var/lib/ocaml/pprzlink:/workspace/paparazzi/sw/lib/ocaml \
     -e PPRZ_HOST_ROOT="$PPRZ_HOST_ROOT" \
     -e PPRZ_HOST_CC="${PPRZ_HOST_CC:-}" \
     -e CONF="${CONF:-}" \
