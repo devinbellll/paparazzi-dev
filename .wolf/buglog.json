@@ -2931,6 +2931,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-01T08:29:58.484Z"
+    },
+    {
+      "id": "bug-171",
+      "timestamp": "2026-07-01T11:20:44.046Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/stabilization_mfc.c",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 3→3 lines (3 removed) | Also: mfc_pitch.kp             = 8;; mfc_pitch.kd             = 5;",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-01T11:20:48.579Z"
+    },
+    {
+      "id": "bug-172",
+      "timestamp": "2026-07-01T11:21:09.167Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/conf/modules/stabilization_mfc.xml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 15→21 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-01T11:21:09.167Z"
+    },
+    {
+      "id": "bug-173",
+      "timestamp": "2026-07-01T11:22:32.141Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/conf/modules/guidance_mfc.xml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 15→21 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-01T11:22:32.141Z"
     }
   ]
 }

@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-01T08:29:58.471Z
-> Files: 759 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-01T11:28:35.104Z
+> Files: 760 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -236,6 +236,7 @@
 - `2026-06-25-nps-rc-script-attitude-zhold.md` — NPS RC emulation → ANTON_MFC takeoff + ATTITUDE_Z_HOLD via rc_script (~965 tok)
 - `2026-06-29-nps-scope-ivy-plotjuggler-parity.md` — Session — 2026-06-29: NPS-scope ↔ ivy-server PlotJuggler parity (MFC) (~1050 tok)
 - `2026-06-30-mfc-runtime-tuneability.md` — 2026-06-30 — MFC runtime tuneability (allocator + thrust toggles, unified shortnames) (~896 tok)
+- `2026-07-01-flight-test-streaming-fix-and-kd-tuneability.md` — Session — 2026-07-01: Flight-Test Streaming Fix + kd/use_Kd Tuneability (~706 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -950,12 +951,12 @@
 
 - `guidance_dual_mfc_indi.xml` (~766 tok)
 - `guidance_mfc_oneloop.xml` (~215 tok)
-- `guidance_mfc.xml` (~1828 tok)
+- `guidance_mfc.xml` (~2455 tok)
 - `nps_scope_state.xml` (~240 tok)
-- `oneloop_mfc.xml` (~1133 tok)
+- `oneloop_mfc.xml` (~1678 tok)
 - `stabilization_dual_mfc_indi.xml` (~903 tok)
 - `stabilization_mfc_oneloop.xml` (~272 tok)
-- `stabilization_mfc.xml` (~2815 tok)
+- `stabilization_mfc.xml` (~3511 tok)
 
 ## paparazzi/conf/simulator/flightgear/
 
@@ -976,12 +977,12 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6074 tok)
-- `guidance_mfc.c` (~6320 tok)
+- `guidance_mfc.c` (~6484 tok)
 - `guidance_mfc.h` (~557 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
 
-- `oneloop_mfc.c` (~17003 tok)
+- `oneloop_mfc.c` (~17341 tok)
 - `oneloop_mfc.h` — Declares float (~1114 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
@@ -990,7 +991,7 @@
 - `mfc_core.h` (~746 tok)
 - `stabilization_indi.c` (~12056 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
-- `stabilization_mfc.c` (~11453 tok)
+- `stabilization_mfc.c` (~11625 tok)
 - `stabilization_mfc.h` — PPRZ command to each actuator (~647 tok)
 
 ## paparazzi/sw/airborne/modules/control_dual/
