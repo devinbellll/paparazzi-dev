@@ -2,7 +2,7 @@
 
 > OpenWolf's learning memory. Updated automatically as the AI learns from interactions.
 > Do not edit manually unless correcting an error.
-> Last updated: 2026-06-04
+> Last updated: 2026-07-01
 
 ## User Preferences
 
@@ -311,6 +311,13 @@
 ## Decision Log additions (2026-06-29)
 - Kept GUIDANCE_MFC at telemetry id 57: per-class id space means the datalink TARGET_POS(57) does not collide. Reassigning would waste one of only three free telemetry ids and is unnecessary. Flagged to user.
 - Made guidance_mfc.c nps_* acc2att globals + their assignment unconditional (were #ifdef SITL) so the new GUIDANCE_MFC_ACC2ATT flight-test (ap) telemetry/SD message can read them; only the NPS_SCOPE_VAR registrations stay under SITL.
+
+## Key Learnings additions (2026-07-01 — flight-test streaming fix + kd/use_Kd rollout)
+
+- **`server.ml`'s `udp_sockaddr` was bound at module-load time, before `Arg.parse` ran** — a top-level `let udp_sockaddr = Unix.ADDR_INET(...)` evaluates immediately when the .ml file loads, capturing the *default* `!udp_json_stream_addr`/`_port` refs, not whatever `-udp_json_stream_addr` later sets. So the flag was silently a no-op for the entire life of this feature (matches the now-corrected `plotjuggler-server-udp-json` memory claim that "addr/port flags are dead"). Fix: make it a `ref`, and re-resolve it in `main()` right after `Arg.parse` returns. Verified end-to-end against real flight-test hardware — PlotJuggler now receives the stream at the real host IP, not just 127.0.0.1.
+- **`mfc_core.c`'s feedforward acceleration was wrongly zeroed whenever `use_trajec_sp=false`.** The trajectory filter and the feedforward derivative are logically separate: even when raw-setpoint tracking is selected (guidance axes normally set `use_trajec_sp=0`), the double-difference feedforward term should still be computed from `setpoint_trajec` history (which becomes `[raw_sp, raw_sp, raw_sp]`-ish under bypass) — it was being hardcoded to `0.f` in the false branch instead, which suppressed feedforward entirely on any step/ramp input for every guidance axis. Fixed by hoisting the derivative computation out of the if/else so it always runs.
+- **kd/use_Kd are now first-class tuneable parameters on every MFC axis** (stabilization roll/pitch/yaw, guidance gx/gy/gz, and oneloop_mfc's self-contained copies of both) — compile-time `#ifndef` default + airframe-XML override + runtime `dl_setting`, matching the exact pattern used for kp/alpha/traj (see the 2026-06-30 entry below). `guidance_indi.c`'s `mfc_thrust` (the deprecated `GUIDANCE_INDI_THRUST_MFC` path, superseded by `guidance_mfc`) was deliberately left untouched — the file's own comment says it's hardcoded on the way out.
+- Restoring `stabilization_mfc.c`'s roll/pitch `kp` to read from their macros (they'd been hardcoded to literals `6`/`8` during flight tuning) required bumping the module's `PITCH_PROPORTIONAL_GAIN` default from `6.` to `8.` to keep compiled behavior identical — always check the module XML default matches a literal before restoring the macro, or you silently change tuning.
 
 ## Decision Log additions (2026-06-30 — MFC runtime tuneability)
 - **Allocator + thrust-packaging mode are now RUNTIME dl_settings, not `#if` defines.** Converted `STABILIZATION_MFC_ALLOCATION_PSEUDO_INVERSE` → `bool stabilization_mfc_use_pseudo_inverse` (and `oneloop_mfc_use_pseudo_inverse` in oneloop_mfc.c), and `GUIDANCE_MFC_THRUST_TO_PPRZ` → `bool guidance_mfc_thrust_to_pprz`. Pattern follows `mfc_use_adaptive`: keep the `#ifndef…#define…FALSE` default, init the bool from the macro, branch with a plain `if`. Required **de-guarding both allocator paths** (WLS state `wls_stab_p`/`act_pref`/`set_wls_settings` AND `calc_g1g2_pseudo_inv`/`g1g2_pseudo_inv`) so both compile; `calc_g1g2_pseudo_inv()` is now called unconditionally in init + lms so a live switch has no uninitialised state. Toggles are non-persistent (a bad allocator never saved to flash). Why: flight-test tuning without re-flash.
