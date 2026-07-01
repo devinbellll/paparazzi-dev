@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-29T12:59:33.895Z
-> Files: 754 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-01T08:29:58.471Z
+> Files: 759 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -14,6 +14,7 @@
 
 ## ../../../../../../home/agent/.claude/plans/
 
+- `foamy-growing-origami.md` — MFC tuneability: runtime toggles + unified shortnames (~1744 tok)
 - `look-at-build-fw-sh-and-async-kettle.md` — Plan: Decouple Claude/VSCode from the Paparazzi build env via ephemeral arm64 containers (~2405 tok)
 - `purrfect-inventing-cascade.md` — Plan: Honor `use_trajec_sp` and add guarded `use_Kd` in mfc_core (~1304 tok)
 - `purrfect-sprouting-lovelace.md` — Plan: sim_anton cleanup + GCS shell + dual-ctrl flight plan (~1571 tok)
@@ -26,7 +27,7 @@
 - `MEMORY.md` (~187 tok)
 - `mfc-flight-test-enablement.md` (~470 tok)
 - `nps-scope-ivy-parity.md` (~362 tok)
-- `plotjuggler-server-udp-json.md` (~371 tok)
+- `plotjuggler-server-udp-json.md` (~417 tok)
 - `runtime-sandbox-and-build-model.md` (~1213 tok)
 
 ## ../home/vscode/.claude/plans/
@@ -190,6 +191,7 @@
 - `2026-06-22.md` — Today (~499 tok)
 - `2026-06-24.md` — Today (~309 tok)
 - `2026-06-25.md` — Today (~319 tok)
+- `2026-06-29.md` — Today (~324 tok)
 
 ## Knowledge/Plans/
 
@@ -198,6 +200,7 @@
 - `MFC Flight-Test Enablement.md` — Plan — MFC Flight-Test Enablement (telemetry + SD fast-logging + analysis) (~3709 tok)
 - `NPS-Scope Ivy PlotJuggler Parity.md` — NPS-scope ↔ ivy-server PlotJuggler parity (MFC) (~2399 tok)
 - `sim_anton Paparazzi-Native Rework.md` — Plan — `sim_anton.py` Paparazzi-Native Rework (~1992 tok)
+- `Third-Update-Slide-Guide.md` — Third Update — Slide Guide for the PowerPoint Agent (~2820 tok)
 
 ## Knowledge/Sessions/
 
@@ -232,6 +235,7 @@
 - `2026-06-25-mfc-flight-test-enablement.md` — 2026-06-25 — MFC Flight-Test Enablement (Hoops_111_MFC) (~1422 tok)
 - `2026-06-25-nps-rc-script-attitude-zhold.md` — NPS RC emulation → ANTON_MFC takeoff + ATTITUDE_Z_HOLD via rc_script (~965 tok)
 - `2026-06-29-nps-scope-ivy-plotjuggler-parity.md` — Session — 2026-06-29: NPS-scope ↔ ivy-server PlotJuggler parity (MFC) (~1050 tok)
+- `2026-06-30-mfc-runtime-tuneability.md` — 2026-06-30 — MFC runtime tuneability (allocator + thrust toggles, unified shortnames) (~896 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -946,12 +950,12 @@
 
 - `guidance_dual_mfc_indi.xml` (~766 tok)
 - `guidance_mfc_oneloop.xml` (~215 tok)
-- `guidance_mfc.xml` (~1762 tok)
+- `guidance_mfc.xml` (~1828 tok)
 - `nps_scope_state.xml` (~240 tok)
-- `oneloop_mfc.xml` (~1074 tok)
+- `oneloop_mfc.xml` (~1133 tok)
 - `stabilization_dual_mfc_indi.xml` (~903 tok)
 - `stabilization_mfc_oneloop.xml` (~272 tok)
-- `stabilization_mfc.xml` (~2727 tok)
+- `stabilization_mfc.xml` (~2815 tok)
 
 ## paparazzi/conf/simulator/flightgear/
 
@@ -972,13 +976,13 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6074 tok)
-- `guidance_mfc.c` (~6233 tok)
-- `guidance_mfc.h` (~432 tok)
+- `guidance_mfc.c` (~6320 tok)
+- `guidance_mfc.h` (~557 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
 
-- `oneloop_mfc.c` (~16995 tok)
-- `oneloop_mfc.h` — Declares float (~1079 tok)
+- `oneloop_mfc.c` (~17003 tok)
+- `oneloop_mfc.h` — Declares float (~1114 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
@@ -986,8 +990,8 @@
 - `mfc_core.h` (~746 tok)
 - `stabilization_indi.c` (~12056 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
-- `stabilization_mfc.c` (~11442 tok)
-- `stabilization_mfc.h` — ifndef STABILIZATION_MFC (~827 tok)
+- `stabilization_mfc.c` (~11453 tok)
+- `stabilization_mfc.h` — PPRZ command to each actuator (~647 tok)
 
 ## paparazzi/sw/airborne/modules/control_dual/
 
@@ -1015,6 +1019,10 @@
 ## paparazzi/sw/ext/pprzlink/message_definitions/v1.0/
 
 - `messages.xml` — Declares name (~51522 tok)
+
+## paparazzi/sw/ground_segment/tmtc/
+
+- `server.ml` — Declares msg (~11553 tok)
 
 ## paparazzi/sw/simulator/nps/
 
