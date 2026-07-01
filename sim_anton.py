@@ -455,7 +455,7 @@ def main():
 
     print("Starting Paparazzi server …")
     server = subprocess.Popen(
-        [SERVER, "-b", IVY_BUS, "-n"],
+        [SERVER, "-b", IVY_BUS, "-n", "-udp_json_stream_addr", SCOPE_HOST],
         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
 
