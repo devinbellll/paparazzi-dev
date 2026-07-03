@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-01T11:28:35.104Z
-> Files: 760 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-03T09:24:11.406Z
+> Files: 763 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -16,6 +16,7 @@
 
 - `foamy-growing-origami.md` — MFC tuneability: runtime toggles + unified shortnames (~1744 tok)
 - `look-at-build-fw-sh-and-async-kettle.md` — Plan: Decouple Claude/VSCode from the Paparazzi build env via ephemeral arm64 containers (~2405 tok)
+- `make-the-u-min-and-jiggly-eclipse.md` — Expose MFC per-axis U_min/U_max as dl_settings (~1353 tok)
 - `purrfect-inventing-cascade.md` — Plan: Honor `use_trajec_sp` and add guarded `use_Kd` in mfc_core (~1304 tok)
 - `purrfect-sprouting-lovelace.md` — Plan: sim_anton cleanup + GCS shell + dual-ctrl flight plan (~1571 tok)
 - `resource-users-devinbellll-workspace-en-prancy-cupcake.md` — Plan: Fix IntelliSense — two separate root causes (~906 tok)
@@ -24,9 +25,10 @@
 
 ## ../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/
 
-- `MEMORY.md` (~187 tok)
+- `MEMORY.md` (~244 tok)
 - `mfc-flight-test-enablement.md` (~470 tok)
 - `nps-scope-ivy-parity.md` (~362 tok)
+- `plotjuggler-json-relay-sanitizer.md` — Declares to (~893 tok)
 - `plotjuggler-server-udp-json.md` (~417 tok)
 - `runtime-sandbox-and-build-model.md` (~1213 tok)
 
@@ -58,6 +60,7 @@
 - `handover_bumptest.py` — ac_id, frame, block, setting (~1298 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 - `mfc_ivy_probe.py` — Temporary probe: tap the Ivy bus for STAB_MFC + GUIDANCE_MFC, print decoded (~535 tok)
+- `pj_json_relay.py` — repair_json_text, flush_word, sanitize, main (~2920 tok)
 - `plotjuggler_mfc.xml` (~8888 tok)
 - `pprz_ctrl.py` — find_sim_container, send_cmd, main (~760 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~840 tok)
@@ -951,12 +954,12 @@
 
 - `guidance_dual_mfc_indi.xml` (~766 tok)
 - `guidance_mfc_oneloop.xml` (~215 tok)
-- `guidance_mfc.xml` (~2455 tok)
+- `guidance_mfc.xml` (~2567 tok)
 - `nps_scope_state.xml` (~240 tok)
-- `oneloop_mfc.xml` (~1678 tok)
+- `oneloop_mfc.xml` (~2014 tok)
 - `stabilization_dual_mfc_indi.xml` (~903 tok)
 - `stabilization_mfc_oneloop.xml` (~272 tok)
-- `stabilization_mfc.xml` (~3511 tok)
+- `stabilization_mfc.xml` (~3695 tok)
 
 ## paparazzi/conf/simulator/flightgear/
 
@@ -991,7 +994,7 @@
 - `mfc_core.h` (~746 tok)
 - `stabilization_indi.c` (~12056 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
-- `stabilization_mfc.c` (~11625 tok)
+- `stabilization_mfc.c` (~11938 tok)
 - `stabilization_mfc.h` — PPRZ command to each actuator (~647 tok)
 
 ## paparazzi/sw/airborne/modules/control_dual/

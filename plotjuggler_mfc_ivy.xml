@@ -1,110 +1,61 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!--
-  MFC PlotJuggler layout. Curves are keyed against the mirrored message schema,
-  so the same template lines up leaf-for-leaf across the two feeds:
-
-    ivy server  (sw/ground_segment/tmtc/server.ml)  UDP/JSON port 9870
-                root = "Hoops_111_MFC (111)" / <MSG> / <field>
-    nps_scope   (sw/simulator/nps/nps_scope.c)       UDP/JSON, scope_port flag (default 9871)
-                root = "Hoops_111_MFC (177)" / [MSG|TRUTH|EST|SENSORS|SP|MODE] / field
-
-  Shared controller branches (STAB_MFC, GUIDANCE_MFC, WLS_V/U, and the
-  GUIDANCE_MFC_ACC2ATT debug message — sim branch "ACC2ATT") carry BOTH roots'
-  paths so the layout works for either or both feeds; absent series just don't
-  draw. Sim-only branches (TRUTH, EST, SENSORS, SP, MODE) use the (sim) root.
-
-  To stream both feeds at once, add two UDP-Server instances under the UDP Server
-  plugin: one on 9870 (ivy) and one on the sim scope_port. NOTE: sim timestamp
-  is sim time (fdm.time); ivy timestamp is wall-clock — the two roots will not
-  share an absolute x-axis when shown together.
--->
 <root>
  <tabbed_widget parent="main_window" name="Main Window">
-  <Tab tab_name="SPvMEAS" containers="1">
+  <Tab containers="1" tab_name="SPvMEAS">
    <Container>
     <DockSplitter sizes="1" orientation="-" count="1">
-     <DockSplitter sizes="0.333685;0.332629;0.333685" orientation="|" count="3">
-      <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
+     <DockSplitter sizes="0.334099;0.331803;0.334099" orientation="|" count="3">
+      <DockSplitter sizes="0.500794;0.499206" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.633972" top="0.066272" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.100000" top="0.100000" right="1410.451842"/>
          <limitY/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/SP/nav/target_n"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/TRUTH/x"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/EST/x"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_x"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/sp_x"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_x"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/me_x"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_x" color="#8c564b"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_x" color="#e377c2"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-10.421943" top="1.582213" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.012502" top="-0.002827" right="1410.451842"/>
          <limitY/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/TRUTH/phi"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/SP/stab/phi"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/EST/phi"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (177)/STAB_MFC/sp_phi"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (111)/STAB_MFC/sp_phi"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (177)/STAB_MFC/me_phi"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (111)/STAB_MFC/me_phi"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/sp_phi" color="#8c564b"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/me_phi" color="#e377c2"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.736213" top="0.045512" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.100000" top="0.100000" right="1410.451842"/>
          <limitY/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/SP/nav/target_e"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/EST/y"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/TRUTH/y"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_y"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/sp_y"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_y"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/me_y"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_y" color="#8c564b"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_y" color="#e377c2"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-7.886134" top="5.723294" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.000083" top="0.003385" right="1410.451842"/>
          <limitY/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/TRUTH/theta"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/SP/stab/theta"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/EST/theta"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (177)/STAB_MFC/sp_theta"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (111)/STAB_MFC/sp_theta"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (177)/STAB_MFC/me_theta"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (111)/STAB_MFC/me_theta"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/sp_theta" color="#8c564b"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/me_theta" color="#e377c2"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-3.807618" top="-1.955912" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.004004" top="0.000098" right="1410.451842"/>
          <limitY/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/SP/nav/target_d"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/EST/z"/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/TRUTH/z"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_z"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/sp_z"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_z"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/me_z"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_z" color="#8c564b"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_z" color="#e377c2"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-5.861897" top="-0.150854" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.009558" top="-0.008937" right="1410.451842"/>
          <limitY/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/TRUTH/psi"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/SP/stab/psi"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/EST/psi"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (177)/STAB_MFC/sp_psi"/>
-         <curve color="#8c564b" name="/Hoops_111_MFC (111)/STAB_MFC/sp_psi"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (177)/STAB_MFC/me_psi"/>
-         <curve color="#e377c2" name="/Hoops_111_MFC (111)/STAB_MFC/me_psi"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/sp_psi" color="#8c564b"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/me_psi" color="#e377c2"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -112,85 +63,67 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="MFC_RPY" containers="1">
+  <Tab containers="1" tab_name="MFC_RPY">
    <Container>
     <DockSplitter sizes="1" orientation="-" count="1">
-     <DockSplitter sizes="0.333685;0.332629;0.333685" orientation="|" count="3">
-      <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
+     <DockSplitter sizes="0.334099;0.331803;0.334099" orientation="|" count="3">
+      <DockSplitter sizes="0.500794;0.499206" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-15.712152" top="12.522452" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-162.828453" top="314.297020" right="1410.416915"/>
          <limitY/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/STAB_MFC/cmd_phi"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (111)/STAB_MFC/cmd_phi"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/STAB_MFC/fk_phi"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (111)/STAB_MFC/fk_phi"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/cmd_phi" color="#d62728"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/fk_phi" color="#1ac938"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.180426" top="0.048383" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.012809" top="0.009752" right="1410.416915"/>
          <limitY/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/STAB_MFC/err_phi"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (111)/STAB_MFC/err_phi"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/STAB_MFC/me_phi"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (111)/STAB_MFC/me_phi"/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/STAB_MFC/sp_phi"/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (111)/STAB_MFC/sp_phi"/>
-         <curve color="#17becf" name="/Hoops_111_MFC (177)/STAB_MFC/sp_traj_phi"/>
-         <curve color="#17becf" name="/Hoops_111_MFC (111)/STAB_MFC/sp_traj_phi"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/err_phi" color="#ff7f0e"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/me_phi" color="#f14cc1"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/sp_phi" color="#9467bd"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/sp_traj_phi" color="#17becf"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-31.721310" top="19.317510" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-2.372958" top="1.229364" right="1410.416915"/>
          <limitY/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/STAB_MFC/cmd_theta"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (111)/STAB_MFC/cmd_theta"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/STAB_MFC/fk_theta"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (111)/STAB_MFC/fk_theta"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/cmd_theta" color="#bcbd22"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/fk_theta" color="#1f77b4"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.135831" top="0.099846" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.000083" top="0.003385" right="1410.416915"/>
          <limitY/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/STAB_MFC/err_theta"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (111)/STAB_MFC/err_theta"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/STAB_MFC/me_theta"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (111)/STAB_MFC/me_theta"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/STAB_MFC/sp_theta"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (111)/STAB_MFC/sp_theta"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/STAB_MFC/sp_traj_theta"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (111)/STAB_MFC/sp_traj_theta"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/err_theta" color="#d62728"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/me_theta" color="#1ac938"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/sp_theta" color="#ff7f0e"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/sp_traj_theta" color="#f14cc1"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-21.651625" top="21.643025" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.937593" top="0.937593" right="1410.416915"/>
          <limitY/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/STAB_MFC/cmd_psi"/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (111)/STAB_MFC/cmd_psi"/>
-         <curve color="#17becf" name="/Hoops_111_MFC (177)/STAB_MFC/fk_psi"/>
-         <curve color="#17becf" name="/Hoops_111_MFC (111)/STAB_MFC/fk_psi"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/cmd_psi" color="#9467bd"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/fk_psi" color="#17becf"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.087857" top="0.002272" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.115496" bottom="-0.009781" top="0.000234" right="1410.416915"/>
          <limitY/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/STAB_MFC/err_psi"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (111)/STAB_MFC/err_psi"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/STAB_MFC/me_psi"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (111)/STAB_MFC/me_psi"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/STAB_MFC/sp_psi"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (111)/STAB_MFC/sp_psi"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/STAB_MFC/sp_traj_psi"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (111)/STAB_MFC/sp_traj_psi"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/err_psi" color="#bcbd22"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/me_psi" color="#1f77b4"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/sp_psi" color="#d62728"/>
+         <curve name="/Hoops_111_MFC (177)/STAB_MFC/sp_traj_psi" color="#1ac938"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -198,79 +131,64 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="MFC_XYZ" containers="1">
+  <Tab containers="1" tab_name="MFC_XYZ">
    <Container>
     <DockSplitter sizes="1" orientation="-" count="1">
-     <DockSplitter sizes="0.333685;0.332629;0.333685" orientation="|" count="3">
-      <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
+     <DockSplitter sizes="0.334201;0.331598;0.334201" orientation="|" count="3">
+      <DockSplitter sizes="0.500626;0.499374" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-10.649460" top="9.336660" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.154612" bottom="-0.100000" top="0.100000" right="1410.451842"/>
          <limitY/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/cmd_x"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/cmd_x"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/fk_x"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/fk_x"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/cmd_x" color="#ff7f0e"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/fk_x" color="#f14cc1"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.626314" top="0.015276" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.154612" bottom="-0.100000" top="0.100000" right="1410.451842"/>
          <limitY/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_x"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/me_x"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_x"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/sp_x"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_traj_x"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/sp_traj_x"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_x" color="#1f77b4"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_x" color="#1ac938"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_traj_x" color="#ff7f0e"/>
         </plot>
        </DockArea>
       </DockSplitter>
-      <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
+      <DockSplitter sizes="0.500626;0.499374" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-3.743733" top="17.722603" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.154612" bottom="-0.100000" top="0.100000" right="1410.451842"/>
          <limitY/>
-         <curve color="#17becf" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/cmd_y"/>
-         <curve color="#17becf" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/cmd_y"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/fk_y"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/fk_y"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/cmd_y" color="#17becf"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/fk_y" color="#bcbd22"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.610982" top="0.018397" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.154612" bottom="-0.100000" top="0.100000" right="1410.451842"/>
          <limitY/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_y"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/me_y"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_y"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/sp_y"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_traj_y"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/sp_traj_y"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_y" color="#d62728"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_y" color="#f14cc1"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_traj_y" color="#f14cc1"/>
         </plot>
        </DockArea>
       </DockSplitter>
-      <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
+      <DockSplitter sizes="0.500626;0.499374" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-15.889437" top="100.174937" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.154612" bottom="-6.283130" top="0.153247" right="1410.451842"/>
          <limitY/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/cmd_z"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/cmd_z"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/fk_z"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/fk_z"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/cmd_z" color="#1f77b4"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/fk_z" color="#d62728"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-3.763867" top="-3.736703" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.154612" bottom="-0.004004" top="0.000098" right="1410.451842"/>
          <limitY/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_z"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/me_z"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_z"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/sp_z"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_traj_z"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (111)/GUIDANCE_MFC/sp_traj_z"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/me_z" color="#1ac938"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_z" color="#1ac938"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC/sp_traj_z" color="#ff7f0e"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -278,55 +196,44 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="ACCEL2ATT" containers="1">
+  <Tab containers="1" tab_name="ACCEL2ATT">
    <Container>
     <DockSplitter sizes="1" orientation="-" count="1">
-     <DockSplitter sizes="0.501055;0.498945" orientation="|" count="2">
-      <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
+     <DockSplitter sizes="0.502294;0.497706" orientation="|" count="2">
+      <DockSplitter sizes="0.500794;0.499206" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.141462" top="0.080517" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.156265" bottom="-0.100000" top="0.100000" right="1410.452174"/>
          <limitY/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/ACC2ATT/phi_d"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/phi_d"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/ACC2ATT/theta_d"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/theta_d"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/ACC2ATT/att_sp_psi"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/att_sp_psi"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/ACC2ATT/att_sp_phi"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/att_sp_phi"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/ACC2ATT/att_sp_theta"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/att_sp_theta"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC_ACC2ATT/att_sp_phi" color="#1ac938"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC_ACC2ATT/att_sp_psi" color="#ff7f0e"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC_ACC2ATT/att_sp_theta" color="#f14cc1"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.141028" top="0.080413" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.156265" bottom="-0.100000" top="0.100000" right="1410.452174"/>
          <limitY/>
-         <curve color="#17becf" name="/Hoops_111_MFC (177)/ACC2ATT/vhatx"/>
-         <curve color="#17becf" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/vhatx"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/ACC2ATT/vhaty"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/vhaty"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC_ACC2ATT/phi_d" color="#9467bd"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC_ACC2ATT/theta_d" color="#17becf"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-12.100000" top="-11.900000" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.156265" bottom="-0.100000" top="0.100000" right="1410.452174"/>
          <limitY/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/ACC2ATT/u1"/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/u1"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC_ACC2ATT/vhatx" color="#bcbd22"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC_ACC2ATT/vhaty" color="#1f77b4"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.124031" top="1.027415" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="1408.156265" bottom="-0.025000" top="1.025000" right="1410.452174"/>
          <limitY/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/ACC2ATT/cosphid"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/cosphid"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/ACC2ATT/vhaty_cd"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (111)/GUIDANCE_MFC_ACC2ATT/vhaty_cd"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC_ACC2ATT/cosphid" color="#d62728"/>
+         <curve name="/Hoops_111_MFC (177)/GUIDANCE_MFC_ACC2ATT/vhaty_cd" color="#1ac938"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -334,103 +241,75 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="WLS" containers="1">
+  <Tab containers="1" tab_name="WLS">
    <Container>
-    <DockSplitter sizes="1" orientation="|" count="1">
-     <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
-      <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="1489.446250" top="2262.403750" left="17.557000"/>
-        <limitY/>
-        <curve color="#bcbd22" name="/Hoops_111_MFC (177)/WLS_U/u/u_0"/>
-        <curve color="#bcbd22" name="/Hoops_111_MFC (111)/WLS_U/u/u_0"/>
-        <curve color="#1f77b4" name="/Hoops_111_MFC (177)/WLS_U/u/u_1"/>
-        <curve color="#1f77b4" name="/Hoops_111_MFC (111)/WLS_U/u/u_1"/>
-        <curve color="#d62728" name="/Hoops_111_MFC (177)/WLS_U/u/u_2"/>
-        <curve color="#d62728" name="/Hoops_111_MFC (111)/WLS_U/u/u_2"/>
-        <curve color="#1ac938" name="/Hoops_111_MFC (177)/WLS_U/u/u_3"/>
-        <curve color="#1ac938" name="/Hoops_111_MFC (111)/WLS_U/u/u_3"/>
-       </plot>
-      </DockArea>
-      <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-21.532390" top="16.754390" left="17.557000"/>
-        <limitY/>
-        <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/WLS_V/v/v_0"/>
-        <curve color="#ff7f0e" name="/Hoops_111_MFC (111)/WLS_V/v/v_0"/>
-        <curve color="#f14cc1" name="/Hoops_111_MFC (177)/WLS_V/v/v_1"/>
-        <curve color="#f14cc1" name="/Hoops_111_MFC (111)/WLS_V/v/v_1"/>
-        <curve color="#9467bd" name="/Hoops_111_MFC (177)/WLS_V/v/v_2"/>
-        <curve color="#9467bd" name="/Hoops_111_MFC (111)/WLS_V/v/v_2"/>
-        <curve color="#17becf" name="/Hoops_111_MFC (177)/WLS_V/v/v_3"/>
-        <curve color="#17becf" name="/Hoops_111_MFC (111)/WLS_V/v/v_3"/>
-       </plot>
-      </DockArea>
-     </DockSplitter>
+    <DockSplitter sizes="0.500794;0.499206" orientation="-" count="2">
+     <DockArea name="...">
+      <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+       <range left="1408.074485" bottom="-135.712073" top="5564.194983" right="1410.453181"/>
+       <limitY/>
+       <curve name="/Hoops_111_MFC (177)/WLS_U/u/u_0" color="#bcbd22"/>
+       <curve name="/Hoops_111_MFC (177)/WLS_U/u/u_1" color="#1f77b4"/>
+       <curve name="/Hoops_111_MFC (177)/WLS_U/u/u_2" color="#d62728"/>
+       <curve name="/Hoops_111_MFC (177)/WLS_U/u/u_3" color="#1ac938"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+       <range left="1408.074485" bottom="-155.330778" top="4.976118" right="1410.453181"/>
+       <limitY/>
+       <curve name="/Hoops_111_MFC (177)/WLS_V/v/v_0" color="#ff7f0e"/>
+       <curve name="/Hoops_111_MFC (177)/WLS_V/v/v_1" color="#f14cc1"/>
+       <curve name="/Hoops_111_MFC (177)/WLS_V/v/v_2" color="#9467bd"/>
+       <curve name="/Hoops_111_MFC (177)/WLS_V/v/v_3" color="#17becf"/>
+      </plot>
+     </DockArea>
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="States" containers="1">
+  <Tab containers="1" tab_name="States">
    <Container>
     <DockSplitter sizes="1" orientation="-" count="1">
-     <DockSplitter sizes="0.333685;0.332629;0.333685" orientation="|" count="3">
-      <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
+     <DockSplitter sizes="0.334099;0.331803;0.334099" orientation="|" count="3">
+      <DockSplitter sizes="0.500794;0.499206" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-10.522368" top="5.699618" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-10.522368" top="5.699618" right="1.000000"/>
          <limitY/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/TRUTH/phi"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/TRUTH/psi"/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/TRUTH/theta"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-3.853805" top="0.144805" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-3.853805" top="0.144805" right="1.000000"/>
          <limitY/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/TRUTH/x"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/TRUTH/y"/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/TRUTH/z"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-44.919895" top="50.768495" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-44.919895" top="50.768495" right="1.000000"/>
          <limitY/>
-         <curve color="#17becf" name="/Hoops_111_MFC (177)/TRUTH/p"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/TRUTH/q"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/TRUTH/r"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.111248" top="0.999547" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-0.111248" top="0.999547" right="1.000000"/>
          <limitY/>
-         <curve color="#17becf" name="/Hoops_111_MFC (177)/TRUTH/vx"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/TRUTH/vy"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/TRUTH/vz"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-329.447175" top="521.186175" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-329.447175" top="521.186175" right="1.000000"/>
          <limitY/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/TRUTH/ap"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/TRUTH/aq"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/TRUTH/ar"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-10.974882" top="0.271983" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-10.974882" top="0.271983" right="1.000000"/>
          <limitY/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/TRUTH/ax"/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/TRUTH/ay"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/TRUTH/az"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -438,56 +317,41 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="Estim" containers="1">
+  <Tab containers="1" tab_name="Estim">
    <Container>
     <DockSplitter sizes="1" orientation="-" count="1">
-     <DockSplitter sizes="0.385428;0.384372;0.230201" orientation="|" count="3">
+     <DockSplitter sizes="0.385763;0.384615;0.229621" orientation="|" count="3">
       <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-3.857704" top="0.097619" left="17.557000"/>
+       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+        <range left="0.000000" bottom="-3.857704" top="0.097619" right="1.000000"/>
         <limitY/>
-        <curve color="#1f77b4" name="/Hoops_111_MFC (177)/EST/x"/>
-        <curve color="#d62728" name="/Hoops_111_MFC (177)/EST/y"/>
-        <curve color="#1ac938" name="/Hoops_111_MFC (177)/EST/z"/>
        </plot>
       </DockArea>
       <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-10.411119" top="5.784879" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-10.411119" top="5.784879" right="1.000000"/>
          <limitY/>
-         <curve color="#1ac938" name="/Hoops_111_MFC (177)/EST/phi"/>
-         <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/EST/psi"/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/EST/theta"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-0.109994" top="1.094027" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-0.109994" top="1.094027" right="1.000000"/>
          <limitY/>
-         <curve color="#f14cc1" name="/Hoops_111_MFC (177)/EST/vx"/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/EST/vy"/>
-         <curve color="#17becf" name="/Hoops_111_MFC (177)/EST/vz"/>
         </plot>
        </DockArea>
       </DockSplitter>
       <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-45.780835" top="50.808035" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-45.780835" top="50.808035" right="1.000000"/>
          <limitY/>
-         <curve color="#9467bd" name="/Hoops_111_MFC (177)/EST/p"/>
-         <curve color="#17becf" name="/Hoops_111_MFC (177)/EST/q"/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/EST/r"/>
         </plot>
        </DockArea>
        <DockArea name="...">
-        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-         <range right="36.821000" bottom="-2.259958" top="1.283498" left="17.557000"/>
+        <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+         <range left="0.000000" bottom="-2.259958" top="1.283498" right="1.000000"/>
          <limitY/>
-         <curve color="#bcbd22" name="/Hoops_111_MFC (177)/EST/ax"/>
-         <curve color="#1f77b4" name="/Hoops_111_MFC (177)/EST/ay"/>
-         <curve color="#d62728" name="/Hoops_111_MFC (177)/EST/az"/>
         </plot>
        </DockArea>
       </DockSplitter>
@@ -495,75 +359,62 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="Sensors" containers="1">
+  <Tab containers="1" tab_name="Sensors">
    <Container>
-    <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
-     <DockSplitter sizes="0.5;0.5" orientation="|" count="2">
+    <DockSplitter sizes="0.500794;0.499206" orientation="-" count="2">
+     <DockSplitter sizes="0.501147;0.498853" orientation="|" count="2">
       <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-3836.050000" top="5154.050000" left="17.557000"/>
+       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+        <range left="0.000000" bottom="-3836.050000" top="5154.050000" right="1.000000"/>
         <limitY/>
-        <curve color="#9467bd" name="/Hoops_111_MFC (177)/SENSORS/mag_x"/>
-        <curve color="#17becf" name="/Hoops_111_MFC (177)/SENSORS/mag_y"/>
-        <curve color="#bcbd22" name="/Hoops_111_MFC (177)/SENSORS/mag_z"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-249875.225000" top="178828.225000" left="17.557000"/>
+       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+        <range left="0.000000" bottom="-249875.225000" top="178828.225000" right="1.000000"/>
         <limitY/>
-        <curve color="#1ac938" name="/Hoops_111_MFC (177)/SENSORS/gyro_p"/>
-        <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/SENSORS/gyro_q"/>
-        <curve color="#f14cc1" name="/Hoops_111_MFC (177)/SENSORS/gyro_r"/>
        </plot>
       </DockArea>
      </DockSplitter>
-     <DockSplitter sizes="0.50211;0.49789" orientation="|" count="2">
+     <DockSplitter sizes="0.502294;0.497706" orientation="|" count="2">
       <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-4.116629" top="154.642991" left="17.557000"/>
+       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+        <range left="0.000000" bottom="-4.116629" top="154.642991" right="1.000000"/>
         <limitY/>
-        <curve color="#1f77b4" name="/Hoops_111_MFC (177)/SENSORS/gps_hmsl"/>
-        <curve color="#d62728" name="/Hoops_111_MFC (177)/SENSORS/gps_vx"/>
-        <curve color="#1ac938" name="/Hoops_111_MFC (177)/SENSORS/gps_vy"/>
-        <curve color="#ff7f0e" name="/Hoops_111_MFC (177)/SENSORS/gps_vz"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-4617.950000" top="293.950000" left="17.557000"/>
+       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
+        <range left="0.000000" bottom="-4617.950000" top="293.950000" right="1.000000"/>
         <limitY/>
-        <curve color="#bcbd22" name="/Hoops_111_MFC (177)/SENSORS/acc_x"/>
-        <curve color="#1f77b4" name="/Hoops_111_MFC (177)/SENSORS/acc_y"/>
-        <curve color="#d62728" name="/Hoops_111_MFC (177)/SENSORS/acc_z"/>
        </plot>
       </DockArea>
      </DockSplitter>
     </DockSplitter>
    </Container>
   </Tab>
-  <currentTabIndex index="0"/>
+  <currentTabIndex index="2"/>
  </tabbed_widget>
  <use_relative_time_offset enabled="0"/>
  <!-- - - - - - - - - - - - - - - -->
  <!-- - - - - - - - - - - - - - - -->
  <Plugins>
   <plugin ID="DataLoad CSV">
-   <parameters time_axis="" delimiter="0"/>
+   <parameters delimiter="0" time_axis=""/>
   </plugin>
   <plugin ID="DataLoad MCAP"/>
   <plugin ID="DataLoad Parquet">
-   <default dateFromat="yyyy-MM-dd hh:mm:ss" parseDateTime="0" radioIndexChecked="0" prevTimestamp=""/>
+   <default prevTimestamp="" radioIndexChecked="0" dateFromat="yyyy-MM-dd hh:mm:ss" parseDateTime="0"/>
   </plugin>
   <plugin ID="DataLoad ULog"/>
   <plugin ID="Foxglove ROS2 Bridge">
-   <foxglove_client address="127.0.0.1" clamp_large_arrays="0" port="8765" max_array_size="500" use_timestamp="0">
+   <foxglove_client use_timestamp="0" max_array_size="500" address="127.0.0.1" clamp_large_arrays="0" port="8765">
     <topics/>
    </foxglove_client>
   </plugin>
   <plugin ID="MQTT Subscriber (Mosquitto)"/>
   <plugin ID="PlotJuggler ROS2 Bridge">
-   <websocket_client address="127.0.0.1" clamp_large_arrays="0" port="9090" max_array_size="500" use_timestamp="0">
+   <websocket_client use_timestamp="0" max_array_size="500" address="127.0.0.1" clamp_large_arrays="0" port="9090">
     <topics/>
    </websocket_client>
   </plugin>
