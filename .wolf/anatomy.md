@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-03T09:24:11.406Z
-> Files: 763 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-03T11:14:42.049Z
+> Files: 764 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -62,12 +62,12 @@
 - `mfc_ivy_probe.py` — Temporary probe: tap the Ivy bus for STAB_MFC + GUIDANCE_MFC, print decoded (~535 tok)
 - `pj_json_relay.py` — repair_json_text, flush_word, sanitize, main (~2920 tok)
 - `plotjuggler_mfc.xml` (~8888 tok)
-- `pprz_ctrl.py` — find_sim_container, send_cmd, main (~760 tok)
+- `pprz_ctrl.py` — find_sim_container, send_cmd, main. `setting <name> <val>` now (was `<index>`). (~800 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~840 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2345 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — pprz_block_frame, pprz_setting_frame, on_rate_attitude, on_pos_llh (~6636 tok)
+- `sim_anton.py` — Paparazzi-native rework (2026-07-03): commands via pprzlink Ivy (JUMP_TO_BLOCK/DL_SETTING by name, no hand-rolled frames/hardcoded index); telemetry capture = server's own udp_json_stream teed to .jsonl (via pj_json_relay.sanitize) + forwarded to PlotJuggler, replacing the old bespoke CSV; --render slimmed to truth/law/cmd only. on_rate_attitude, on_pos_llh, on_dual_ctrl, on_rotorcraft_cmd, telemetry_capture_relay (~5200 tok)
 - `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1255 tok)
 - `tune_mfc.sh` — tune_mfc.sh — grade an MFC run with analyze_mfc.py, from any of three feeds: (~921 tok)
 
@@ -240,6 +240,7 @@
 - `2026-06-29-nps-scope-ivy-plotjuggler-parity.md` — Session — 2026-06-29: NPS-scope ↔ ivy-server PlotJuggler parity (MFC) (~1050 tok)
 - `2026-06-30-mfc-runtime-tuneability.md` — 2026-06-30 — MFC runtime tuneability (allocator + thrust toggles, unified shortnames) (~896 tok)
 - `2026-07-01-flight-test-streaming-fix-and-kd-tuneability.md` — Session — 2026-07-01: Flight-Test Streaming Fix + kd/use_Kd Tuneability (~706 tok)
+- `2026-07-03-sim-anton-native-rework.md` — 2026-07-03 — sim_anton.py Paparazzi-native rework (~1334 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 

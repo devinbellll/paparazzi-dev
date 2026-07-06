@@ -14,6 +14,8 @@ Flags:
   --render          Enable the live TUI dashboard (default: plain debug log to stdout).
   --fg              Stream NET_FDM pose to FlightGear on the Mac host (host.docker.internal:5501).
   --switch-after N  Switch to MFC N seconds after takeoff, then back to INDI N seconds later.
+                    Only meaningful on a dual-controller build (e.g. ANTON_DUAL) that has a
+                    `dual_ctrl_active` setting; harmless no-op otherwise (a warning is printed).
   --rc_script N     Drive RC from a compiled-in NPS stick script instead of --norc
                     (0=hover 1=step_roll 2=step_pitch 3=step_yaw 4=ff; auto-takeoff for first 8 s).
                     Script 5 = FP takeoff (NAV) then ATTITUDE_Z_HOLD with a scheduled
@@ -21,49 +23,64 @@ Flags:
 
 Interactive commands (type in the sim terminal, or pipe via pprz_ctrl.py):
   block <id>              jump to flight plan block
-  switch <indi|mfc>       hand motor authority to the named controller
-  setting <idx> <float>   set an arbitrary GCS setting by index
+  switch <indi|mfc>       hand motor authority to the named controller (dual-controller builds only)
+  setting <name> <float>  set a GCS setting by its shortname (var/aircrafts/<AC>/settings.xml)
 
   From a second terminal on the host:
     python3 pprz_ctrl.py AIRCRAFT switch mfc
     python3 pprz_ctrl.py AIRCRAFT block 5
 
 Takeoff sequence (flight plan blocks):
-  Block 3 "Start Engine" → NavResurrect() un-kills throttle
-  Block 4 "Takeoff"      → climbs to CLIMB waypoint at nav.climb_vspeed
+  Block 2 "Start Engine" → NavResurrect() un-kills throttle
+  Block 3 "Takeoff"      → climbs to CLIMB waypoint at nav.climb_vspeed
 
 Command delivery:
-  Commands are sent as pprz binary frames over UDP to port 4243
-  (the sim's primary datalink input — DOWNLINK_DEVICE=udp0, UDP0_PORT_IN=4243).
+  Commands are sent as native Ivy messages (ground/JUMP_TO_BLOCK, ground/DL_SETTING) — the
+  same mechanism the GCS strip buttons and settings panel use. `server` decodes them into the
+  binary pprz frames and forwards them over the sim's datalink; we never touch that wire format.
 
 Observability:
-  Layer 0 — JSBSim truth:   NPS_RATE_ATTITUDE, NPS_POS_LLH, NPS_SPEED_POS
-  Layer 1 — Firmware state: STAB_ATTITUDE (INDI), STAB_MFC, ROTORCRAFT_CMD, DUAL_CTRL
-  Logging: CSV written to /tmp/mfc_sim_<timestamp>.csv
-  Scope:   The in-process NPS emitter (nps_scope.c in simsitl) still streams to PlotJuggler
-           if it was compiled in — use --scope_host/--scope_port/--scope_decim flags
-           directly on simsitl if you need that stream.
+  Layer 0 — JSBSim truth:   NPS_RATE_ATTITUDE, NPS_POS_LLH
+  Layer 1 — Firmware state: DUAL_CTRL (active law), ROTORCRAFT_CMD (motor commands)
+  Logging: server's own UDP/JSON telemetry stream (the real PlotJuggler bridge, see
+           pj_json_relay.py) is captured to a .jsonl file — same schema PlotJuggler consumes,
+           no bespoke CSV columns to keep in sync with the firmware.
+  Scope:   The in-process NPS emitter (nps_scope.c in simsitl) still streams firmware-registered
+           scope vars (mfc/*, wls/*, ...) to PlotJuggler directly — unrelated/complementary to
+           the telemetry capture above; use --no-scope to disable it.
+
+Note on `pprzsim-launch`: paparazzi ships sw/simulator/pprzsim-launch as the canonical NPS
+launcher, but it only knows how to `execv` simsitl with a handful of flags (fg/rc_script/norc/
+ivy_bus) — it does not support the in-process scope emitter or a gdbserver wrap, both of which
+this script needs by default. So simsitl is still invoked directly here; that is simsitl's own
+native CLI, not something reinvented by this script.
 """
 
-import csv
 import datetime
+import json
 import math
 import os
 import signal
 import socket
-import struct
 import subprocess
 import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
 from collections import deque
-from ivy.std_api import IvyInit, IvyStart, IvyStop, IvyBindMsg
 
-PPRZ    = "/workspace/paparazzi"
-SERVER  = f"{PPRZ}/sw/ground_segment/tmtc/server"
-LINK    = f"{PPRZ}/sw/ground_segment/tmtc/link"
+PPRZ = "/workspace/paparazzi"
+SERVER = f"{PPRZ}/sw/ground_segment/tmtc/server"
+LINK = f"{PPRZ}/sw/ground_segment/tmtc/link"
 IVY_BUS = "127.255.255.255:2010"
+
+sys.path.append(f"{PPRZ}/sw/lib/python")
+sys.path.append(f"{PPRZ}/var/lib/python")
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from pprzlink.ivy import IvyMessagesInterface
+from pprzlink.message import PprzMessage
+from settings import PprzSettingsParser
+from pj_json_relay import sanitize as sanitize_json
 
 # ── Parse positional AC_NAME + flags ─────────────────────────────────────────
 _flags = {}
@@ -100,6 +117,9 @@ _SWITCH_AFTER = _flags.get("switch_after")   # seconds after takeoff, or None
 _RC_SCRIPT    = _flags.get("rc_script")      # NPS compiled RC script index, or None
 
 # ── Look up AC_ID from the conf XML ──────────────────────────────────────────
+# Still needed: Ivy ground messages (JUMP_TO_BLOCK / DL_SETTING) address the
+# aircraft by its numeric ac_id, which `server` uses as its aircraft-table key.
+# (Launching simsitl itself never needed this — it's addressed by AC_NAME.)
 def _lookup_ac_id(pprz_home: str, conf_rel: str, name: str) -> int | None:
     conf_path = os.path.join(pprz_home, conf_rel)
     try:
@@ -117,15 +137,13 @@ if AC_ID is None:
     print(f"Error: aircraft '{AC_NAME}' not found in {os.path.join(PPRZ, _CONF)}", file=sys.stderr)
     sys.exit(1)
 
-SIMSITL  = f"{PPRZ}/var/aircrafts/{AC_NAME}/nps/simsitl"
-FG_PORT  = 5501
+SIMSITL = f"{PPRZ}/var/aircrafts/{AC_NAME}/nps/simsitl"
+FG_PORT = 5501
 try:
     FG_HOST = socket.gethostbyname("host.docker.internal")
 except OSError:
     FG_HOST = "192.168.65.254"
-R2D      = math.degrees(1)
-SIM_HOST = "127.0.0.1"
-SIM_PORT = 4243   # sim's primary datalink receive port (UDP0_PORT_IN)
+R2D = math.degrees(1)
 
 # Scope: in-process NPS emitter → PlotJuggler on the Mac host (sim-time stamped JSON).
 # PlotJuggler: Streaming → Start → UDP Server, port 9870, protocol JSON, "use field as timestamp" = t.
@@ -133,75 +151,37 @@ SCOPE_HOST  = FG_HOST   # same egress path as FlightGear
 SCOPE_PORT  = 9870
 SCOPE_DECIM = 2         # emit every Nth sim step (~500 Hz at 1 kHz sim rate)
 
+# Telemetry JSON stream: server's own UDP/JSON emitter is the real PlotJuggler bridge
+# (see pj_json_relay.py). Point it at a local port so we can tee it to a capture file
+# before relaying (sanitized) on to the Mac, instead of re-decoding Ivy by hand.
+TELEM_JSON_LOCAL_PORT = 9870
+
 # Logs land in /workspace/sim_logs/ (bind-mounted to the host) so they survive
 # container exit. Fall back to /tmp if running outside a container.
 _LOG_DIR = os.environ.get("MFC_LOG_DIR", "/workspace/sim_logs")
 os.makedirs(_LOG_DIR, exist_ok=True)
 _TS = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-LOG_FILE       = os.path.join(_LOG_DIR, f"mfc_sim_{_TS}.csv")
+LOG_FILE = os.path.join(_LOG_DIR, f"mfc_sim_{_TS}.jsonl")
 DEBUG_LOG_FILE = os.path.join(_LOG_DIR, f"mfc_sim_{_TS}_debug.log")
 
-# ── pprz binary encoding ─────────────────────────────────────────────────────
-STX            = 0x99
-CLASS_DATALINK = 2
-MSG_BLOCK      = 5   # datalink::BLOCK   — fields: block_id(u8), ac_id(u8)
-MSG_SETTING    = 4   # datalink::SETTING — fields: index(u8), ac_id(u8), value(f32)
+# ── settings.xml (name → index), for DL_SETTING by name ─────────────────────
+SETTINGS_XML = f"{PPRZ}/var/aircrafts/{AC_NAME}/settings.xml"
+try:
+    SETTINGS = PprzSettingsParser.parse(SETTINGS_XML) if os.path.isfile(SETTINGS_XML) else None
+except Exception as e:
+    print(f"Warning: could not parse {SETTINGS_XML}: {e}", file=sys.stderr)
+    SETTINGS = None
 
-# Dual-controller constants (match control_dual_mfc_indi.h)
-DUAL_CTRL_INDI = 0
-DUAL_CTRL_MFC  = 1
-DUAL_CTRL_IDX  = 47  # settings.h flat index for dual_ctrl_active on ANTON_MFC
-                     # Verify: grep -n "dual_ctrl_active" var/aircrafts/ANTON_MFC/ap/generated/settings.h
-
-def _pprz_frame(msg_id: int, payload: bytes) -> bytes:
-    sender   = 0
-    receiver = AC_ID
-    comp_cls = (0 << 4) | CLASS_DATALINK
-    length   = 8 + len(payload)
-    header   = struct.pack("BBBBBB", STX, length, sender, receiver, comp_cls, msg_id) + payload
-    ck_a = ck_b = 0
-    for b in header[1:]:
-        ck_a = (ck_a + b) & 0xFF
-        ck_b = (ck_b + ck_a) & 0xFF
-    return header + struct.pack("BB", ck_a, ck_b)
-
-def pprz_block_frame(block_id: int) -> bytes:
-    return _pprz_frame(MSG_BLOCK, bytes([block_id, AC_ID]))
-
-def pprz_setting_frame(index: int, value: float) -> bytes:
-    return _pprz_frame(MSG_SETTING, struct.pack("BBf", index, AC_ID, value))
+DUAL_CTRL_SETTING = "active_law"   # shortname of dual_ctrl_active (dual-controller builds only)
 
 
 # ── shared state ─────────────────────────────────────────────────────────────
 state = {
-    # Layer 0 — JSBSim truth (NPS_*)
     "phi": 0.0, "theta": 0.0, "psi": 0.0,
     "p":   0.0, "q":     0.0, "r":   0.0,
     "lat": 0.0, "lon":   0.0,
     "alt": 0.0, "agl":   0.0,
-    "vx":  0.0, "vy":    0.0, "vz":  0.0,
-    "ax":  0.0, "ay":    0.0, "az":  0.0,
-    "bias_p": 0.0, "bias_q": 0.0, "bias_r": 0.0,
-    "wind_n": 0.0, "wind_e": 0.0, "wind_d": 0.0,
-    # Layer 1 — MFC stabilizer (STAB_MFC)
-    "mfc_sp_phi":   0.0, "mfc_sp_theta":   0.0, "mfc_sp_psi":   0.0,
-    "mfc_me_phi":   0.0, "mfc_me_theta":   0.0, "mfc_me_psi":   0.0,
-    "mfc_err_phi":  0.0, "mfc_err_theta":  0.0, "mfc_err_psi":  0.0,
-    "mfc_fk_phi":   0.0, "mfc_fk_theta":   0.0, "mfc_fk_psi":   0.0,
-    "mfc_cmd_phi":  0.0, "mfc_cmd_theta":  0.0, "mfc_cmd_psi":  0.0,
-    "mfc_u0": 0.0, "mfc_u1": 0.0, "mfc_u2": 0.0, "mfc_u3": 0.0,
-    # Layer 1 — WLS virtual control inputs
-    "wls_v0": 0.0, "wls_v1": 0.0, "wls_v2": 0.0, "wls_v3": 0.0,
-    # Layer 1 — INDI stabilizer (STAB_ATTITUDE)
-    "sa_att_phi":  0.0, "sa_att_theta":  0.0, "sa_att_psi":  0.0,
-    "sa_ref_phi":  0.0, "sa_ref_theta":  0.0, "sa_ref_psi":  0.0,
-    "sa_rate_p":   0.0, "sa_rate_q":     0.0, "sa_rate_r":   0.0,
-    "sa_rref_p":   0.0, "sa_rref_q":     0.0, "sa_rref_r":   0.0,
-    "sa_dacc_p":   0.0, "sa_dacc_q":     0.0, "sa_dacc_r":   0.0,
-    "sa_aref_p":   0.0, "sa_aref_q":     0.0, "sa_aref_r":   0.0,
-    # Layer 1 — Dual-controller status (DUAL_CTRL)
     "dual_active": -1,  # -1 = not yet received; 0 = INDI, 1 = MFC
-    # Layer 1 — Firmware cmd ints (ROTORCRAFT_CMD)
     "rc_roll": 0, "rc_pitch": 0, "rc_yaw": 0, "rc_thrust": 0,
     "t":   0.0,
     "cmd": "",
@@ -209,92 +189,28 @@ state = {
 
 debug_log: deque = deque(maxlen=20)
 
-# ── Ivy callbacks ─────────────────────────────────────────────────────────────
-def on_rate_attitude(agent, msg):
-    parts = msg.split()
-    if len(parts) < 8: return
-    state["p"], state["q"], state["r"] = float(parts[2]), float(parts[3]), float(parts[4])
-    state["phi"], state["theta"], state["psi"] = float(parts[5]), float(parts[6]), float(parts[7])
+# ── Ivy callbacks (PprzMessage, named field access — no manual parsing) ─────
+def on_rate_attitude(ac_id, msg):
+    if str(ac_id) != str(AC_ID): return
+    state["p"], state["q"], state["r"] = msg["p"], msg["q"], msg["r"]
+    state["phi"], state["theta"], state["psi"] = msg["phi"], msg["theta"], msg["psi"]
     state["t"] = time.monotonic()
 
-def on_pos_llh(agent, msg):
-    parts = msg.split()
-    if len(parts) < 10: return
-    state["lat"] = float(parts[2]) * R2D
-    state["lon"] = float(parts[5]) * R2D
-    state["alt"] = float(parts[7])
-    state["agl"] = float(parts[9])
+def on_pos_llh(ac_id, msg):
+    if str(ac_id) != str(AC_ID): return
+    state["lat"] = msg["lat_geod"] * R2D
+    state["lon"] = msg["lon"] * R2D
+    state["alt"] = msg["asl"]
+    state["agl"] = msg["agl"]
 
-def on_speed_pos(agent, msg):
-    parts = msg.split()
-    if len(parts) < 8: return
-    state["vx"], state["vy"], state["vz"] = float(parts[5]), float(parts[6]), float(parts[7])
+def on_dual_ctrl(ac_id, msg):
+    if str(ac_id) != str(AC_ID): return
+    state["dual_active"] = int(msg["active"])
 
-def on_sensors(agent, msg):
-    parts = msg.split()
-    if len(parts) < 5: return
-    state["ax"], state["ay"], state["az"] = float(parts[2]), float(parts[3]), float(parts[4])
-
-def on_gyro_bias(agent, msg):
-    parts = msg.split()
-    if len(parts) < 5: return
-    state["bias_p"], state["bias_q"], state["bias_r"] = float(parts[2]), float(parts[3]), float(parts[4])
-
-def on_wind(agent, msg):
-    parts = msg.split()
-    if len(parts) < 5: return
-    state["wind_n"], state["wind_e"], state["wind_d"] = float(parts[2]), float(parts[3]), float(parts[4])
-
-def on_stab_mfc(agent, msg):
-    parts = msg.split()
-    if len(parts) < 21: return
-    i = 2
-    state["mfc_sp_phi"],  state["mfc_sp_theta"],  state["mfc_sp_psi"]  = float(parts[i]),    float(parts[i+1]),  float(parts[i+2])
-    state["mfc_me_phi"],  state["mfc_me_theta"],  state["mfc_me_psi"]  = float(parts[i+3]),  float(parts[i+4]),  float(parts[i+5])
-    state["mfc_err_phi"], state["mfc_err_theta"], state["mfc_err_psi"] = float(parts[i+6]),  float(parts[i+7]),  float(parts[i+8])
-    state["mfc_fk_phi"],  state["mfc_fk_theta"],  state["mfc_fk_psi"]  = float(parts[i+9]),  float(parts[i+10]), float(parts[i+11])
-    state["mfc_cmd_phi"], state["mfc_cmd_theta"], state["mfc_cmd_psi"] = float(parts[i+12]), float(parts[i+13]), float(parts[i+14])
-    state["mfc_u0"], state["mfc_u1"] = float(parts[i+15]), float(parts[i+16])
-    state["mfc_u2"], state["mfc_u3"] = float(parts[i+17]), float(parts[i+18])
-
-def on_wls_v_stab(agent, msg):
-    parts = msg.split()
-    if len(parts) < 6: return
-    v = [float(x) for x in parts[5].split(',')]
-    if len(v) >= 4:
-        state["wls_v0"], state["wls_v1"] = v[0], v[1]
-        state["wls_v2"], state["wls_v3"] = v[2], v[3]
-
-def on_stab_attitude(agent, msg):
-    parts = msg.split()
-    if len(parts) < 9: return
-    att  = [float(x) for x in parts[3].split(',')]
-    ref  = [float(x) for x in parts[4].split(',')]
-    rate = [float(x) for x in parts[5].split(',')]
-    rref = [float(x) for x in parts[6].split(',')]
-    dacc = [float(x) for x in parts[7].split(',')]
-    aref = [float(x) for x in parts[8].split(',')]
-    state["sa_att_phi"],  state["sa_att_theta"], state["sa_att_psi"]  = att[0],  att[1],  att[2]
-    state["sa_ref_phi"],  state["sa_ref_theta"], state["sa_ref_psi"]  = ref[0],  ref[1],  ref[2]
-    state["sa_rate_p"],   state["sa_rate_q"],    state["sa_rate_r"]   = rate[0], rate[1], rate[2]
-    state["sa_rref_p"],   state["sa_rref_q"],    state["sa_rref_r"]   = rref[0], rref[1], rref[2]
-    state["sa_dacc_p"],   state["sa_dacc_q"],    state["sa_dacc_r"]   = dacc[0], dacc[1], dacc[2]
-    state["sa_aref_p"],   state["sa_aref_q"],    state["sa_aref_r"]   = aref[0], aref[1], aref[2]
-
-def on_dual_ctrl(agent, msg):
-    # DUAL_CTRL: AC_ID DUAL_CTRL active committed[nb] shadow[nb] resid[nb]
-    parts = msg.split()
-    if len(parts) < 3: return
-    try:
-        state["dual_active"] = int(parts[2])
-    except ValueError:
-        pass
-
-def on_rotorcraft_cmd(agent, msg):
-    parts = msg.split()
-    if len(parts) < 6: return
-    state["rc_roll"],  state["rc_pitch"] = int(float(parts[2])), int(float(parts[3]))
-    state["rc_yaw"],   state["rc_thrust"] = int(float(parts[4])), int(float(parts[5]))
+def on_rotorcraft_cmd(ac_id, msg):
+    if str(ac_id) != str(AC_ID): return
+    state["rc_roll"], state["rc_pitch"] = msg["cmd_roll"], msg["cmd_pitch"]
+    state["rc_yaw"], state["rc_thrust"] = msg["cmd_yaw"], msg["cmd_thrust"]
 
 
 # ── simsitl stdout reader ─────────────────────────────────────────────────────
@@ -321,8 +237,10 @@ CYAN   = "\033[36m"
 GREEN  = "\033[32m"
 YELLOW = "\033[33m"
 GREY   = "\033[90m"
-BLUE   = "\033[34m"
 RED    = "\033[31m"
+
+DUAL_CTRL_INDI = 0
+DUAL_CTRL_MFC  = 1
 
 def render():
     s = state
@@ -333,7 +251,7 @@ def render():
 
     da = s["dual_active"]
     if da < 0:
-        law_str = f"{GREY}(waiting){RESET}"
+        law_str = f"{GREY}(no DUAL_CTRL telemetry){RESET}"
     elif da == DUAL_CTRL_MFC:
         law_str = f"{RED}{BOLD}MFC{RESET}"
     else:
@@ -341,11 +259,11 @@ def render():
 
     lines = [
         f"{BOLD}{'─' * 60}{RESET}",
-        f"  {BOLD}{CYAN}ANTON NPS  —  {AC_NAME} (ac_id {AC_ID}){RESET}   {status}",
+        f"  {BOLD}{CYAN}{AC_NAME} NPS (ac_id {AC_ID}){RESET}   {status}",
         f"  Active law: {law_str}    {cmd_line.strip()}",
         f"{'─' * 60}",
         "",
-        f"  {BOLD}LAYER 0 — JSBSim truth{RESET}",
+        f"  {BOLD}JSBSim truth{RESET}",
         f"    Lat {s['lat']:+12.6f}°   Lon {s['lon']:+12.6f}°",
         f"    Alt {s['alt']:+10.2f} m MSL   AGL {s['agl']:+8.2f} m",
         f"    Roll  {bar(s['phi'],   -45, 45, unit='°')}",
@@ -354,74 +272,96 @@ def render():
         f"    p {bar(s['p'], -60, 60, unit='°/s')}",
         f"    q {bar(s['q'], -60, 60, unit='°/s')}",
         f"    r {bar(s['r'], -60, 60, unit='°/s')}",
-        f"    Vn {s['vx']:+7.3f} m/s  Ve {s['vy']:+7.3f} m/s  Vd {s['vz']:+7.3f} m/s",
         "",
-        f"  {BOLD}{BLUE}LAYER 1 — INDI stabilizer  (STAB_ATTITUDE){RESET}",
-        f"    {'':6s}  {'att(°)':>9s}  {'ref(°)':>9s}  {'rate(°/s)':>9s}  {'acc_ref':>9s}",
-        f"    {'roll':6s}  {math.degrees(s['sa_att_phi']):+9.3f}  {math.degrees(s['sa_ref_phi']):+9.3f}  {math.degrees(s['sa_rate_p']):+9.3f}  {math.degrees(s['sa_aref_p']):+9.3f}",
-        f"    {'pitch':6s}  {math.degrees(s['sa_att_theta']):+9.3f}  {math.degrees(s['sa_ref_theta']):+9.3f}  {math.degrees(s['sa_rate_q']):+9.3f}  {math.degrees(s['sa_aref_q']):+9.3f}",
-        f"    {'yaw':6s}  {math.degrees(s['sa_att_psi']):+9.3f}  {math.degrees(s['sa_ref_psi']):+9.3f}  {math.degrees(s['sa_rate_r']):+9.3f}  {math.degrees(s['sa_aref_r']):+9.3f}",
-        "",
-        f"  {BOLD}{BLUE}LAYER 1 — MFC controller  (STAB_MFC){RESET}",
-        f"    {'':6s}  {'sp(°)':>10s}  {'meas(°)':>10s}  {'err(°)':>10s}  {'F_k':>12s}  {'cmd':>10s}",
-        f"    {'roll':6s}  {math.degrees(s['mfc_sp_phi']):+10.3f}  {math.degrees(s['mfc_me_phi']):+10.3f}  {math.degrees(s['mfc_err_phi']):+10.4f}  {s['mfc_fk_phi']:+12.4f}  {s['mfc_cmd_phi']:+10.4f}",
-        f"    {'pitch':6s}  {math.degrees(s['mfc_sp_theta']):+10.3f}  {math.degrees(s['mfc_me_theta']):+10.3f}  {math.degrees(s['mfc_err_theta']):+10.4f}  {s['mfc_fk_theta']:+12.4f}  {s['mfc_cmd_theta']:+10.4f}",
-        f"    {'yaw':6s}  {math.degrees(s['mfc_sp_psi']):+10.3f}  {math.degrees(s['mfc_me_psi']):+10.3f}  {math.degrees(s['mfc_err_psi']):+10.4f}  {s['mfc_fk_psi']:+12.4f}  {s['mfc_cmd_psi']:+10.4f}",
-        f"    WLS v:  φ {s['wls_v0']:+8.2f}  θ {s['wls_v1']:+8.2f}  ψ {s['wls_v2']:+8.2f}  T {s['wls_v3']:+8.2f}",
-        f"    WLS u:  NE {s['mfc_u0']:+7.0f}  SE {s['mfc_u1']:+7.0f}  SW {s['mfc_u2']:+7.0f}  NW {s['mfc_u3']:+7.0f}",
+        f"  {BOLD}Motor commands (ROTORCRAFT_CMD){RESET}",
+        f"    roll {s['rc_roll']:+6d}  pitch {s['rc_pitch']:+6d}  yaw {s['rc_yaw']:+6d}  thrust {s['rc_thrust']:+6d}",
         "",
         f"  {BOLD}DEBUG{RESET}",
         *[f"    {GREY}{line}{RESET}" for line in list(debug_log)[-6:]],
         f"{'─' * 60}",
-        f"  {GREY}Log → {LOG_FILE}   Ctrl-C to stop{RESET}",
+        f"  {GREY}Telemetry capture → {LOG_FILE}   Ctrl-C to stop{RESET}",
+        f"  {GREY}Deeper MFC/INDI/WLS signals: PlotJuggler on {SCOPE_HOST}:{SCOPE_PORT}{RESET}",
     ]
     sys.stdout.write(CLEAR + "\n".join(lines) + "\n")
     sys.stdout.flush()
 
 
-# ── CSV logger ────────────────────────────────────────────────────────────────
-def log_writer():
-    with open(LOG_FILE, "w", newline="") as f:
-        writer = None
+# ── telemetry JSON capture + relay ────────────────────────────────────────────
+# server streams its UDP/JSON telemetry to TELEM_JSON_LOCAL_PORT on localhost;
+# we tee every (sanitized) datagram to LOG_FILE and forward it on to the real
+# PlotJuggler host, replacing the bespoke CSV logger with the same schema
+# PlotJuggler already consumes.
+def telemetry_capture_relay():
+    recv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    recv_sock.bind(("127.0.0.1", TELEM_JSON_LOCAL_PORT))
+    send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    forward_to = (SCOPE_HOST, SCOPE_PORT)
+    with open(LOG_FILE, "w", buffering=1) as f:
         while True:
-            row = {**state, "wall": time.time()}
-            if writer is None:
-                writer = csv.DictWriter(f, fieldnames=list(row.keys()))
-                writer.writeheader()
-            writer.writerow(row)
-            f.flush()
-            time.sleep(0.1)
+            data, _ = recv_sock.recvfrom(65535)
+            clean = sanitize_json(data)
+            if clean is None:
+                continue
+            f.write(clean.decode("utf-8", errors="replace") + "\n")
+            try:
+                send_sock.sendto(clean, forward_to)
+            except OSError:
+                pass
 
 
-# ── command senders ───────────────────────────────────────────────────────────
-def send_block(sock: socket.socket, block_id: int, label: str):
-    frame = pprz_block_frame(block_id)
-    sock.sendto(frame, (SIM_HOST, SIM_PORT))
+# ── command senders (native Ivy ground messages, no hand-rolled frames) ─────
+def send_block(ivy: IvyMessagesInterface, block_id: int, label: str):
+    msg = PprzMessage("ground", "JUMP_TO_BLOCK")
+    msg["ac_id"] = AC_ID
+    msg["block_id"] = block_id
+    ivy.send(msg)
     state["cmd"] = f"BLOCK {block_id} ({label})"
 
-def send_switch(sock: socket.socket, law: int, label: str):
-    frame = pprz_setting_frame(DUAL_CTRL_IDX, float(law))
-    sock.sendto(frame, (SIM_HOST, SIM_PORT))
-    state["cmd"] = f"SWITCH → {label}"
+def send_setting_by_name(ivy: IvyMessagesInterface, name: str, value: float, label: str = None):
+    if SETTINGS is None:
+        print(f"[ctrl] no settings.xml for {AC_NAME} ({SETTINGS_XML} missing) — rebuild first", flush=True)
+        return
+    try:
+        setting = SETTINGS[name]
+    except AttributeError:
+        print(f"[ctrl] unknown setting '{name}' for {AC_NAME}", flush=True)
+        return
+    msg = PprzMessage("ground", "DL_SETTING")
+    msg["ac_id"] = AC_ID
+    msg["index"] = setting.index
+    msg["value"] = float(value)
+    ivy.send(msg)
+    state["cmd"] = label or f"SETTING {name}={value}"
+
+def send_switch(ivy: IvyMessagesInterface, law: int, label: str):
+    if SETTINGS is None:
+        print(f"[ctrl] no settings.xml for {AC_NAME} — rebuild first", flush=True)
+        return
+    try:
+        SETTINGS[DUAL_CTRL_SETTING]
+    except AttributeError:
+        print(f"[ctrl] {AC_NAME} has no '{DUAL_CTRL_SETTING}' setting — not a dual-controller build, ignoring switch", flush=True)
+        return
+    send_setting_by_name(ivy, DUAL_CTRL_SETTING, float(law), label=f"SWITCH → {label}")
     print(f"[ctrl] switching to {label}", flush=True)
 
-def takeoff_sequence(sock: socket.socket):
+def takeoff_sequence(ivy: IvyMessagesInterface):
     time.sleep(5.0)
-    send_block(sock, 2, "Start Engine")
+    send_block(ivy, 2, "Start Engine")
     time.sleep(0.5)
-    send_block(sock, 3, "Takeoff")
+    send_block(ivy, 3, "Takeoff")
 
     if _SWITCH_AFTER is not None:
         time.sleep(_SWITCH_AFTER)
-        send_switch(sock, DUAL_CTRL_MFC, "MFC")
+        send_switch(ivy, DUAL_CTRL_MFC, "MFC")
         time.sleep(_SWITCH_AFTER)
-        send_switch(sock, DUAL_CTRL_INDI, "INDI")
+        send_switch(ivy, DUAL_CTRL_INDI, "INDI")
 
 
-def cmd_loop(sock: socket.socket):
+def cmd_loop(ivy: IvyMessagesInterface):
     """Read text commands from stdin and dispatch them. Runs as a daemon thread.
 
-    Accepts:  block <id> | switch <indi|mfc> | setting <idx> <float>
+    Accepts:  block <id> | switch <indi|mfc> | setting <name> <float>
     """
     for raw in sys.stdin:
         parts = raw.strip().split()
@@ -430,19 +370,17 @@ def cmd_loop(sock: socket.socket):
         cmd = parts[0]
         try:
             if cmd == "block" and len(parts) >= 2:
-                send_block(sock, int(parts[1]), parts[1])
+                send_block(ivy, int(parts[1]), parts[1])
             elif cmd == "switch" and len(parts) >= 2 and parts[1] in ("indi", "mfc"):
                 law = DUAL_CTRL_MFC if parts[1] == "mfc" else DUAL_CTRL_INDI
-                send_switch(sock, law, parts[1].upper())
+                send_switch(ivy, law, parts[1].upper())
             elif cmd == "setting" and len(parts) >= 3:
-                frame = pprz_setting_frame(int(parts[1]), float(parts[2]))
-                sock.sendto(frame, (SIM_HOST, SIM_PORT))
-                state["cmd"] = f"SETTING idx={parts[1]} val={parts[2]}"
-                print(f"[ctrl] setting idx={parts[1]} val={parts[2]}", flush=True)
+                send_setting_by_name(ivy, parts[1], float(parts[2]))
+                print(f"[ctrl] setting {parts[1]}={parts[2]}", flush=True)
             else:
                 print(
                     f"[cmd] unknown: {raw.strip()!r}  "
-                    "(commands: block <id> | switch <indi|mfc> | setting <idx> <val>)",
+                    "(commands: block <id> | switch <indi|mfc> | setting <name> <val>)",
                     flush=True,
                 )
         except Exception as exc:
@@ -455,7 +393,8 @@ def main():
 
     print("Starting Paparazzi server …")
     server = subprocess.Popen(
-        [SERVER, "-b", IVY_BUS, "-n", "-udp_json_stream_addr", SCOPE_HOST],
+        [SERVER, "-b", IVY_BUS, "-n", "-udp_json_stream_addr", "127.0.0.1",
+         "-udp_json_stream_port", str(TELEM_JSON_LOCAL_PORT)],
         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
 
@@ -469,6 +408,8 @@ def main():
     # (script 0=hover, 1=step_roll, 2=step_pitch, 3=step_yaw, 4=ff; all auto-
     # take off for the first 8 s — see sw/simulator/nps/nps_radio_control.c).
     # Otherwise RC is disabled (--norc) and control comes from the flight plan.
+    # (simsitl's own native CLI — see the pprzsim-launch note in the module
+    # docstring for why we call it directly instead of through that launcher.)
     _sim_cmd = [SIMSITL]
     _sim_cmd += ["--rc_script", str(_RC_SCRIPT)] if _RC_SCRIPT is not None else ["--norc"]
     if _USE_FG:
@@ -486,12 +427,12 @@ def main():
         text=True, bufsize=1,
     )
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ivy = IvyMessagesInterface(f"sim_anton_{AC_NAME}", ivy_bus=IVY_BUS)
 
     def shutdown(sig=None, frame=None):
         print("\nShutting down …")
-        sim.terminate(); link.terminate(); server.terminate(); sock.close()
-        try: IvyStop()
+        sim.terminate(); link.terminate(); server.terminate()
+        try: ivy.shutdown()
         except Exception: pass
         sys.exit(0)
 
@@ -501,27 +442,17 @@ def main():
     print("Waiting for sim to start …")
     time.sleep(3)
 
-    IvyInit("anton_monitor", "READY", None, lambda a, b: None, lambda a, b: None)
-    IvyStart(IVY_BUS)
-
-    IvyBindMsg(on_rate_attitude,  r"(\d+ NPS_RATE_ATTITUDE .*)")
-    IvyBindMsg(on_pos_llh,        r"(\d+ NPS_POS_LLH .*)")
-    IvyBindMsg(on_speed_pos,      r"(\d+ NPS_SPEED_POS .*)")
-    IvyBindMsg(on_sensors,        r"(\d+ NPS_SENSORS_SCALED .*)")
-    IvyBindMsg(on_gyro_bias,      r"(\d+ NPS_GYRO_BIAS .*)")
-    IvyBindMsg(on_wind,           r"(\d+ NPS_WIND .*)")
-    IvyBindMsg(on_stab_attitude,  r"(\d+ STAB_ATTITUDE .*)")
-    IvyBindMsg(on_stab_mfc,       r"(\d+ STAB_MFC .*)")
-    IvyBindMsg(on_wls_v_stab,     r"(\d+ WLS_V .*)")
-    IvyBindMsg(on_dual_ctrl,      r"(\d+ DUAL_CTRL .*)")
-    IvyBindMsg(on_rotorcraft_cmd, r"(\d+ ROTORCRAFT_CMD .*)")
+    ivy.subscribe(on_rate_attitude,  PprzMessage("telemetry", "NPS_RATE_ATTITUDE"))
+    ivy.subscribe(on_pos_llh,        PprzMessage("telemetry", "NPS_POS_LLH"))
+    ivy.subscribe(on_dual_ctrl,      PprzMessage("telemetry", "DUAL_CTRL"))
+    ivy.subscribe(on_rotorcraft_cmd, PprzMessage("telemetry", "ROTORCRAFT_CMD"))
 
     state["t"] = time.monotonic()
-    threading.Thread(target=sim_stdout_reader, args=(sim,), daemon=True).start()
-    threading.Thread(target=takeoff_sequence,  args=(sock,), daemon=True).start()
-    threading.Thread(target=log_writer,        daemon=True).start()
-    threading.Thread(target=cmd_loop,          args=(sock,), daemon=True).start()
-    print(f"Logging → {LOG_FILE}   Debug → {DEBUG_LOG_FILE}")
+    threading.Thread(target=sim_stdout_reader,       args=(sim,), daemon=True).start()
+    threading.Thread(target=takeoff_sequence,        args=(ivy,), daemon=True).start()
+    threading.Thread(target=telemetry_capture_relay, daemon=True).start()
+    threading.Thread(target=cmd_loop,                args=(ivy,), daemon=True).start()
+    print(f"Telemetry capture → {LOG_FILE}   Debug → {DEBUG_LOG_FILE}")
     if _USE_SCOPE:
         print(f"Scope → PlotJuggler at {SCOPE_HOST}:{SCOPE_PORT} (decim {SCOPE_DECIM}, ~{1000//SCOPE_DECIM} Hz)")
     if _SWITCH_AFTER:
