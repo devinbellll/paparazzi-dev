@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-03T11:14:42.049Z
-> Files: 764 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-07T13:17:55.630Z
+> Files: 767 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -64,6 +64,7 @@
 - `plotjuggler_mfc.xml` (~8888 tok)
 - `pprz_ctrl.py` — find_sim_container, send_cmd, main. `setting <name> <val>` now (was `<index>`). (~800 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~840 tok)
+- `pprz_wls.m` — MATLAB System object port of the Paparazzi WLS active-set allocator (wls_alloc.c) with ANTON_MFC defaults: B=(G1,G1+G2 yaw)/1000, Wv=[1000 1000 1 100], gamma_sq=1e4, u∈[0,9600], imax=10 (~2000 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2345 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
@@ -176,6 +177,7 @@
 - `09 - FlightGear 3D Visualization.md` — FlightGear 3D Visualization for NPS (~1076 tok)
 - `10 - Simplified Autopilots & Flight Modes.md` — 10 - Simplified Autopilots & Flight Modes (~2177 tok)
 - `11 - In-Flight Controller Switching (Oneloop Pattern).md` — 11 - In-Flight Controller Switching (Oneloop Pattern) (~1709 tok)
+- `12 - First-Order Actuator Dynamics (JSBSim vs Firmware).md` — First-Order Actuator Dynamics — JSBSim Model vs Firmware (ANTON / ANTON_MFC) (~2106 tok)
 
 ## Knowledge/Daily Notes/
 
@@ -241,6 +243,7 @@
 - `2026-06-30-mfc-runtime-tuneability.md` — 2026-06-30 — MFC runtime tuneability (allocator + thrust toggles, unified shortnames) (~896 tok)
 - `2026-07-01-flight-test-streaming-fix-and-kd-tuneability.md` — Session — 2026-07-01: Flight-Test Streaming Fix + kd/use_Kd Tuneability (~706 tok)
 - `2026-07-03-sim-anton-native-rework.md` — 2026-07-03 — sim_anton.py Paparazzi-native rework (~1334 tok)
+- `2026-07-07-pprz-wls-matlab-port.md` — 2026-07-07 — Porting the Paparazzi WLS allocator to MATLAB (`pprz_wls.m`) (~776 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
