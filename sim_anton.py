@@ -42,12 +42,22 @@ Command delivery:
 Observability:
   Layer 0 — JSBSim truth:   NPS_RATE_ATTITUDE, NPS_POS_LLH
   Layer 1 — Firmware state: DUAL_CTRL (active law), ROTORCRAFT_CMD (motor commands)
-  Logging: server's own UDP/JSON telemetry stream (the real PlotJuggler bridge, see
-           pj_json_relay.py) is captured to a .jsonl file — same schema PlotJuggler consumes,
-           no bespoke CSV columns to keep in sync with the firmware.
-  Scope:   The in-process NPS emitter (nps_scope.c in simsitl) still streams firmware-registered
-           scope vars (mfc/*, wls/*, ...) to PlotJuggler directly — unrelated/complementary to
-           the telemetry capture above; use --no-scope to disable it.
+
+  PlotJuggler feed — exactly ONE source streams to the Mac, in the shared
+  aircraft-agnostic schema (root "uav", MFC_* branches — see pj_json_relay.py):
+    default:     the in-process NPS scope emitter (nps_scope.c in simsitl) — ground
+                 truth + firmware-registered vars at full decimated sim rate. It sends
+                 to a local port; we normalize each packet and forward it on.
+    --no-scope:  fall back to server's ivy UDP/JSON telemetry stream (downsampled,
+                 walltime-stamped — what you'd have in real flight).
+  Because both sources are normalized to the same schema, plotjuggler_mfc.xml /
+  plotjuggler_indi.xml work unchanged for sim and real flight, any aircraft.
+  PJ_HOST / PJ_PORT env vars override the PlotJuggler destination (default: the
+  Mac host, 9870).
+
+  Logging: server's UDP/JSON telemetry stream is always captured (normalized) to a
+           .jsonl file — same schema PlotJuggler consumes, no bespoke CSV columns
+           to keep in sync with the firmware.
 
 Note on `pprzsim-launch`: paparazzi ships sw/simulator/pprzsim-launch as the canonical NPS
 launcher, but it only knows how to `execv` simsitl with a handful of flags (fg/rc_script/norc/
@@ -145,15 +155,21 @@ except OSError:
     FG_HOST = "192.168.65.254"
 R2D = math.degrees(1)
 
-# Scope: in-process NPS emitter → PlotJuggler on the Mac host (sim-time stamped JSON).
-# PlotJuggler: Streaming → Start → UDP Server, port 9870, protocol JSON, "use field as timestamp" = t.
-SCOPE_HOST  = FG_HOST   # same egress path as FlightGear
-SCOPE_PORT  = 9870
+# PlotJuggler destination (Streaming → UDP Server, protocol JSON, timestamp field
+# "timestamp"). Overridable for testing / non-Mac setups.
+PJ_HOST = os.environ.get("PJ_HOST") or FG_HOST   # default: same egress path as FlightGear
+PJ_PORT = int(os.environ.get("PJ_PORT") or 9870)
+
+# Scope: in-process NPS emitter (nps_scope.c) → local port → normalize → PJ_HOST.
+# Routed through this process (not straight to the Mac) so every packet gets the
+# shared aircraft-agnostic schema rewrite from pj_json_relay.normalize_obj.
+SCOPE_LOCAL_PORT = 9871
 SCOPE_DECIM = 2         # emit every Nth sim step (~500 Hz at 1 kHz sim rate)
 
 # Telemetry JSON stream: server's own UDP/JSON emitter is the real PlotJuggler bridge
-# (see pj_json_relay.py). Point it at a local port so we can tee it to a capture file
-# before relaying (sanitized) on to the Mac, instead of re-decoding Ivy by hand.
+# (see pj_json_relay.py). Point it at a local port so we can tee it to a capture file;
+# it is only forwarded to PlotJuggler when the scope is disabled (--no-scope), so the
+# GUI never gets the same signals from two sources at once.
 TELEM_JSON_LOCAL_PORT = 9870
 
 # Logs land in /workspace/sim_logs/ (bind-mounted to the host) so they survive
@@ -280,7 +296,7 @@ def render():
         *[f"    {GREY}{line}{RESET}" for line in list(debug_log)[-6:]],
         f"{'─' * 60}",
         f"  {GREY}Telemetry capture → {LOG_FILE}   Ctrl-C to stop{RESET}",
-        f"  {GREY}Deeper MFC/INDI/WLS signals: PlotJuggler on {SCOPE_HOST}:{SCOPE_PORT}{RESET}",
+        f"  {GREY}Deeper MFC/INDI/WLS signals: PlotJuggler on {PJ_HOST}:{PJ_PORT}{RESET}",
     ]
     sys.stdout.write(CLEAR + "\n".join(lines) + "\n")
     sys.stdout.flush()
@@ -288,14 +304,15 @@ def render():
 
 # ── telemetry JSON capture + relay ────────────────────────────────────────────
 # server streams its UDP/JSON telemetry to TELEM_JSON_LOCAL_PORT on localhost;
-# we tee every (sanitized) datagram to LOG_FILE and forward it on to the real
-# PlotJuggler host, replacing the bespoke CSV logger with the same schema
-# PlotJuggler already consumes.
+# we tee every (sanitized + normalized) datagram to LOG_FILE. It is forwarded to
+# PlotJuggler only when the scope emitter is off (--no-scope): in a SITL run the
+# scope carries the same signals as ivy telemetry at full rate plus ground truth,
+# so forwarding both would draw every curve twice from two clocks.
 def telemetry_capture_relay():
     recv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     recv_sock.bind(("127.0.0.1", TELEM_JSON_LOCAL_PORT))
     send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    forward_to = (SCOPE_HOST, SCOPE_PORT)
+    forward_to = (PJ_HOST, PJ_PORT)
     with open(LOG_FILE, "w", buffering=1) as f:
         while True:
             data, _ = recv_sock.recvfrom(65535)
@@ -303,10 +320,32 @@ def telemetry_capture_relay():
             if clean is None:
                 continue
             f.write(clean.decode("utf-8", errors="replace") + "\n")
+            if _USE_SCOPE:
+                continue
             try:
                 send_sock.sendto(clean, forward_to)
             except OSError:
                 pass
+
+
+# ── scope normalize + relay ───────────────────────────────────────────────────
+# The in-process NPS scope emitter sends raw JSON (root "<AIRFRAME> (sim)") to
+# SCOPE_LOCAL_PORT; rewrite each packet to the shared "uav" schema and forward
+# it to PlotJuggler.
+def scope_relay():
+    recv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    recv_sock.bind(("127.0.0.1", SCOPE_LOCAL_PORT))
+    send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    forward_to = (PJ_HOST, PJ_PORT)
+    while True:
+        data, _ = recv_sock.recvfrom(65535)
+        clean = sanitize_json(data)
+        if clean is None:
+            continue
+        try:
+            send_sock.sendto(clean, forward_to)
+        except OSError:
+            pass
 
 
 # ── command senders (native Ivy ground messages, no hand-rolled frames) ─────
@@ -415,8 +454,8 @@ def main():
     if _USE_FG:
         _sim_cmd += ["--fg_host", FG_HOST, "--fg_port", str(FG_PORT), "--fg_fdm"]
     if _USE_SCOPE:
-        _sim_cmd += ["--scope_host", SCOPE_HOST,
-                     "--scope_port", str(SCOPE_PORT),
+        _sim_cmd += ["--scope_host", "127.0.0.1",
+                     "--scope_port", str(SCOPE_LOCAL_PORT),
                      "--scope_decim", str(SCOPE_DECIM)]
     if _GDB:
         _sim_cmd = ["gdbserver", ":1234"] + _sim_cmd
@@ -452,9 +491,14 @@ def main():
     threading.Thread(target=takeoff_sequence,        args=(ivy,), daemon=True).start()
     threading.Thread(target=telemetry_capture_relay, daemon=True).start()
     threading.Thread(target=cmd_loop,                args=(ivy,), daemon=True).start()
+    if _USE_SCOPE:
+        threading.Thread(target=scope_relay, daemon=True).start()
     print(f"Telemetry capture → {LOG_FILE}   Debug → {DEBUG_LOG_FILE}")
     if _USE_SCOPE:
-        print(f"Scope → PlotJuggler at {SCOPE_HOST}:{SCOPE_PORT} (decim {SCOPE_DECIM}, ~{1000//SCOPE_DECIM} Hz)")
+        print(f"PlotJuggler feed: NPS scope (normalized '/uav' schema) → {PJ_HOST}:{PJ_PORT} "
+              f"(decim {SCOPE_DECIM}, ~{1000//SCOPE_DECIM} Hz)")
+    else:
+        print(f"PlotJuggler feed: ivy telemetry (normalized '/uav' schema) → {PJ_HOST}:{PJ_PORT}")
     if _SWITCH_AFTER:
         print(f"Auto-switch: MFC at +{_SWITCH_AFTER}s, INDI at +{2*_SWITCH_AFTER}s")
 

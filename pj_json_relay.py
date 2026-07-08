@@ -27,6 +27,24 @@ drops) malformed datagrams, and re-emits clean JSON. It also replaces the
 `socat` hop that was already needed to get packets from the VM interface to
 localhost, so it's a drop-in for that command.
 
+Normalization (shared PlotJuggler schema)
+-----------------------------------------
+Besides repairing JSON, the relay rewrites every packet into a single schema
+shared by the two telemetry sources, so ONE PlotJuggler layout works for any
+aircraft, sim or real flight:
+
+  ivy server  (server.ml, UDP/JSON 9870):  {"NAME (id)":  {"GUIDANCE_MFC": {...}}, "timestamp": t}
+  nps_scope   (nps_scope.c, in-process):   {"NAME (sim)": {"TRUTH": {...}, "MFC_STAB/sp_phi": v, ...}, "timestamp": t}
+
+both become:
+
+  {"uav": {"MFC_GUIDANCE": {...}}, "timestamp": t}
+
+i.e. the aircraft-specific root key is replaced by the fixed root "uav", and
+MFC-related branches are renamed so they sort together in the curve tree:
+STAB_MFC -> MFC_STAB, GUIDANCE_MFC -> MFC_GUIDANCE,
+GUIDANCE_MFC_ACC2ATT / ACC2ATT -> MFC_ACC2ATT. Pass --raw to disable.
+
 Usage (replaces the socat invocation):
     ./pj_json_relay.py --listen-addr 172.16.113.1 --listen-port 9870 \
                         --forward-addr 127.0.0.1  --forward-port 9870
@@ -51,6 +69,46 @@ BARE_LITERALS = {
     "inf": "null", "-inf": "null",
     "infinity": "null", "-infinity": "null",
 }
+
+# ── shared-schema normalization ──────────────────────────────────────────────
+# Fixed root key replacing the aircraft-specific "NAME (id)" / "NAME (sim)"
+# roots, so PlotJuggler layouts are aircraft- and feed-agnostic.
+NORMALIZED_ROOT = "uav"
+# First-path-segment renames applied inside the root. Covers both the ivy
+# message names (messages.xml) and the legacy nps_scope registration names.
+BRANCH_MAP = {
+    "STAB_MFC": "MFC_STAB",
+    "GUIDANCE_MFC": "MFC_GUIDANCE",
+    "GUIDANCE_MFC_ACC2ATT": "MFC_ACC2ATT",
+    "ACC2ATT": "MFC_ACC2ATT",
+}
+
+
+def normalize_obj(obj):
+    """Rewrite a parsed telemetry packet into the shared schema (see module doc).
+
+    Any top-level key whose value is a dict is treated as an aircraft root and
+    merged under NORMALIZED_ROOT; scalar top-level keys ("timestamp") pass
+    through. Branch keys (which may contain '/' separators, e.g. the flat
+    "MFC_STAB/sp_phi" names nps_scope emits) get their first path segment
+    renamed via BRANCH_MAP.
+    """
+    if not isinstance(obj, dict):
+        return obj
+    tree = {}
+    passthrough = {}
+    for key, val in obj.items():
+        if not isinstance(val, dict):
+            passthrough[key] = val
+            continue
+        for branch, sub in val.items():
+            head, sep, rest = branch.partition("/")
+            tree[BRANCH_MAP.get(head, head) + sep + rest] = sub
+    if not tree:
+        return obj
+    out = {NORMALIZED_ROOT: tree}
+    out.update(passthrough)
+    return out
 
 
 def repair_json_text(text: str) -> str:
@@ -124,21 +182,33 @@ def repair_json_text(text: str) -> str:
     return "".join(out)
 
 
-def sanitize(data: bytes):
-    """Return clean JSON bytes to forward, or None if the packet is unsalvageable."""
+def _sanitize_ex(data: bytes, normalize: bool):
+    """Return (clean_bytes_or_None, was_valid_json)."""
     try:
-        json.loads(data)
-        return data  # already valid, pass through untouched
+        obj = json.loads(data)
+        was_clean = True
     except (json.JSONDecodeError, UnicodeDecodeError):
-        pass
+        was_clean = False
+        text = data.decode("utf-8", errors="replace")
+        repaired = repair_json_text(text)
+        try:
+            obj = json.loads(repaired)
+        except json.JSONDecodeError:
+            return None, False
 
-    text = data.decode("utf-8", errors="replace")
-    repaired = repair_json_text(text)
-    try:
-        obj = json.loads(repaired)
-    except json.JSONDecodeError:
-        return None
-    return json.dumps(obj).encode("utf-8")
+    if normalize:
+        obj = normalize_obj(obj)
+    elif was_clean:
+        return data, True  # raw mode, already valid: pass through untouched
+    return json.dumps(obj).encode("utf-8"), was_clean
+
+
+def sanitize(data: bytes, normalize: bool = True):
+    """Return clean JSON bytes to forward, or None if the packet is unsalvageable.
+
+    With normalize=True (the default) the packet is also rewritten into the
+    shared aircraft-agnostic schema (see normalize_obj)."""
+    return _sanitize_ex(data, normalize)[0]
 
 
 def main():
@@ -147,6 +217,10 @@ def main():
     ap.add_argument("--listen-port", type=int, default=9870)
     ap.add_argument("--forward-addr", default="127.0.0.1", help="PlotJuggler UDP Server address")
     ap.add_argument("--forward-port", type=int, default=9870)
+    ap.add_argument("--raw", action="store_true",
+                     help="disable schema normalization: forward packets with their original "
+                          "aircraft-specific root and message names instead of rewriting them "
+                          "to the shared '%s' schema" % NORMALIZED_ROOT)
     ap.add_argument("-q", "--quiet", action="store_true", help="only print drop/repair counters, not every event")
     ap.add_argument("-v", "--verbose", action="store_true",
                      help="log every packet received and forwarded (source addr, size, payload preview), "
@@ -182,7 +256,9 @@ def main():
     forward_to = (args.forward_addr, args.forward_port)
 
     print(f"pj_json_relay: listening on {args.listen_addr}:{args.listen_port}, "
-          f"forwarding to {args.forward_addr}:{args.forward_port}", file=sys.stderr)
+          f"forwarding to {args.forward_addr}:{args.forward_port} "
+          f"({'raw passthrough' if args.raw else 'normalized to /' + NORMALIZED_ROOT + ' schema'})",
+          file=sys.stderr)
 
     n_ok = n_repaired = n_dropped = 0
     last_report = time.monotonic()
@@ -207,14 +283,14 @@ def main():
             if args.verbose:
                 print(f"[recv] {from_addr[0]}:{from_addr[1]} {len(data)}B: {data[:200]!r}", file=sys.stderr)
 
-            clean = sanitize(data)
+            clean, was_clean = _sanitize_ex(data, normalize=not args.raw)
             if clean is None:
                 n_dropped += 1
                 if not args.quiet:
                     preview = data[:120]
                     print(f"[drop] unparseable packet ({len(data)}B): {preview!r}", file=sys.stderr)
             else:
-                if clean is not data:
+                if not was_clean:
                     n_repaired += 1
                     if not args.quiet:
                         print(f"[repair] fixed malformed packet ({len(data)}B)", file=sys.stderr)

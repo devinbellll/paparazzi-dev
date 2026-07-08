@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-07T13:17:55.630Z
-> Files: 767 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-08T10:15:19.060Z
+> Files: 769 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -27,7 +27,7 @@
 
 - `MEMORY.md` (~244 tok)
 - `mfc-flight-test-enablement.md` (~470 tok)
-- `nps-scope-ivy-parity.md` (~362 tok)
+- `nps-scope-ivy-parity.md` (~465 tok)
 - `plotjuggler-json-relay-sanitizer.md` — Declares to (~893 tok)
 - `plotjuggler-server-udp-json.md` (~417 tok)
 - `runtime-sandbox-and-build-model.md` (~1213 tok)
@@ -60,15 +60,16 @@
 - `handover_bumptest.py` — ac_id, frame, block, setting (~1298 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 - `mfc_ivy_probe.py` — Temporary probe: tap the Ivy bus for STAB_MFC + GUIDANCE_MFC, print decoded (~535 tok)
-- `pj_json_relay.py` — repair_json_text, flush_word, sanitize, main (~2920 tok)
-- `plotjuggler_mfc.xml` (~8888 tok)
+- `pj_json_relay.py` — UDP JSON sanitizer + shared-schema normalizer (root→uav, MFC_* branch renames); sanitize(data, normalize=True) (~4400 tok)
+- `plotjuggler_indi.xml` — INDI layout, shared /uav schema (indi/*, WLS, TRUTH/EST/SENSORS/SP) (~3500 tok)
+- `plotjuggler_mfc.xml` — MFC layout, shared /uav schema (aircraft-agnostic, sim+real) (~6000 tok)
 - `pprz_ctrl.py` — find_sim_container, send_cmd, main. `setting <name> <val>` now (was `<index>`). (~800 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~840 tok)
 - `pprz_wls.m` — MATLAB System object port of the Paparazzi WLS active-set allocator (wls_alloc.c) with ANTON_MFC defaults: B=(G1,G1+G2 yaw)/1000, Wv=[1000 1000 1 100], gamma_sq=1e4, u∈[0,9600], imax=10 (~2000 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2345 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — Paparazzi-native rework (2026-07-03): commands via pprzlink Ivy (JUMP_TO_BLOCK/DL_SETTING by name, no hand-rolled frames/hardcoded index); telemetry capture = server's own udp_json_stream teed to .jsonl (via pj_json_relay.sanitize) + forwarded to PlotJuggler, replacing the old bespoke CSV; --render slimmed to truth/law/cmd only. on_rate_attitude, on_pos_llh, on_dual_ctrl, on_rotorcraft_cmd, telemetry_capture_relay (~5200 tok)
+- `sim_anton.py` — on_rate_attitude, on_pos_llh, on_dual_ctrl, on_rotorcraft_cmd (~6100 tok)
 - `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1255 tok)
 - `tune_mfc.sh` — tune_mfc.sh — grade an MFC run with analyze_mfc.py, from any of three feeds: (~921 tok)
 
@@ -244,6 +245,7 @@
 - `2026-07-01-flight-test-streaming-fix-and-kd-tuneability.md` — Session — 2026-07-01: Flight-Test Streaming Fix + kd/use_Kd Tuneability (~706 tok)
 - `2026-07-03-sim-anton-native-rework.md` — 2026-07-03 — sim_anton.py Paparazzi-native rework (~1334 tok)
 - `2026-07-07-pprz-wls-matlab-port.md` — 2026-07-07 — Porting the Paparazzi WLS allocator to MATLAB (`pprz_wls.m`) (~776 tok)
+- `2026-07-08-plotjuggler-shared-schema.md` — Session — 2026-07-08: One PlotJuggler schema for all feeds (sim + real, any aircraft) (~798 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 

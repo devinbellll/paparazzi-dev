@@ -36,6 +36,9 @@
 
 - **A telemetry process with >1 mode auto-generates a `telemetry_mode_<Process>` switch SETTING for target `ap|nps`.** That symbol is only defined by whatever `.c` does `#define PERIODIC_C_<PROCESS>`. For `FlightRecorder` that's `flight_recorder.c`, which is `<makefile target="ap">` + chibios-only deps → on **nps** nothing defines it → `ld: undefined reference to telemetry_mode_FlightRecorder` (bug-168). `mfc_flight_test.xml` FlightRecorder has 2 modes (default+mfc) → fails on nps; `default_rotorcraft.xml` FlightRecorder has 1 mode → no setting → ANTON_MFC nps links. Single-mode non-Main processes are sim-safe; multi-mode ones need an nps owner stub.
 
+
+- **PlotJuggler shared schema (2026-07-08): every feed is normalized before PlotJuggler.** `pj_json_relay.normalize_obj` rewrites any telemetry packet to root `"uav"` and renames MFC branches (`STAB_MFC`→`MFC_STAB`, `GUIDANCE_MFC`→`MFC_GUIDANCE`, `GUIDANCE_MFC_ACC2ATT`/`ACC2ATT`→`MFC_ACC2ATT`), so one layout (`plotjuggler_mfc.xml` / `plotjuggler_indi.xml`, curves `/uav/...`) works for any aircraft, sim or real. In SITL `sim_anton.py` forwards ONLY the NPS scope (via local port 9871 → normalize → PJ_HOST:PJ_PORT, default Mac:9870); ivy telemetry is captured to .jsonl but forwarded only with `--no-scope`. Real flight: run `pj_json_relay.py` standalone (normalizes by default, `--raw` to disable). pprzlink message names in messages.xml are UNCHANGED — the rename happens only at the relay layer. Firmware NPS_SCOPE_VAR strings now use the MFC_* names directly.
+
 ## Do-Not-Repeat
 
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
@@ -62,6 +65,9 @@
 - [2026-06-09] **Makefile.ac caching bug (known limitation)**: `sw/lib/ocaml/aircraft.ml:478` sets `autopilot=true` only for the current `-target`; the file is only copied if newer than sources. After NPS build, AP build reuses the NPS Makefile.ac (which lacks `USE_GENERATED_AUTOPILOT=TRUE` in the AP block). Fix: delete `Makefile.ac` before switching targets. This is a Paparazzi upstream bug.
 - [2026-06-11] **Thrust-unit conversion lives in guidance, not the shared stabilizer**: `guidance_mfc` emits its vertical thrust in physical (indi_v[3]-space) units. A single compile-time `GUIDANCE_MFC_THRUST_TO_PPRZ` define (default FALSE) selects packaging: FALSE → raw float (`th_sp_from_thrust_f`) for `stabilization_mfc`'s pseudo-inverse; TRUE → scale by `GUIDANCE_MFC_THRUST_PPRZ_SCALE = 1/sum(Bwls[3][i])` and emit an int (`th_sp_from_thrust_i`) so the **stock** INDI Bwls path round-trips exactly. Chosen over hacking each stabilizer so both `stabilization_indi.c` and `stabilization_mfc.c` keep their stock contracts; guidance adapts to the selected downstream. `stabilization_indi.c` was reverted to stock; `stabilization_mfc.c` now reads `thrust->sp.thrust_f[Z]` directly (OUTPUTS==4). Scale for ANTON = `1000/(4*-1.5)` = -166.67. Supersedes the bug-035 diagnosis "option (2)" hack.
 
+
+- **PlotJuggler shared schema (2026-07-08): every feed is normalized before PlotJuggler.** `pj_json_relay.normalize_obj` rewrites any telemetry packet to root `"uav"` and renames MFC branches (`STAB_MFC`→`MFC_STAB`, `GUIDANCE_MFC`→`MFC_GUIDANCE`, `GUIDANCE_MFC_ACC2ATT`/`ACC2ATT`→`MFC_ACC2ATT`), so one layout (`plotjuggler_mfc.xml` / `plotjuggler_indi.xml`, curves `/uav/...`) works for any aircraft, sim or real. In SITL `sim_anton.py` forwards ONLY the NPS scope (via local port 9871 → normalize → PJ_HOST:PJ_PORT, default Mac:9870); ivy telemetry is captured to .jsonl but forwarded only with `--no-scope`. Real flight: run `pj_json_relay.py` standalone (normalizes by default, `--raw` to disable). pprzlink message names in messages.xml are UNCHANGED — the rename happens only at the relay layer. Firmware NPS_SCOPE_VAR strings now use the MFC_* names directly.
+
 ## Do-Not-Repeat additions
 
 - [2026-06-09] **`Bound(val, lo, hi)` is a statement macro, not an expression.** Using `asinf(Bound(...))` fails. Always use an intermediate variable: `Bound(val, lo, hi); result = asinf(val);`
@@ -76,6 +82,9 @@
 - [2026-06-15] **A Paparazzi module's source must live under `sw/airborne/modules/<dir>/`.** Setting `dir="firmwares/rotorcraft"` on a `<module>` does NOT make the build find a file there — you get `No rule to make target .../modules/firmwares/rotorcraft/<file>.c`. Put module .c/.h under `modules/<name>/` (dir defaults to module name).
 - [2026-06-15] **A module that declares a generated `<periodic>`/`<event>`/`<init>` call needs a `<header><file name="x.h"/></header>` element**, or the generated `modules.h` calls the function with no prototype (implicit-declaration warning, and confusing failures).
 - [2026-06-15] **NPS scope architecture: truth/* is hardcoded in `sw/simulator/nps/nps_scope.c` (universal); everything else is firmware globals registered via `NPS_SCOPE_VAR`/`NPS_SCOPE_VARN` (no-op off-sim).** For clean SI/deg + fixed-point/union conversion, register a static float mirror refreshed by a sim-only module `<periodic>` (see `modules/nps_scope/nps_scope_state.c`) rather than raw addresses.
+
+
+- **PlotJuggler shared schema (2026-07-08): every feed is normalized before PlotJuggler.** `pj_json_relay.normalize_obj` rewrites any telemetry packet to root `"uav"` and renames MFC branches (`STAB_MFC`→`MFC_STAB`, `GUIDANCE_MFC`→`MFC_GUIDANCE`, `GUIDANCE_MFC_ACC2ATT`/`ACC2ATT`→`MFC_ACC2ATT`), so one layout (`plotjuggler_mfc.xml` / `plotjuggler_indi.xml`, curves `/uav/...`) works for any aircraft, sim or real. In SITL `sim_anton.py` forwards ONLY the NPS scope (via local port 9871 → normalize → PJ_HOST:PJ_PORT, default Mac:9870); ivy telemetry is captured to .jsonl but forwarded only with `--no-scope`. Real flight: run `pj_json_relay.py` standalone (normalizes by default, `--raw` to disable). pprzlink message names in messages.xml are UNCHANGED — the rename happens only at the relay layer. Firmware NPS_SCOPE_VAR strings now use the MFC_* names directly.
 
 ## Do-Not-Repeat additions
 
@@ -112,6 +121,9 @@
 - compiledb is the bear-free way to get compile_commands.json: it PARSES make's verbose stdout (needs `USE_VERBOSE_COMPILE=yes Q=''` for the chibios/airborne rules to echo the real `$(CC) -c ...` lines, and `--print-directory` + `--build-dir` for per-TU include resolution). It drops entries whose source file doesn't exist on disk (use `-S/--no-strict` to disable). nps echoes "CC file.o"/"LD ..."; ap/chibios echoes "Compiling file".
 - A clangd compile_commands.json only needs the per-FILE compile commands; a final LINK failure is irrelevant. pprz.sh db tolerates it on purpose (ap firmware may legitimately not link mid-dev).
 
+
+- **PlotJuggler shared schema (2026-07-08): every feed is normalized before PlotJuggler.** `pj_json_relay.normalize_obj` rewrites any telemetry packet to root `"uav"` and renames MFC branches (`STAB_MFC`→`MFC_STAB`, `GUIDANCE_MFC`→`MFC_GUIDANCE`, `GUIDANCE_MFC_ACC2ATT`/`ACC2ATT`→`MFC_ACC2ATT`), so one layout (`plotjuggler_mfc.xml` / `plotjuggler_indi.xml`, curves `/uav/...`) works for any aircraft, sim or real. In SITL `sim_anton.py` forwards ONLY the NPS scope (via local port 9871 → normalize → PJ_HOST:PJ_PORT, default Mac:9870); ivy telemetry is captured to .jsonl but forwarded only with `--no-scope`. Real flight: run `pj_json_relay.py` standalone (normalizes by default, `--raw` to disable). pprzlink message names in messages.xml are UNCHANGED — the rename happens only at the relay layer. Firmware NPS_SCOPE_VAR strings now use the MFC_* names directly.
+
 ## Do-Not-Repeat additions
 
 - [2026-06-17] **Don't use `bear` for compile_commands.json in the ephemeral build container.** bear 3.x's gRPC intercept wrapper can't reach its loopback daemon there → "gRPC call failed ... Connection refused", every compile fails, no DB. Use `compiledb --parse` on a verbose build log (bug-051).
@@ -135,6 +147,9 @@
 
 - **Dual-controller strategy = single shared Phase 0 (de-confliction) -> Shadow -> Handover, Shadow-first.** The two plans are sequential phases, not alternatives (both reuse Phase 0; Shadow is the safe validation gate for Handover). Implemented Phase 0 at the STABILIZATION level first (guidance left as stock INDI) as the smallest verifiable milestone: pure-INDI active path + MFC stabilizer shadowing. Guidance-level shadow and the Handover selector are later increments. Handover will use Option A (selector in the wrapper, GCS+RC), not the oneloop-style autopilot XML.
 - **Neutralize MFC's colliding globals as `static` (not macro-rename).** Cleaner than `#define name name_mfc` because the latter fights header includes when a wrapper TU pulls in both stabilizer headers. Only actuators_pprz needed a real rename (it must stay an exported symbol for the NPS glue, but as INDI's; MFC's became static mfc_actuators_pprz).
+
+
+- **PlotJuggler shared schema (2026-07-08): every feed is normalized before PlotJuggler.** `pj_json_relay.normalize_obj` rewrites any telemetry packet to root `"uav"` and renames MFC branches (`STAB_MFC`→`MFC_STAB`, `GUIDANCE_MFC`→`MFC_GUIDANCE`, `GUIDANCE_MFC_ACC2ATT`/`ACC2ATT`→`MFC_ACC2ATT`), so one layout (`plotjuggler_mfc.xml` / `plotjuggler_indi.xml`, curves `/uav/...`) works for any aircraft, sim or real. In SITL `sim_anton.py` forwards ONLY the NPS scope (via local port 9871 → normalize → PJ_HOST:PJ_PORT, default Mac:9870); ivy telemetry is captured to .jsonl but forwarded only with `--no-scope`. Real flight: run `pj_json_relay.py` standalone (normalizes by default, `--raw` to disable). pprzlink message names in messages.xml are UNCHANGED — the rename happens only at the relay layer. Firmware NPS_SCOPE_VAR strings now use the MFC_* names directly.
 
 ## Do-Not-Repeat additions
 
@@ -167,6 +182,9 @@
 
 - **Handover = Option A (selector in the wrapper) per the plan, GCS-driven.** Both laws run every tick (warm filters → instant switch); the selector only changes which buffer is committed + which actuator output reaches the motors, and re-`enter()`s the new law for bumpless transfer (oneloop-faithful). RC AUX gate / one-way panic deferred — GCS dropdown + edge RC-loss failsafe implemented now.
 - **INDI shadow support gated behind `STABILIZATION_INDI_SHADOW`** (only the dual module defines it) so the stock `stabilization_indi.c` shared by every other ENAC airframe is byte-for-byte unaffected.
+
+
+- **PlotJuggler shared schema (2026-07-08): every feed is normalized before PlotJuggler.** `pj_json_relay.normalize_obj` rewrites any telemetry packet to root `"uav"` and renames MFC branches (`STAB_MFC`→`MFC_STAB`, `GUIDANCE_MFC`→`MFC_GUIDANCE`, `GUIDANCE_MFC_ACC2ATT`/`ACC2ATT`→`MFC_ACC2ATT`), so one layout (`plotjuggler_mfc.xml` / `plotjuggler_indi.xml`, curves `/uav/...`) works for any aircraft, sim or real. In SITL `sim_anton.py` forwards ONLY the NPS scope (via local port 9871 → normalize → PJ_HOST:PJ_PORT, default Mac:9870); ivy telemetry is captured to .jsonl but forwarded only with `--no-scope`. Real flight: run `pj_json_relay.py` standalone (normalizes by default, `--raw` to disable). pprzlink message names in messages.xml are UNCHANGED — the rename happens only at the relay layer. Firmware NPS_SCOPE_VAR strings now use the MFC_* names directly.
 
 ## Do-Not-Repeat additions (2026-06-18 — Phase 2)
 
@@ -212,6 +230,9 @@
   as a documented asymmetry — INDI is the trusted incumbent, its shadow output is
   telemetry-only.
 
+
+- **PlotJuggler shared schema (2026-07-08): every feed is normalized before PlotJuggler.** `pj_json_relay.normalize_obj` rewrites any telemetry packet to root `"uav"` and renames MFC branches (`STAB_MFC`→`MFC_STAB`, `GUIDANCE_MFC`→`MFC_GUIDANCE`, `GUIDANCE_MFC_ACC2ATT`/`ACC2ATT`→`MFC_ACC2ATT`), so one layout (`plotjuggler_mfc.xml` / `plotjuggler_indi.xml`, curves `/uav/...`) works for any aircraft, sim or real. In SITL `sim_anton.py` forwards ONLY the NPS scope (via local port 9871 → normalize → PJ_HOST:PJ_PORT, default Mac:9870); ivy telemetry is captured to .jsonl but forwarded only with `--no-scope`. Real flight: run `pj_json_relay.py` standalone (normalizes by default, `--raw` to disable). pprzlink message names in messages.xml are UNCHANGED — the rename happens only at the relay layer. Firmware NPS_SCOPE_VAR strings now use the MFC_* names directly.
+
 ## Do-Not-Repeat additions (2026-06-19)
 - [2026-06-22] **`$(SRC_FIRMWARE)` in a module `<header>` block is NOT expanded** — the generator writes the literal string into a C `#include`. Use the expanded literal: `dir="firmwares/rotorcraft/oneloop"`. Makefile variables are only safe in `<makefile>` blocks.
 - [2026-06-22] **When moving a `.c` file, also update its own self-include** — updating wrapper includes is not enough; the moved `.c` includes its own header and needs updating too.
@@ -238,6 +259,9 @@
 - Flashing happens on the **Mac/host**, never the sandbox (USB device is physical). Build runs in container → `.elf/.bin/.hex` land in `var/aircrafts/<AC>/<TARGET>/obj/`.
 - DON'T flash the `.elf` with STM32CubeProgrammer — its zero-size RAM segments (0x20000000, 0x2402xxxx) trigger "File corrupted. Two or more segments define the same memory zone". Flash `.hex` or `.bin`+addr instead.
 - `make ... -f Makefile.ac ap.upload` fails on the lean Mac with "No rule to make target ap.upload" — NOT because the rule is missing (it's at Makefile.ac:220) but because its prereq chain `%.upload→%.compile→%.ac_h→$(GENERATORS)/gen_aircraft.out` needs the OCaml codegen binary the Mac doesn't have; GNU make drops the unsatisfiable pattern rule. Bypass it: call the airborne upload target directly: `make -C $PPRZ/sw/airborne TARGET=ap AIRCRAFT=<AC> PAPARAZZI_SRC=$PPRZ PAPARAZZI_HOME=$PPRZ upload` (needs only the generated `var/aircrafts/<AC>/Makefile.ac` + the bin). Pick flasher with `FLASH_MODE=` (STLINK→st-flash, DFU_CUBE→STM32_Programmer_CLI, default DFU-UTIL→dfu-util). For DFU_CUBE on Mac also override `CUBE_PROGRAMMER=$(which STM32_Programmer_CLI)` (makefile hardcodes /usr/local path).
+
+
+- **PlotJuggler shared schema (2026-07-08): every feed is normalized before PlotJuggler.** `pj_json_relay.normalize_obj` rewrites any telemetry packet to root `"uav"` and renames MFC branches (`STAB_MFC`→`MFC_STAB`, `GUIDANCE_MFC`→`MFC_GUIDANCE`, `GUIDANCE_MFC_ACC2ATT`/`ACC2ATT`→`MFC_ACC2ATT`), so one layout (`plotjuggler_mfc.xml` / `plotjuggler_indi.xml`, curves `/uav/...`) works for any aircraft, sim or real. In SITL `sim_anton.py` forwards ONLY the NPS scope (via local port 9871 → normalize → PJ_HOST:PJ_PORT, default Mac:9870); ivy telemetry is captured to .jsonl but forwarded only with `--no-scope`. Real flight: run `pj_json_relay.py` standalone (normalizes by default, `--raw` to disable). pprzlink message names in messages.xml are UNCHANGED — the rename happens only at the relay layer. Firmware NPS_SCOPE_VAR strings now use the MFC_* names directly.
 
 ## Do-Not-Repeat (2026-06-25)
 - Don't claim NPS flight behavior works from compile-only. The headless CSV/debug logs from sim_anton.py read all-zero/frozen-t in this sandbox (its in-container Ivy client doesn't bind telemetry), so they are NOT a witness. Verify by probing the Ivy bus directly: run a python ivy listener inside a sibling `--network host` container on 127.255.255.255:2010 and decode ROTORCRAFT_STATUS (ap_mode field is the 6th payload value; 9=ATTITUDE_Z_HOLD) + ROTORCRAFT_FP (up*0.0039063 = metres).
@@ -283,6 +307,9 @@
   buildable config and "everything in place" was the goal; attitude-only is a
   documented 1-line guidance→indi swap. The cross pair guidance=indi+stab=mfc
   risks the bug-122 thrust-unit union path, so it's NOT the default.
+
+
+- **PlotJuggler shared schema (2026-07-08): every feed is normalized before PlotJuggler.** `pj_json_relay.normalize_obj` rewrites any telemetry packet to root `"uav"` and renames MFC branches (`STAB_MFC`→`MFC_STAB`, `GUIDANCE_MFC`→`MFC_GUIDANCE`, `GUIDANCE_MFC_ACC2ATT`/`ACC2ATT`→`MFC_ACC2ATT`), so one layout (`plotjuggler_mfc.xml` / `plotjuggler_indi.xml`, curves `/uav/...`) works for any aircraft, sim or real. In SITL `sim_anton.py` forwards ONLY the NPS scope (via local port 9871 → normalize → PJ_HOST:PJ_PORT, default Mac:9870); ivy telemetry is captured to .jsonl but forwarded only with `--no-scope`. Real flight: run `pj_json_relay.py` standalone (normalizes by default, `--raw` to disable). pprzlink message names in messages.xml are UNCHANGED — the rename happens only at the relay layer. Firmware NPS_SCOPE_VAR strings now use the MFC_* names directly.
 
 ## Do-Not-Repeat additions (2026-06-25 — SITL test of MFC enablement)
 - **`ins ext_pose` (OptiTrack) gets NO state feed in stock NPS** → an airframe on

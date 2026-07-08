@@ -3105,6 +3105,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-03T11:09:06.092Z"
+    },
+    {
+      "id": "bug-181",
+      "timestamp": "2026-07-08T10:06:02.093Z",
+      "error_message": "Significant refactor of ",
+      "file": "pj_json_relay.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 15→22 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-08T10:06:02.093Z"
+    },
+    {
+      "id": "bug-182",
+      "timestamp": "2026-07-08T10:07:03.635Z",
+      "error_message": "Significant refactor of ",
+      "file": "sim_anton.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 9→19 lines (6 removed) | Also: # Scope: in-process NPS emitter → PlotJuggler on t; # PlotJuggler: Streaming → Start → UDP Server, por | Also: # we tee every (sanitized) datagram to LOG_FILE an; # PlotJuggler host, replacing the bespoke CSV logg",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-07-08T10:07:41.108Z"
+    },
+    {
+      "id": "bug-183",
+      "timestamp": "2026-07-08T10:08:10.599Z",
+      "error_message": "Incorrect value in code",
+      "file": "sim_anton.py",
+      "root_cause": "Had \"  {GREY}Deeper MFC/INDI/WLS signals: PlotJuggler ",
+      "fix": "Changed to \"  {GREY}Deeper MFC/INDI/WLS signals: PlotJuggler ",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-08T10:08:10.599Z"
     }
   ]
 }

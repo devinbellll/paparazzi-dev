@@ -94,4 +94,8 @@ TTY_OPTS=(-i)
 [[ -t 0 && -t 1 ]] && TTY_OPTS=(-it)
 
 echo "==> Launching NPS sim ($AC_NAME) in container '$(pprz_image_name)'..."
-pprz_run "${NET_OPTS[@]}" "${TTY_OPTS[@]}" -- python3 sim_anton.py "$AC_NAME" ${SIM_ARGS[@]+"${SIM_ARGS[@]}"}
+# PJ_HOST/PJ_PORT: optional PlotJuggler destination override (sim_anton.py
+# defaults to host.docker.internal:9870 when unset).
+pprz_run "${NET_OPTS[@]}" "${TTY_OPTS[@]}" \
+  -e PJ_HOST="${PJ_HOST:-}" -e PJ_PORT="${PJ_PORT:-}" \
+  -- python3 sim_anton.py "$AC_NAME" ${SIM_ARGS[@]+"${SIM_ARGS[@]}"}
