@@ -41,6 +41,8 @@
 
 ## Do-Not-Repeat
 
+- (2026-07-09) When fixing a discovered modeling/correctness error, do NOT wrap the fix in a compile-time define + runtime toggle + GCS setting for backward compatibility unless asked. User rejected the STABILIZATION_MFC_G2_IN_ALLOCATION flag machinery and chose the direct unconditional fix (drop G2 from MFC allocation entirely). Preference: minimal, decisive fixes; wrong behavior should not remain selectable.
+
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
 

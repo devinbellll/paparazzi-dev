@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-08T10:15:19.060Z
-> Files: 769 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-09T14:56:37.561Z
+> Files: 772 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -30,6 +30,7 @@
 - `nps-scope-ivy-parity.md` (~465 tok)
 - `plotjuggler-json-relay-sanitizer.md` — Declares to (~893 tok)
 - `plotjuggler-server-udp-json.md` (~417 tok)
+- `prefers-direct-fixes-over-compat-flags.md` (~272 tok)
 - `runtime-sandbox-and-build-model.md` (~1213 tok)
 
 ## ../home/vscode/.claude/plans/
@@ -179,6 +180,8 @@
 - `10 - Simplified Autopilots & Flight Modes.md` — 10 - Simplified Autopilots & Flight Modes (~2177 tok)
 - `11 - In-Flight Controller Switching (Oneloop Pattern).md` — 11 - In-Flight Controller Switching (Oneloop Pattern) (~1709 tok)
 - `12 - First-Order Actuator Dynamics (JSBSim vs Firmware).md` — First-Order Actuator Dynamics — JSBSim Model vs Firmware (ANTON / ANTON_MFC) (~2106 tok)
+- `13 - G2 in Allocation — Incremental (INDI) vs Absolute (MFC).md` — Why (G1+G2) yaw row is exact for INDI increments but ~31x overstates steady yaw effectiveness under MFC absolute allocation; the G2_IN_ALLOCATION fix, WLS saturation impact, Simulink plant guidance (~1700 tok)
+- `13 - G2 in Allocation — Incremental (INDI) vs Absolute (MFC).md` — G2 in the Allocation Matrix — Why (G1+G2) Is Correct for INDI's Incremental Commands but Wrong for M (~1750 tok)
 
 ## Knowledge/Daily Notes/
 
@@ -965,7 +968,7 @@
 - `oneloop_mfc.xml` (~2014 tok)
 - `stabilization_dual_mfc_indi.xml` (~903 tok)
 - `stabilization_mfc_oneloop.xml` (~272 tok)
-- `stabilization_mfc.xml` (~3695 tok)
+- `stabilization_mfc.xml` (~3843 tok)
 
 ## paparazzi/conf/simulator/flightgear/
 
@@ -1000,8 +1003,8 @@
 - `mfc_core.h` (~746 tok)
 - `stabilization_indi.c` (~12056 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
-- `stabilization_mfc.c` (~11938 tok)
-- `stabilization_mfc.h` — PPRZ command to each actuator (~647 tok)
+- `stabilization_mfc.c` (~12039 tok)
+- `stabilization_mfc.h` — PPRZ command to each actuator (~733 tok)
 
 ## paparazzi/sw/airborne/modules/control_dual/
 
