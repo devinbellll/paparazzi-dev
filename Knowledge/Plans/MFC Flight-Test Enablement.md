@@ -1,5 +1,13 @@
 # Plan — MFC Flight-Test Enablement (telemetry + SD fast-logging + analysis)
 
+> **STATUS (2026-07-16): largely executed.** Successful flights flown 2026-07-05 (fr_0002–fr_0004)
+> and 2026-07-10 (fr_0001, attitude mode) — SD fast-logs in `SUCCESSFULL_FLIGHTS_SD/`. Phases 0–2
+> done (Hoops_111_MFC builds the MFC stack, GUIDANCE_MFC message exists, FlightRecorder logs the
+> MFC set). Phase 3's schema unification landed differently than drafted: the canonical schema is
+> the **`/uav/<BRANCH>/<field>` PlotJuggler schema** (via `pj_json_relay.py`), not the lowercase
+> `mfc/roll/...` keys — `sdlog2scope.py` as specified here is superseded. Phases 3(b)/4 are
+> **superseded by [[MFC Data Management & Comparison]]**, which adds Simulink as a third source.
+
 **Goal:** get everything in place to flight-test the standalone MFC stack
 (`stabilization_mfc.c` + `guidance_mfc.c`) on the real aircraft **`Hoops_111_MFC`**
 (ac_id 111, board `tawaki_2.0`). Attitude-only first, then the full guidance+stab stack.

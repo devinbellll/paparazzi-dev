@@ -24,7 +24,7 @@
 #
 # Env:
 #   CONF          Fleet XML, relative to the paparazzi/ dir
-#                 (default conf/airframes/ENAC/conf_enac.xml).
+#                 (default conf/userconf/ENAC/conf_mfc.xml).
 #   PPRZ_HOST_CC  Mac arm-none-eabi-gcc path — rewritten into the DB so clangd
 #                 resolves bare-metal system headers (optional).
 set -euo pipefail
@@ -34,7 +34,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Fleet XML, relative to the paparazzi/ dir. gen_aircraft.out resolves -conf
 # relative to make's cwd, and the build runs `make -C paparazzi`, so this is the
 # canonical form (NOT the repo-root form "paparazzi/conf/...").
-CONF_DEFAULT="conf/airframes/ENAC/conf_enac.xml"
+CONF_DEFAULT="conf/userconf/ENAC/conf_mfc.xml"
 
 PPRZ=/workspace/paparazzi   # in-container repo path
 

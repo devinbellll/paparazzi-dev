@@ -30,7 +30,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=pprz_docker.sh
 source "$SCRIPT_DIR/pprz_docker.sh"
 
-CONF="${CONF:-conf/airframes/ENAC/conf_enac.xml}"
+CONF="${CONF:-conf/userconf/ENAC/conf_mfc.xml}"
 
 # ── Parse our own flags; forward the rest to sim_anton.py ─────────────────────
 DO_BUILD=true
