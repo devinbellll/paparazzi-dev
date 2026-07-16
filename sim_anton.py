@@ -3,19 +3,16 @@
 Launch a Paparazzi NPS simulation and print live aircraft state to the terminal.
 Sends a takeoff command sequence 1 second after the sim is ready.
 
-Usage:  python3 sim_anton.py AIRCRAFT [--gdb] [--fg] [--render] [--switch-after SEC] [--rc_script N]
+Usage:  python3 sim_anton.py AIRCRAFT [--gdb] [--fg] [--render] [--rc_script N]
         Ctrl-C to stop (kills child processes cleanly).
 
   AIRCRAFT  Aircraft name as registered in the conf XML (e.g. ANTON_MFC).
             The CONF env var selects which conf file to search
-            (default: conf/airframes/ENAC/conf_enac.xml, relative to PAPARAZZI_HOME).
+            (default: conf/userconf/ENAC/conf_mfc.xml, relative to PAPARAZZI_HOME).
 
 Flags:
   --render          Enable the live TUI dashboard (default: plain debug log to stdout).
   --fg              Stream NET_FDM pose to FlightGear on the Mac host (host.docker.internal:5501).
-  --switch-after N  Switch to MFC N seconds after takeoff, then back to INDI N seconds later.
-                    Only meaningful on a dual-controller build (e.g. ANTON_DUAL) that has a
-                    `dual_ctrl_active` setting; harmless no-op otherwise (a warning is printed).
   --rc_script N     Drive RC from a compiled-in NPS stick script instead of --norc
                     (0=hover 1=step_roll 2=step_pitch 3=step_yaw 4=ff; auto-takeoff for first 8 s).
                     Script 5 = FP takeoff (NAV) then ATTITUDE_Z_HOLD with a scheduled
@@ -23,11 +20,9 @@ Flags:
 
 Interactive commands (type in the sim terminal, or pipe via pprz_ctrl.py):
   block <id>              jump to flight plan block
-  switch <indi|mfc>       hand motor authority to the named controller (dual-controller builds only)
   setting <name> <float>  set a GCS setting by its shortname (var/aircrafts/<AC>/settings.xml)
 
   From a second terminal on the host:
-    python3 pprz_ctrl.py AIRCRAFT switch mfc
     python3 pprz_ctrl.py AIRCRAFT block 5
 
 Takeoff sequence (flight plan blocks):
@@ -41,7 +36,7 @@ Command delivery:
 
 Observability:
   Layer 0 — JSBSim truth:   NPS_RATE_ATTITUDE, NPS_POS_LLH
-  Layer 1 — Firmware state: DUAL_CTRL (active law), ROTORCRAFT_CMD (motor commands)
+  Layer 1 — Firmware state: ROTORCRAFT_CMD (motor commands)
 
   PlotJuggler feed — exactly ONE source streams to the Mac, in the shared
   aircraft-agnostic schema (root "uav", MFC_* branches — see pj_json_relay.py):
@@ -99,10 +94,7 @@ _args = sys.argv[1:]
 i = 0
 while i < len(_args):
     a = _args[i]
-    if a == "--switch-after" and i + 1 < len(_args):
-        _flags["switch_after"] = float(_args[i + 1])
-        i += 2
-    elif a == "--rc_script" and i + 1 < len(_args):
+    if a == "--rc_script" and i + 1 < len(_args):
         _flags["rc_script"] = int(_args[i + 1])
         i += 2
     elif a.startswith("-"):
@@ -115,7 +107,7 @@ while i < len(_args):
         i += 1
 
 if AC_NAME is None:
-    print(f"Usage: {sys.argv[0]} AIRCRAFT [--gdb] [--fg] [--render] [--switch-after SEC] [--rc_script N]",
+    print(f"Usage: {sys.argv[0]} AIRCRAFT [--gdb] [--fg] [--render] [--rc_script N]",
           file=sys.stderr)
     sys.exit(1)
 
@@ -123,7 +115,6 @@ _USE_RENDER   = "--render"   in _flags
 _GDB          = "--gdb"      in _flags
 _USE_FG       = "--fg"       in _flags
 _USE_SCOPE    = "--no-scope" not in _flags
-_SWITCH_AFTER = _flags.get("switch_after")   # seconds after takeoff, or None
 _RC_SCRIPT    = _flags.get("rc_script")      # NPS compiled RC script index, or None
 
 # ── Look up AC_ID from the conf XML ──────────────────────────────────────────
@@ -141,7 +132,7 @@ def _lookup_ac_id(pprz_home: str, conf_rel: str, name: str) -> int | None:
         print(f"Warning: could not parse {conf_path}: {e}", file=sys.stderr)
     return None
 
-_CONF = os.environ.get("CONF") or "conf/airframes/ENAC/conf_enac.xml"
+_CONF = os.environ.get("CONF") or "conf/userconf/ENAC/conf_mfc.xml"
 AC_ID = _lookup_ac_id(PPRZ, _CONF, AC_NAME)
 if AC_ID is None:
     print(f"Error: aircraft '{AC_NAME}' not found in {os.path.join(PPRZ, _CONF)}", file=sys.stderr)
@@ -188,8 +179,6 @@ except Exception as e:
     print(f"Warning: could not parse {SETTINGS_XML}: {e}", file=sys.stderr)
     SETTINGS = None
 
-DUAL_CTRL_SETTING = "active_law"   # shortname of dual_ctrl_active (dual-controller builds only)
-
 
 # ── shared state ─────────────────────────────────────────────────────────────
 state = {
@@ -197,7 +186,6 @@ state = {
     "p":   0.0, "q":     0.0, "r":   0.0,
     "lat": 0.0, "lon":   0.0,
     "alt": 0.0, "agl":   0.0,
-    "dual_active": -1,  # -1 = not yet received; 0 = INDI, 1 = MFC
     "rc_roll": 0, "rc_pitch": 0, "rc_yaw": 0, "rc_thrust": 0,
     "t":   0.0,
     "cmd": "",
@@ -218,10 +206,6 @@ def on_pos_llh(ac_id, msg):
     state["lon"] = msg["lon"] * R2D
     state["alt"] = msg["asl"]
     state["agl"] = msg["agl"]
-
-def on_dual_ctrl(ac_id, msg):
-    if str(ac_id) != str(AC_ID): return
-    state["dual_active"] = int(msg["active"])
 
 def on_rotorcraft_cmd(ac_id, msg):
     if str(ac_id) != str(AC_ID): return
@@ -253,10 +237,6 @@ CYAN   = "\033[36m"
 GREEN  = "\033[32m"
 YELLOW = "\033[33m"
 GREY   = "\033[90m"
-RED    = "\033[31m"
-
-DUAL_CTRL_INDI = 0
-DUAL_CTRL_MFC  = 1
 
 def render():
     s = state
@@ -265,18 +245,10 @@ def render():
     status = f"{GREY}stale ({age:.1f}s){RESET}" if stale else f"{GREEN}live{RESET}"
     cmd_line = f"  {YELLOW}CMD:{RESET} {s['cmd']}" if s["cmd"] else f"  {GREY}no command sent yet{RESET}"
 
-    da = s["dual_active"]
-    if da < 0:
-        law_str = f"{GREY}(no DUAL_CTRL telemetry){RESET}"
-    elif da == DUAL_CTRL_MFC:
-        law_str = f"{RED}{BOLD}MFC{RESET}"
-    else:
-        law_str = f"{GREEN}INDI{RESET}"
-
     lines = [
         f"{BOLD}{'─' * 60}{RESET}",
         f"  {BOLD}{CYAN}{AC_NAME} NPS (ac_id {AC_ID}){RESET}   {status}",
-        f"  Active law: {law_str}    {cmd_line.strip()}",
+        f"  {cmd_line.strip()}",
         f"{'─' * 60}",
         "",
         f"  {BOLD}JSBSim truth{RESET}",
@@ -372,35 +344,17 @@ def send_setting_by_name(ivy: IvyMessagesInterface, name: str, value: float, lab
     ivy.send(msg)
     state["cmd"] = label or f"SETTING {name}={value}"
 
-def send_switch(ivy: IvyMessagesInterface, law: int, label: str):
-    if SETTINGS is None:
-        print(f"[ctrl] no settings.xml for {AC_NAME} — rebuild first", flush=True)
-        return
-    try:
-        SETTINGS[DUAL_CTRL_SETTING]
-    except AttributeError:
-        print(f"[ctrl] {AC_NAME} has no '{DUAL_CTRL_SETTING}' setting — not a dual-controller build, ignoring switch", flush=True)
-        return
-    send_setting_by_name(ivy, DUAL_CTRL_SETTING, float(law), label=f"SWITCH → {label}")
-    print(f"[ctrl] switching to {label}", flush=True)
-
 def takeoff_sequence(ivy: IvyMessagesInterface):
     time.sleep(5.0)
     send_block(ivy, 2, "Start Engine")
     time.sleep(0.5)
     send_block(ivy, 3, "Takeoff")
 
-    if _SWITCH_AFTER is not None:
-        time.sleep(_SWITCH_AFTER)
-        send_switch(ivy, DUAL_CTRL_MFC, "MFC")
-        time.sleep(_SWITCH_AFTER)
-        send_switch(ivy, DUAL_CTRL_INDI, "INDI")
-
 
 def cmd_loop(ivy: IvyMessagesInterface):
     """Read text commands from stdin and dispatch them. Runs as a daemon thread.
 
-    Accepts:  block <id> | switch <indi|mfc> | setting <name> <float>
+    Accepts:  block <id> | setting <name> <float>
     """
     for raw in sys.stdin:
         parts = raw.strip().split()
@@ -410,16 +364,13 @@ def cmd_loop(ivy: IvyMessagesInterface):
         try:
             if cmd == "block" and len(parts) >= 2:
                 send_block(ivy, int(parts[1]), parts[1])
-            elif cmd == "switch" and len(parts) >= 2 and parts[1] in ("indi", "mfc"):
-                law = DUAL_CTRL_MFC if parts[1] == "mfc" else DUAL_CTRL_INDI
-                send_switch(ivy, law, parts[1].upper())
             elif cmd == "setting" and len(parts) >= 3:
                 send_setting_by_name(ivy, parts[1], float(parts[2]))
                 print(f"[ctrl] setting {parts[1]}={parts[2]}", flush=True)
             else:
                 print(
                     f"[cmd] unknown: {raw.strip()!r}  "
-                    "(commands: block <id> | switch <indi|mfc> | setting <name> <val>)",
+                    "(commands: block <id> | setting <name> <val>)",
                     flush=True,
                 )
         except Exception as exc:
@@ -483,7 +434,6 @@ def main():
 
     ivy.subscribe(on_rate_attitude,  PprzMessage("telemetry", "NPS_RATE_ATTITUDE"))
     ivy.subscribe(on_pos_llh,        PprzMessage("telemetry", "NPS_POS_LLH"))
-    ivy.subscribe(on_dual_ctrl,      PprzMessage("telemetry", "DUAL_CTRL"))
     ivy.subscribe(on_rotorcraft_cmd, PprzMessage("telemetry", "ROTORCRAFT_CMD"))
 
     state["t"] = time.monotonic()
@@ -499,8 +449,6 @@ def main():
               f"(decim {SCOPE_DECIM}, ~{1000//SCOPE_DECIM} Hz)")
     else:
         print(f"PlotJuggler feed: ivy telemetry (normalized '/uav' schema) → {PJ_HOST}:{PJ_PORT}")
-    if _SWITCH_AFTER:
-        print(f"Auto-switch: MFC at +{_SWITCH_AFTER}s, INDI at +{2*_SWITCH_AFTER}s")
 
     if _USE_RENDER:
         while True:

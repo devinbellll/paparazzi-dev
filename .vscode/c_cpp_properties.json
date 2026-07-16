@@ -10,8 +10,6 @@
         { "name": "ANTON (ap)" },
         { "name": "ANTON (nps)" },
         { "name": "ANTON_ONELOOP (ap)" },
-        { "name": "ANTON_ONELOOP (nps)" },
-        { "name": "ANTON_DUAL (ap)" },
-        { "name": "ANTON_DUAL (nps)" }
+        { "name": "ANTON_ONELOOP (nps)" }
     ]
 }

@@ -1,7 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-09T14:56:37.561Z
-> Files: 772 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-16T12:37:43.586Z
+> Files: 766 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
+
+- `convert_sd_to_pj.py` — Convert FLIGHT_RECORDER SD-card CSVs into the /uav/... schema used by (~320 tok)
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -14,9 +18,11 @@
 
 ## ../../../../../../home/agent/.claude/plans/
 
+- `clean-up-task-i-wise-shamir.md` — Clean up MFC config: conf split, flight-plan rework, rc_script verification (~1706 tok)
 - `foamy-growing-origami.md` — MFC tuneability: runtime toggles + unified shortnames (~1744 tok)
 - `look-at-build-fw-sh-and-async-kettle.md` — Plan: Decouple Claude/VSCode from the Paparazzi build env via ephemeral arm64 containers (~2405 tok)
 - `make-the-u-min-and-jiggly-eclipse.md` — Expose MFC per-axis U_min/U_max as dl_settings (~1353 tok)
+- `nested-crunching-seal.md` — Plan: MFC Data Management & Comparison — new plan document (~1476 tok)
 - `purrfect-inventing-cascade.md` — Plan: Honor `use_trajec_sp` and add guarded `use_Kd` in mfc_core (~1304 tok)
 - `purrfect-sprouting-lovelace.md` — Plan: sim_anton cleanup + GCS shell + dual-ctrl flight plan (~1571 tok)
 - `resource-users-devinbellll-workspace-en-prancy-cupcake.md` — Plan: Fix IntelliSense — two separate root causes (~906 tok)
@@ -25,8 +31,9 @@
 
 ## ../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/
 
-- `MEMORY.md` (~244 tok)
-- `mfc-flight-test-enablement.md` (~470 tok)
+- `MEMORY.md` (~340 tok)
+- `mfc-data-management-plan.md` (~429 tok)
+- `mfc-flight-test-enablement.md` (~542 tok)
 - `nps-scope-ivy-parity.md` (~465 tok)
 - `plotjuggler-json-relay-sanitizer.md` — Declares to (~893 tok)
 - `plotjuggler-server-udp-json.md` (~417 tok)
@@ -64,13 +71,13 @@
 - `pj_json_relay.py` — UDP JSON sanitizer + shared-schema normalizer (root→uav, MFC_* branch renames); sanitize(data, normalize=True) (~4400 tok)
 - `plotjuggler_indi.xml` — INDI layout, shared /uav schema (indi/*, WLS, TRUTH/EST/SENSORS/SP) (~3500 tok)
 - `plotjuggler_mfc.xml` — MFC layout, shared /uav schema (aircraft-agnostic, sim+real) (~6000 tok)
-- `pprz_ctrl.py` — find_sim_container, send_cmd, main. `setting <name> <val>` now (was `<index>`). (~800 tok)
+- `pprz_ctrl.py` — find_sim_container, send_cmd, main (~645 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~840 tok)
 - `pprz_wls.m` — MATLAB System object port of the Paparazzi WLS active-set allocator (wls_alloc.c) with ANTON_MFC defaults: B=(G1,G1+G2 yaw)/1000, Wv=[1000 1000 1 100], gamma_sq=1e4, u∈[0,9600], imax=10 (~2000 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2345 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — on_rate_attitude, on_pos_llh, on_dual_ctrl, on_rotorcraft_cmd (~6100 tok)
+- `sim_anton.py` — on_rate_attitude, on_pos_llh, on_rotorcraft_cmd, sim_stdout_reader (~5392 tok)
 - `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1255 tok)
 - `tune_mfc.sh` — tune_mfc.sh — grade an MFC run with analyze_mfc.py, from any of three feeds: (~921 tok)
 
@@ -166,7 +173,7 @@
 
 ## .vscode/
 
-- `c_cpp_properties.json` (~555 tok)
+- `c_cpp_properties.json` (~172 tok)
 - `launch.json` (~622 tok)
 - `settings.json` (~286 tok)
 - `tasks.json` (~1286 tok)
@@ -206,7 +213,8 @@
 
 - `Dual-Controller Handover Mode.md` — Plan — Dual-Controller Handover Mode (switch MFC ↔ INDI in flight) (~1755 tok)
 - `Dual-Controller Shadow Mode.md` — Plan — Dual-Controller Shadow Mode (MFC alongside INDI) (~2092 tok)
-- `MFC Flight-Test Enablement.md` — Plan — MFC Flight-Test Enablement (telemetry + SD fast-logging + analysis) (~3709 tok)
+- `MFC Data Management & Comparison.md` — Plan — MFC Data Management & Comparison (flight ↔ sim ↔ Simulink) (~2882 tok)
+- `MFC Flight-Test Enablement.md` — Plan — MFC Flight-Test Enablement (telemetry + SD fast-logging + analysis) (~3878 tok)
 - `NPS-Scope Ivy PlotJuggler Parity.md` — NPS-scope ↔ ivy-server PlotJuggler parity (MFC) (~2399 tok)
 - `sim_anton Paparazzi-Native Rework.md` — Plan — `sim_anton.py` Paparazzi-Native Rework (~1992 tok)
 - `Third-Update-Slide-Guide.md` — Third Update — Slide Guide for the PowerPoint Agent (~2820 tok)
@@ -249,6 +257,8 @@
 - `2026-07-03-sim-anton-native-rework.md` — 2026-07-03 — sim_anton.py Paparazzi-native rework (~1334 tok)
 - `2026-07-07-pprz-wls-matlab-port.md` — 2026-07-07 — Porting the Paparazzi WLS allocator to MATLAB (`pprz_wls.m`) (~776 tok)
 - `2026-07-08-plotjuggler-shared-schema.md` — Session — 2026-07-08: One PlotJuggler schema for all feeds (sim + real, any aircraft) (~798 tok)
+- `2026-07-16-data-management-plan.md` — Session 2026-07-16 — MFC Data Management & Comparison plan (~511 tok)
+- `2026-07-16-mfc-conf-cleanup.md` — Session — 2026-07-16: MFC conf split + flight-plan rework (~1404 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -259,15 +269,6 @@
 - `pprz_docker.sh` — dispatcher library. `pprz_run [opts] -- <cmd>` runs cmd in ephemeral container, repo→/workspace, passes PPRZ_HOST_ROOT/PPRZ_HOST_CC for path rewrites. Auto-builds image if missing. (~200 tok)
 - `pprz.sh` — THE build tool. `pprz.sh <cmd> AIRCRAFT [TARGET]` (also accepts "AIRCRAFT (target)"): build (incremental), clean, rebuild, db (compiledb→compile_commands.json, link-failure-tolerant), codegen, bootstrap. Self-dispatches into container; host-side rewrites /workspace→PPRZ_HOST_ROOT in the DB. Replaced build_fw.sh + the old build_active/gen_* scripts. (~600 tok)
 - `sim.sh` — builds nps target + runs sim_anton.py in container. Networking forks on IS_SANDBOX (--network host for sbx DinD vs bridge+-p for Mac Docker Desktop). (~200 tok)
-
-## dual-controller Phase 0 (2026-06-18)
-
-- `paparazzi/conf/modules/guidance_dual_mfc_indi.xml` — guidance wrapper module: compiles guidance_indi.c+guidance_indi_quadrotor.c with GUIDANCE_INDI_USE_AS_DEFAULT=FALSE; provides guidance,attitude_command; carries GuidanceCtrl + guidance_indi settings. Select via `<module name="guidance" type="dual_mfc_indi"/>`. (~350 tok)
-- `paparazzi/conf/modules/stabilization_dual_mfc_indi.xml` — STAB wrapper module: compiles stabilization_indi.c (stock) + the wrapper; depends on oneloop_mfc (the MFC side). Provides commands; defines INDI/MFC _OUTPUTS/_NUM_ACT. NO SHADOW defines anymore. Select via `<module name="stabilization" type="dual_mfc_indi"/>`. (~400 tok)
-- `paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/oneloop_mfc.{c,h}` — self-contained MFC stack (attitude + position guidance) with file-local globals (own WLS/g1g2/Bwls/filters); merged from the tuned stabilization_mfc.c + guidance_mfc.c. Public API oneloop_mfc_{init,attitude_enter,attitude_run,guidance_enter,guidance_run}, shadow accessors, bool oneloop_mfc_stab_active. Links beside stock INDI with zero collisions. (~13000 tok)
-- `paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.c` — STAB wrapper: owns the single stabilization_attitude_run/_enter; routes between untouched stabilization_indi_attitude_run and oneloop_mfc_attitude_run via dual_ctrl_active (GCS StabCtrl); both run each tick; MFC copies INDI's operating point when shadow (oneloop_mfc_stab_active). Failsafe→INDI on RC loss. DUAL_CTRL (194) telemetry. (~500 tok)
-- `paparazzi/sw/airborne/modules/control_dual/control_dual_mfc_indi.h` — DUAL_CTRL_{INDI,MFC}, dual_ctrl_active, mfc_shadow_cmd; extern actuators_pprz[] for the NPS glue. (~250 tok)
-- `paparazzi/sw/airborne/modules/control_dual/guidance_dual_mfc_indi.{c,h}` — GUIDANCE wrapper: owns the framework plug symbols guidance_h/v_run_*; routes guidance_indi_run_mode() (INDI, USE_AS_DEFAULT=FALSE) vs oneloop_mfc_guidance_run() via guidance_ctrl_active (GCS GuidanceCtrl). v-before-h latch; MFC thrust formatted for the active stab. GUIDANCE_DUAL (195) telemetry. (~600 tok)
 
 ## enac_paparazzi/
 
@@ -927,7 +928,7 @@
 
 ## paparazzi/conf/airframes/ENAC/
 
-- `conf_enac.xml` (~2311 tok)
+- `conf_enac.xml` (~1834 tok)
 
 ## paparazzi/conf/airframes/ENAC/hybrid/
 
@@ -936,10 +937,9 @@
 
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
-- `anton_dual.xml` (~4403 tok)
 - `anton_indi_aruco.xml` (~2774 tok)
-- `anton_mfc.xml` (~4223 tok)
-- `anton_oneloop.xml` (~4260 tok)
+- `anton_mfc.xml` (~3714 tok)
+- `anton_oneloop.xml` (~4194 tok)
 - `cobraV2.xml` (~2527 tok)
 - `crow_indoor.xml` (~2351 tok)
 - `goose.xml` (~2697 tok)
@@ -957,16 +957,14 @@
 
 ## paparazzi/conf/flight_plans/ENAC/
 
-- `anton_dual_ctrl_test.xml` (~996 tok)
+- `anton_mfc_nav.xml` (~610 tok)
 
 ## paparazzi/conf/modules/
 
-- `guidance_dual_mfc_indi.xml` (~766 tok)
 - `guidance_mfc_oneloop.xml` (~215 tok)
 - `guidance_mfc.xml` (~2567 tok)
 - `nps_scope_state.xml` (~240 tok)
-- `oneloop_mfc.xml` (~2014 tok)
-- `stabilization_dual_mfc_indi.xml` (~903 tok)
+- `oneloop_mfc.xml` (~1908 tok)
 - `stabilization_mfc_oneloop.xml` (~272 tok)
 - `stabilization_mfc.xml` (~3843 tok)
 
@@ -978,6 +976,10 @@
 
 - `default_rotorcraft.xml` (~2791 tok)
 - `mfc_flight_test.xml` (~3251 tok)
+
+## paparazzi/conf/userconf/ENAC/
+
+- `conf_mfc.xml` (~867 tok)
 
 ## paparazzi/sw/airborne/
 
@@ -1006,16 +1008,6 @@
 - `stabilization_mfc.c` (~12039 tok)
 - `stabilization_mfc.h` — PPRZ command to each actuator (~733 tok)
 
-## paparazzi/sw/airborne/modules/control_dual/
-
-- `control_dual_mfc_indi.c` — Declares int16_t (~2238 tok)
-- `control_dual_mfc_indi.h` (~710 tok)
-- `guidance_dual_mfc_indi.c` — Declares GuidanceIndi_VMode (~2043 tok)
-- `guidance_dual_mfc_indi.h` (~595 tok)
-- `guidance_mfc_oneloop.c` (~707 tok)
-- `stabilization_dual_mfc_indi.c` — Declares int16_t (~2479 tok)
-- `stabilization_mfc_oneloop.c` (~374 tok)
-
 ## paparazzi/sw/airborne/modules/ctrl/
 
 - `eff_scheduling_rotwing_V2.c` — Declares into (~4590 tok)
@@ -1031,7 +1023,7 @@
 
 ## paparazzi/sw/ext/pprzlink/message_definitions/v1.0/
 
-- `messages.xml` — Declares name (~51522 tok)
+- `messages.xml` — Declares name (~51120 tok)
 
 ## paparazzi/sw/ground_segment/tmtc/
 
@@ -1039,7 +1031,7 @@
 
 ## paparazzi/sw/simulator/nps/
 
-- `nps_radio_control.c` — Declares NpsRadioControlType (~2134 tok)
+- `nps_radio_control.c` — Returns the yaw stick value for a center -> push -> center arming gesture (~2648 tok)
 - `nps_scope.c` — ifndef _GNU_SOURCE (~1792 tok)
 
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
@@ -1052,6 +1044,8 @@
 - `Knowledge/11 - In-Flight Controller Switching (Oneloop Pattern).md` — End-to-end trace of how Paparazzi switches control laws in flight: autopilot XML → gen_autopilot.ml codegen table → runtime mode/select/on_enter machine; oneloop ANDI/INDI as the one-law-at-a-time precedent; the WEAK set_rotorcraft_commands chokepoint. (~1500 tok)
 - `Knowledge/Plans/Dual-Controller Handover Mode.md` — Plan to switch motor authority MFC↔INDI in flight bumplessly (re-enter on switch), oneloop-style RC+GCS trigger; reuses Shadow Phase 0. (~950 tok)
 - `Knowledge/Plans/Dual-Controller Shadow Mode.md` — Plan to compile MFC + INDI together; Phase 0 de-confliction (symbol collisions: stabilization_attitude_run, set_rotorcraft_commands, g1g2/actuators_pprz globals) via a dual wrapper module; INDI drives, MFC shadowed + logged for validation. (~1100 tok)
+- `Knowledge/Plans/MFC Data Management & Comparison.md` — Plan (2026-07-16): unify flight-SD / NPS-sim / Simulink-.mat data into canonical wide-CSV runs (`/uav/...` columns) under `flight_data/runs/`; new `tools/mfcdata/` CLI (sd/sim/simulink/compare/report), matplotlib report figures; supersedes Flight-Test Enablement Phase 3b/4, retires sdlog2scope.py. (~2100 tok)
+- `Knowledge/Sessions/2026-07-16-data-management-plan.md` — Session: drafted the Data Management & Comparison plan; audit of schema divergence (live /uav vs offline lowercase), uncommitted convert_sd_to_pj.py, dead tune_mfc.sh loop; user decisions (.mat Dataset, wide CSV, matplotlib). (~450 tok)
 - `sw/airborne/nps_scope_var.h` — firmware-facing shim (always-on include path). `NPS_SCOPE_VAR`/`NPS_SCOPE_VARN` macros register a global by address via `__attribute__((constructor))`; gated on `USE_NPS`, no-op on real targets. (~250 tok)
 - `sw/simulator/nps/nps_scope.c` — controller-agnostic. Includes `generated/airframe.h`; emits `{ "<AIRFRAME_NAME> (sim)": { "TRUTH":{…}, "<MSG>/<field>":v … }, "timestamp": fdm.time }` (mirrors the ivy-server tree so one PlotJuggler template matches both feeds). Registered vars (`nps_scope_register`/`_array`) sit inside the root; buf 16384. (~900 tok)
 - `sw/simulator/nps/nps_scope.h` — adds `nps_scope_type_t` enum + register prototypes. (~250 tok)

@@ -9,18 +9,13 @@ container namespace).
 
 Usage:
   python3 pprz_ctrl.py block <block_id>
-  python3 pprz_ctrl.py switch <indi|mfc>
   python3 pprz_ctrl.py setting <name> <float_value>
 
 Examples:
   python3 pprz_ctrl.py block 5              # jump to flight plan block 5
-  python3 pprz_ctrl.py switch mfc           # hand motor authority to MFC (dual-controller builds)
-  python3 pprz_ctrl.py switch indi          # hand motor authority back to INDI
-  python3 pprz_ctrl.py setting active_law 1.0   # equivalent to 'switch mfc'
-                                             # (name = shortname in var/aircrafts/<AC>/settings.xml)
+  python3 pprz_ctrl.py setting active_law 1.0   # (name = shortname in var/aircrafts/<AC>/settings.xml)
 
 You can also type commands directly in the sim terminal window:
-  switch mfc
   block 5
 """
 
@@ -71,12 +66,6 @@ def main():
             sys.exit(1)
         send_cmd(f"block {int(args[1])}")
 
-    elif cmd == "switch":
-        if len(args) < 2 or args[1] not in ("indi", "mfc"):
-            print("Usage: pprz_ctrl.py switch <indi|mfc>", file=sys.stderr)
-            sys.exit(1)
-        send_cmd(f"switch {args[1]}")
-
     elif cmd == "setting":
         if len(args) < 3:
             print("Usage: pprz_ctrl.py setting <name> <value>", file=sys.stderr)
@@ -85,7 +74,7 @@ def main():
 
     else:
         print(f"Unknown command: {cmd}", file=sys.stderr)
-        print("Commands: block, switch, setting", file=sys.stderr)
+        print("Commands: block, setting", file=sys.stderr)
         sys.exit(1)
 
 
