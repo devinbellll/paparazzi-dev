@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-16T12:37:43.586Z
-> Files: 766 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-17T10:03:32.299Z
+> Files: 770 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -34,6 +34,7 @@
 - `MEMORY.md` (~340 tok)
 - `mfc-data-management-plan.md` (~429 tok)
 - `mfc-flight-test-enablement.md` (~542 tok)
+- `mfc-si-units-refactor.md` — Declares tags (~520 tok)
 - `nps-scope-ivy-parity.md` (~465 tok)
 - `plotjuggler-json-relay-sanitizer.md` — Declares to (~893 tok)
 - `plotjuggler-server-udp-json.md` (~417 tok)
@@ -259,6 +260,8 @@
 - `2026-07-08-plotjuggler-shared-schema.md` — Session — 2026-07-08: One PlotJuggler schema for all feeds (sim + real, any aircraft) (~798 tok)
 - `2026-07-16-data-management-plan.md` — Session 2026-07-16 — MFC Data Management & Comparison plan (~511 tok)
 - `2026-07-16-mfc-conf-cleanup.md` — Session — 2026-07-16: MFC conf split + flight-plan rework (~1404 tok)
+- `2026-07-16-mfc-si-units.md` — Session — 2026-07-16: MFC SI-unit refactor (Hoops_111_MFC) (~1913 tok)
+- `2026-07-16-mfc-si-units.md` — Session — 2026-07-16: MFC SI-unit refactor (Hoops_111_MFC) (~1531 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -938,12 +941,13 @@
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
 - `anton_indi_aruco.xml` (~2774 tok)
-- `anton_mfc.xml` (~3714 tok)
+- `anton_mfc.xml` (~4114 tok)
 - `anton_oneloop.xml` (~4194 tok)
 - `cobraV2.xml` (~2527 tok)
 - `crow_indoor.xml` (~2351 tok)
 - `goose.xml` (~2697 tok)
 - `hoops_111_indoor.xml` (~4032 tok)
+- `hoops_111_mfc.xml` (~4844 tok)
 - `maya_outdoor.xml` (~2343 tok)
 - `robobee.xml` (~2518 tok)
 
@@ -962,11 +966,11 @@
 ## paparazzi/conf/modules/
 
 - `guidance_mfc_oneloop.xml` (~215 tok)
-- `guidance_mfc.xml` (~2567 tok)
+- `guidance_mfc.xml` (~2500 tok)
 - `nps_scope_state.xml` (~240 tok)
 - `oneloop_mfc.xml` (~1908 tok)
 - `stabilization_mfc_oneloop.xml` (~272 tok)
-- `stabilization_mfc.xml` (~3843 tok)
+- `stabilization_mfc.xml` (~3952 tok)
 
 ## paparazzi/conf/simulator/flightgear/
 
@@ -991,8 +995,8 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6074 tok)
-- `guidance_mfc.c` (~6484 tok)
-- `guidance_mfc.h` (~557 tok)
+- `guidance_mfc.c` (~6476 tok)
+- `guidance_mfc.h` (~558 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
 
@@ -1002,11 +1006,11 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
 - `mfc_core.c` (~1553 tok)
-- `mfc_core.h` (~746 tok)
+- `mfc_core.h` (~907 tok)
 - `stabilization_indi.c` (~12056 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
-- `stabilization_mfc.c` (~12039 tok)
-- `stabilization_mfc.h` — PPRZ command to each actuator (~733 tok)
+- `stabilization_mfc.c` (~12959 tok)
+- `stabilization_mfc.h` — PPRZ command to each actuator (~728 tok)
 
 ## paparazzi/sw/airborne/modules/ctrl/
 
