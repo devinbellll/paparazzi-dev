@@ -379,3 +379,29 @@
 - (2026-07-16) **Do NOT rescale G1/G2 in airframe XMLs to other units.** User correction: G1/G2 stay in the identified acceleration convention (what people understand and measurement tools produce); any unit conversion (e.g. to N·m/N) belongs in code (sum_g1_g2 multiplies rows by STABILIZATION_MFC_INERTIA_*/MASS). Same principle likely applies to other identified quantities: keep the measured form in config, convert in code.
 - (2026-07-16) **Don't rewrite stock-INDI-mirrored code paths that the current stack doesn't exercise.** The MFC THRUST_INCR_SP branch mirrors stabilization_indi.c and guidance_mfc emits THRUST_SP — user rejected my rework of the increment branch; keep unused mirrored branches byte-similar to stock so diffs against INDI stay readable.
 - (2026-07-16) **Don't over-restrict GCS dl_setting slider ranges to the currently-valid value domain** (e.g. gz u_min/u_max clamped to negative-only). Sliders are UI brackets, not safety logic — keep them permissive; physical clamping lives in the computed defaults.
+
+## Key Learnings additions (2026-07-20 — raw log -> PlotJuggler CSV)
+
+- A Paparazzi `.log` is XML whose `<protocol>/<msg_class>/<message>` section carries the **full
+  message + field definitions for that flight**. Parse field names from the log itself — never
+  hardcode a message field table (the old sdlog2scope.py did, and drifted from messages.xml:
+  it was missing `sp_traj_*` on STAB_MFC/GUIDANCE_MFC).
+- `.data` rows are `time ac_id MSG field1 field2 …`, values **raw/unscaled**, array fields
+  comma-joined into a single token, string/enum fields quoted (`"stab"`). The GCS CSV export
+  keeps these raw values verbatim — only `GPS_lat(deg)`/`GPS_long(deg)` are scaled (GPS_INT
+  lat/lon × 1e-7).
+- The GCS-exported flight CSV is **resampled onto a fixed grid** (4 Hz here), so its timestamps
+  do not exist in the `.data`. To diff a full-rate conversion against it, compare each reference
+  row to the nearest *preceding* raw row, not an exact timestamp match.
+- `UTC` column = `floor(time_of_day) + t` formatted UTC — the exporter truncates the
+  `time_of_day` attribute to whole seconds (using the fraction puts you ~0.7 s off).
+
+## Decision Log additions (2026-07-20)
+
+- sdlog2scope.py was rewritten to emit the **same `/uav/<BRANCH>/<field>` wide CSV as
+  convert_sd_to_pj.py** rather than its old NPS_SCOPE ndjson schema — one output contract for
+  flight data, and it imports `BRANCH_MAP` from convert_sd_to_pj.py so the renaming has a single
+  source of truth. Value-verified: 0 mismatches over 13,005 cells vs a known-good `_pj.csv`.
+- Default row policy is one row per distinct timestamp with forward-fill (full message rate,
+  ~18k rows vs the exporter's 153). `--trigger MSG` restores one-row-per-message if a single
+  message's cadence is wanted.

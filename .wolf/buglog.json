@@ -3584,6 +3584,25 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-17"
+    },
+    {
+      "id": "bug-210",
+      "timestamp": "2026-07-20T14:43:53.139807",
+      "error_message": "sdlog2scope.py emitted the old NPS_SCOPE ndjson schema and a hardcoded message field table, so its output was unusable with plotjuggler_mfc.xml and was missing the sp_traj_* fields",
+      "file": "tools/sdlog2scope.py",
+      "root_cause": "Field order was hardcoded in the script and drifted from messages.xml; output keys (mfc/roll/sp) predate the /uav/<BRANCH>/<field> schema that pj_json_relay.py and convert_sd_to_pj.py standardised on",
+      "fix": "Rewrote it to parse field names from the .log <protocol> XML and emit the /uav wide CSV, importing BRANCH_MAP from convert_sd_to_pj.py. Verified 0 mismatches over 13005 cells vs a known-good _pj.csv",
+      "tags": [
+        "tooling",
+        "logging",
+        "plotjuggler",
+        "csv",
+        "schema",
+        "mfc"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-20T14:43:53.139807"
     }
   ]
 }

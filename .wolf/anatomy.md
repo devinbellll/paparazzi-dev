@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-17T14:42:28.394Z
-> Files: 772 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-20T12:43:43.337Z
+> Files: 773 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -264,6 +264,7 @@
 - `2026-07-16-mfc-conf-cleanup.md` — Session — 2026-07-16: MFC conf split + flight-plan rework (~1404 tok)
 - `2026-07-16-mfc-si-units.md` — Session — 2026-07-16: MFC SI-unit refactor (Hoops_111_MFC) (~1913 tok)
 - `2026-07-16-mfc-si-units.md` — Session — 2026-07-16: MFC SI-unit refactor (Hoops_111_MFC) (~1531 tok)
+- `2026-07-20-sdlog2scope-rewrite.md` — 2026-07-20 — sdlog2scope.py rewritten to the /uav CSV schema (~776 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -1058,4 +1059,4 @@
 
 ## tools/
 
-- `sdlog2scope.py` — convert, set_key, main (~1944 tok)
+- `sdlog2scope.py` — Convert a raw Paparazzi flight log (.log + .data) into the wide `/uav/...` PlotJuggler CSV — same output contract as convert_sd_to_pj.py (shared BRANCH_MAP) but from the raw log, at full message rate instead of the GCS exporter's 4 Hz resample. Field names parsed from the `.log` `<protocol>` XML, so no hardcoded message table. (~2600 tok)
