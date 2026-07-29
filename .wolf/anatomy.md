@@ -1,11 +1,10 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-20T12:43:43.337Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T10:38:56.682Z
 > Files: 773 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
-- `convert_sd_to_pj.py` — Convert FLIGHT_RECORDER SD-card CSVs into the /uav/... schema used by (~320 tok)
 
 ## ../../../../../../home/agent/.claude/jobs/5f5ea195/tmp/
 
@@ -19,6 +18,7 @@
 ## ../../../../../../home/agent/.claude/plans/
 
 - `clean-up-task-i-wise-shamir.md` — Clean up MFC config: conf split, flight-plan rework, rc_script verification (~1706 tok)
+- `create-a-plan-for-serialized-yao.md` — Plan — Big Cleanup of the Command-Line Sim/Launch Stack (~3836 tok)
 - `foamy-growing-origami.md` — MFC tuneability: runtime toggles + unified shortnames (~1744 tok)
 - `look-at-build-fw-sh-and-async-kettle.md` — Plan: Decouple Claude/VSCode from the Paparazzi build env via ephemeral arm64 containers (~2405 tok)
 - `make-the-u-min-and-jiggly-eclipse.md` — Expose MFC per-axis U_min/U_max as dl_settings (~1353 tok)
@@ -61,7 +61,7 @@
 - `.DS_Store` (~2186 tok)
 - `.gitignore` — Git ignore rules (~80 tok)
 - `.gitmodules` (~52 tok)
-- `analyze_mfc.py` — gv, rms, fmt_bar, count_saturated (~3549 tok)
+- `analyze_mfc.py` — rms, fmt_bar, count_saturated, grade (~3468 tok)
 - `build_image.sh` — ── Build the Paparazzi toolchain image (arm64-native) ──────────────────────── (~474 tok)
 - `CLAUDE.md` — OpenWolf (~3209 tok)
 - `Dockerfile.build` — ── Paparazzi headless build/sim toolchain — arm64-native ───────────────────── (~1295 tok)
@@ -69,18 +69,16 @@
 - `handover_bumptest.py` — ac_id, frame, block, setting (~1298 tok)
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 - `mfc_ivy_probe.py` — Temporary probe: tap the Ivy bus for STAB_MFC + GUIDANCE_MFC, print decoded (~535 tok)
-- `pj_json_relay.py` — UDP JSON sanitizer + shared-schema normalizer (root→uav, MFC_* branch renames); sanitize(data, normalize=True) (~4400 tok)
-- `plotjuggler_indi.xml` — INDI layout, shared /uav schema (indi/*, WLS, TRUTH/EST/SENSORS/SP) (~3500 tok)
-- `plotjuggler_mfc.xml` — MFC layout, shared /uav schema (aircraft-agnostic, sim+real) (~6000 tok)
-- `pprz_ctrl.py` — find_sim_container, send_cmd, main (~645 tok)
+- `pj_json_relay.py` — apply_field_aliases, normalize_obj, repair_json_text, flush_word (~4644 tok)
+- `plotjuggler_indi.xml` (~4317 tok)
+- `plotjuggler_mfc.xml` (~6650 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~840 tok)
 - `pprz_wls.m` — MATLAB System object port of the Paparazzi WLS active-set allocator (wls_alloc.c) with ANTON_MFC defaults: B=(G1,G1+G2 yaw)/1000, Wv=[1000 1000 1 100], gamma_sq=1e4, u∈[0,9600], imax=10 (~2000 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2345 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — on_rate_attitude, on_pos_llh, on_rotorcraft_cmd, sim_stdout_reader (~5392 tok)
-- `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1255 tok)
-- `tune_mfc.sh` — tune_mfc.sh — grade an MFC run with analyze_mfc.py, from any of three feeds: (~921 tok)
+- `sim_anton.py` — load_blocks, parse_nav, sim_stdout_reader, feed_relay (~4580 tok)
+- `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1391 tok)
 
 ## .claude/
 
@@ -175,7 +173,7 @@
 ## .vscode/
 
 - `c_cpp_properties.json` (~172 tok)
-- `launch.json` (~622 tok)
+- `launch.json` (~625 tok)
 - `settings.json` (~286 tok)
 - `tasks.json` (~1286 tok)
 
@@ -216,8 +214,8 @@
 
 - `Dual-Controller Handover Mode.md` — Plan — Dual-Controller Handover Mode (switch MFC ↔ INDI in flight) (~1755 tok)
 - `Dual-Controller Shadow Mode.md` — Plan — Dual-Controller Shadow Mode (MFC alongside INDI) (~2092 tok)
-- `MFC Data Management & Comparison.md` — Plan — MFC Data Management & Comparison (flight ↔ sim ↔ Simulink) (~2882 tok)
-- `MFC Flight-Test Enablement.md` — Plan — MFC Flight-Test Enablement (telemetry + SD fast-logging + analysis) (~3878 tok)
+- `MFC Data Management & Comparison.md` — Plan — MFC Data Management & Comparison (flight ↔ sim ↔ Simulink) (~3340 tok)
+- `MFC Flight-Test Enablement.md` — Plan — MFC Flight-Test Enablement (telemetry + SD fast-logging + analysis) (~4006 tok)
 - `NPS-Scope Ivy PlotJuggler Parity.md` — NPS-scope ↔ ivy-server PlotJuggler parity (MFC) (~2399 tok)
 - `sim_anton Paparazzi-Native Rework.md` — Plan — `sim_anton.py` Paparazzi-Native Rework (~1992 tok)
 - `Third-Update-Slide-Guide.md` — Third Update — Slide Guide for the PowerPoint Agent (~2820 tok)
@@ -265,6 +263,7 @@
 - `2026-07-16-mfc-si-units.md` — Session — 2026-07-16: MFC SI-unit refactor (Hoops_111_MFC) (~1913 tok)
 - `2026-07-16-mfc-si-units.md` — Session — 2026-07-16: MFC SI-unit refactor (Hoops_111_MFC) (~1531 tok)
 - `2026-07-20-sdlog2scope-rewrite.md` — 2026-07-20 — sdlog2scope.py rewritten to the /uav CSV schema (~776 tok)
+- `2026-07-22-launcher-cleanup.md` — Session 2026-07-22 — Launcher / sim-stack cleanup (~1641 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -1021,7 +1020,7 @@
 
 ## paparazzi/sw/airborne/modules/nps_scope/
 
-- `nps_scope_state.c` — rotorcraft sim-only NPS scope state mirror. `nps_scope_state_periodic()` copies firmware estimate (stateGet*), NPS simulated `sensors`, nav/guidance/stabilization setpoints (SI/deg) into a static float mirror; registers est/ sensors/ sp/ trees via NPS_SCOPE_VAR + mode/ globals directly. Module nps_scope_state.xml, target nps. (~2500 tok)
+- `nps_scope_state.c` — include "nps_scope_state.h" (~2440 tok)
 - `nps_scope_state.h` — prototype for `nps_scope_state_periodic()`. (~176 tok)
 
 ## paparazzi/sw/airborne/modules/rotwing_drone/
@@ -1039,7 +1038,7 @@
 ## paparazzi/sw/simulator/nps/
 
 - `nps_radio_control.c` — Returns the yaw stick value for a center -> push -> center arming gesture (~2648 tok)
-- `nps_scope.c` — ifndef _GNU_SOURCE (~1792 tok)
+- `nps_scope.c` — ifndef _GNU_SOURCE (~1851 tok)
 
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
 
@@ -1059,4 +1058,5 @@
 
 ## tools/
 
-- `sdlog2scope.py` — Convert a raw Paparazzi flight log (.log + .data) into the wide `/uav/...` PlotJuggler CSV — same output contract as convert_sd_to_pj.py (shared BRANCH_MAP) but from the raw log, at full message rate instead of the GCS exporter's 4 Hz resample. Field names parsed from the `.log` `<protocol>` XML, so no hardcoded message table. (~2600 tok)
+- `scope2csv.py` — scope2csv.py — write NPS scope packets to the wide `/uav/...` CSV schema. (~2209 tok)
+- `sdlog2scope.py` — sdlog2scope.py — convert a raw Paparazzi flight log (.log + .data) into the (~2626 tok)

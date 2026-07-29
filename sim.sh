@@ -2,15 +2,21 @@
 # ── Run an NPS / SITL simulation in an ephemeral container ────────────────────
 #
 # Usage: ./sim.sh AIRCRAFT [--no-build] [sim_anton.py flags...]
-#   ./sim.sh ANTON_MFC --render          # build ANTON_MFC nps, run with TUI dashboard
+#   ./sim.sh Hoops_111_MFC                       # build nps, take off, capture the run
+#   ./sim.sh Hoops_111_MFC --no-build            # skip the rebuild, just run
+#   ./sim.sh Hoops_111_MFC --nav "Start Engine,Takeoff,+15,Nav"
+#                                        # run named flight-plan blocks, +N waits N seconds
+#   ./sim.sh Hoops_111_MFC --set guidance_mfc_kp=2.5
+#                                        # same flight, different gain (repeatable)
 #   ./sim.sh ANTON_MFC --gdb             # wait for a debugger on :1234 (see below)
-#   ./sim.sh ANTON_MFC --no-build        # skip the rebuild, just run
 #   ./sim.sh ANTON_MFC --rc_script 2     # emulate RC from NPS stick script 2 (step_pitch)
 #                                        #   0=hover 1=step_roll 2=step_pitch 3=step_yaw 4=ff
 #                                        #   (all auto-take off for the first 8 s; default is --norc)
-#   ./sim.sh ANTON_MFC --rc_script 5     # FP takeoff (NAV) → ATTITUDE_Z_HOLD, scheduled
-#                                        #   roll/pitch/yaw step sequence (ANTON_MFC AUTO1=Z_HOLD)
 #   CONF="conf/userconf/tudelft/conf.xml" ./sim.sh RW3C_DePonti_Simulation
+#
+# For interactive/GUI work use the Paparazzi control panel instead
+# (conf/userconf/ENAC/control_panel_mfc.xml). This script is the headless path:
+# build, fly, read stdout, get sim_logs/mfc_sim_<TS>.csv.
 #
 # The sim + the OCaml ground segment (server, link) + the IVY bus all run INSIDE
 # one container; only the visualization streams out to the Mac host:

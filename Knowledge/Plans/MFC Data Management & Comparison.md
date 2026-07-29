@@ -8,6 +8,33 @@ Date drafted: 2026-07-16. Supersedes Phase 3/4 of
 `Knowledge/Plans/MFC Flight-Test Enablement.md` (flights flown 2026-07-05 and 2026-07-10;
 SD fast-logs captured under `SUCCESSFULL_FLIGHTS_SD/`; the shared PlotJuggler schema is live).
 
+> **STATUS UPDATE 2026-07-22 — Phase A is DONE; the audit below is partly stale.**
+> Corrected by the launcher cleanup (`Knowledge/Sessions/2026-07-22-launcher-cleanup.md`):
+>
+> * `tools/sdlog2scope.py` was **rewritten** (commit `eb7d4f8`) and is now the
+>   `mfcdata sd` converter this plan asked for: raw `.data` → canonical `/uav`
+>   wide CSV, field names read from the `.log` `<protocol>` header (so no
+>   hardcoded message table can drift from `messages.xml`). The "still speaks the
+>   retired lowercase schema" bullet below is **no longer true**.
+> * `convert_sd_to_pj.py` **was** committed, and has since been **deleted** —
+>   `sdlog2scope.py` supersedes it (full message rate, no manual GCS CSV export).
+>   `BRANCH_MAP` now lives in `pj_json_relay.py` as the single source of truth.
+> * **NEW: `tools/scope2csv.py`** gives the *sim* side the same output contract,
+>   and `sim_anton.py` writes `sim_logs/mfc_sim_<TS>.csv` directly. So the
+>   canonical wide CSV is now produced by **both** paths — the precondition this
+>   whole plan was blocked on.
+> * `analyze_mfc.py` is **retargeted** onto the canonical CSV (metrics unchanged),
+>   so it already is the shared metrics engine; it grades a sim run and a flight
+>   log identically today.
+> * `tune_mfc.sh` was **deleted** (never used, dead default loop). Every
+>   `tune_mfc.sh` item below is void.
+> * Time column: `sdlog2scope.py` emits `Time` (kept diffable against the GCS CSV
+>   export), `scope2csv.py` emits `time`; `analyze_mfc.py` accepts either.
+>
+> **Still open (the actual remaining work):** the `tools/mfcdata/` package, the
+> `flight_data/` run store + `meta.yaml`, time alignment, `compare`/`report`, and
+> all Simulink ingest — i.e. Phases B (partly), C and D.
+
 ---
 
 ## Current-state audit (what exists, what's broken)
@@ -26,22 +53,21 @@ NPS-scope feed into one tree rooted at `uav`:
 `plotjuggler_mfc.xml` (127 curves) is written entirely against `/uav/...` keys.
 `sim_anton.py` captures the normalized Ivy stream to `sim_logs/mfc_sim_<TS>.jsonl` every run.
 
-**The offline path is out of sync:**
+**The offline path is out of sync:** ~~(all but the Simulink bullet fixed 2026-07-22 —
+see the status update above)~~
 
-- `tools/sdlog2scope.py` + `analyze_mfc.py` still speak the retired lowercase schema
-  (`mfc/roll/sp`, `truth/agl`) — nothing bridges them to `/uav/MFC_STAB/...`. The
-  `sdlog2scope.py` field maps are also stale vs. current `messages.xml` (missing
-  `sp_traj_*` on GUIDANCE_MFC, all of `MFC_ACC2ATT`).
-- `convert_sd_to_pj.py` — the script that produced the `*_pj.csv` files in
-  `SUCCESSFULL_FLIGHTS_SD/.../fr_0003` and `fr_0004` (SD tab-CSV → `/uav`-schema comma
-  CSV) — lives only in an ephemeral sandbox job dir. **Not committed. Must be recreated.**
-- The `.tlm → sd2log → .log/.data → tab-CSV` export step is manual and undocumented.
-  `fr_0001` (the 2026-07-10 flight, the best dataset) and `fr_0002` were never converted
-  past `.data`.
-- `tune_mfc.sh`'s default sim path still greps for `sim_logs/mfc_sim_*.csv`, which
-  `sim_anton.py` no longer writes (it writes `/uav`-schema `.jsonl`) — the default loop
-  is dead.
-- **Simulink: zero tooling.** The model lives outside this repo (see Daily Notes
+- ~~`tools/sdlog2scope.py` + `analyze_mfc.py` still speak the retired lowercase schema~~
+  **FIXED.** Both now speak the canonical `/uav` schema; `sdlog2scope.py` takes field
+  names from the log's own `<protocol>` header, so it cannot go stale vs `messages.xml`.
+- ~~`convert_sd_to_pj.py` … Not committed. Must be recreated.~~
+  **RESOLVED** — it was committed, then deleted as redundant with `sdlog2scope.py`.
+- The `.tlm → sd2log → .log/.data` export step is still manual, but no longer needs the
+  tab-CSV hop: `sdlog2scope.py` reads the `.data` directly. `fr_0001` (the 2026-07-10
+  flight) converts cleanly — verified 2026-07-22, 75 116 rows / 213 columns. Its
+  `MFC_STAB/*` columns are identically zero (MFC was not the active law on that flight),
+  which `analyze_mfc.py` now reports as "no signal" rather than a perfect-tracking GOOD.
+- ~~`tune_mfc.sh`'s default sim path …~~ **VOID** — `tune_mfc.sh` deleted.
+- **Simulink: zero tooling** (still true). The model lives outside this repo (see Daily Notes
   2026-07-01/03/07/09 and `Sessions/2026-07-07-pprz-wls-matlab-port.md`); no log format,
   exporter, or converter exists.
 
@@ -145,20 +171,19 @@ source: flight/sim/simulink), saved PNG+PDF:
 
 ### Retargeting existing tools
 
-- `analyze_mfc.py` — replace `_scope_row_to_csv()`'s lowercase-key map with a
-  canonical-CSV reader (`run.csv` → the same internal dataframe); keep all metric math.
-  Becomes the metrics engine `mfcdata report` imports.
-- `tune_mfc.sh` — default loop: run timed sim → `mfcdata sim` on the fresh `.jsonl` →
-  `analyze_mfc.py` on `run.csv`. `--flight` flag now takes a `.data` file through
-  `mfcdata sd`. Delete the dead `sim_logs/mfc_sim_*.csv` grep.
-- `tools/sdlog2scope.py` — retire (superseded by `mfcdata sd`); note the supersession
-  in its docstring or delete it.
+- `analyze_mfc.py` — ✅ **DONE 2026-07-22**: `_scope_row_to_csv()` deleted, replaced by a
+  canonical-CSV reader (COLUMN_MAP); all metric math kept. Ready to be imported as the
+  metrics engine for `mfcdata report`.
+- ~~`tune_mfc.sh`~~ — **DELETED 2026-07-22** (never used). The loop it wanted to be is now
+  just: `./sim.sh <AC>` → `analyze_mfc.py sim_logs/mfc_sim_<TS>.csv`.
+- `tools/sdlog2scope.py` — ✅ **KEEP, it IS the `mfcdata sd` converter** (rewritten
+  2026-07-22). Do not retire; wrap it when the package lands.
 
 ---
 
 ## Phasing
 
-**Phase A — canonical run store (unblocks everything)**
+**Phase A — canonical run store (unblocks everything)**  ✅ *converter half DONE 2026-07-22*
 1. Create `tools/mfcdata/` skeleton + the messages.xml-derived key map (import
    `BRANCH_MAP` from `pj_json_relay.py`).
 2. `mfcdata sd`: `.data` and tab-CSV ingest → `run.csv` + `meta.yaml`.
@@ -166,7 +191,7 @@ source: flight/sim/simulink), saved PNG+PDF:
    `flight_data/runs/`. Verify each `run.csv` loads in PlotJuggler against
    `plotjuggler_mfc.xml`.
 
-**Phase B — sim parity**
+**Phase B — sim parity**  ✅ *steps 4–5 DONE 2026-07-22 (tools/scope2csv.py + retargeted analyze_mfc.py)*
 4. `mfcdata sim`: `.jsonl` → `run.csv`.
 5. Fix `tune_mfc.sh` default loop; retarget `analyze_mfc.py` onto `run.csv`.
 6. Gate: one sim run of `Hoops_111_MFC nps` graded end-to-end through the new path.
@@ -191,9 +216,10 @@ source: flight/sim/simulink), saved PNG+PDF:
       `sim.py`, `simulink.py`, `align.py`, `compare.py`, `report.py`, `cli.py`, README
 - [ ] NEW `flight_data/` run store + `meta.yaml` convention
 - [ ] Backfill runs from `SUCCESSFULL_FLIGHTS_SD/FLIGHT_RECORDER/extracted/fr_0001..4`
-- [ ] `analyze_mfc.py` — canonical-CSV reader, keep metrics
-- [ ] `tune_mfc.sh` — new default loop via `mfcdata sim`; fix dead CSV grep
-- [ ] `tools/sdlog2scope.py` — retire/mark superseded
+- [x] `analyze_mfc.py` — canonical-CSV reader, keep metrics *(done 2026-07-22)*
+- [x] ~~`tune_mfc.sh`~~ — deleted *(2026-07-22)*
+- [x] `tools/sdlog2scope.py` — kept; it is the SD converter *(rewritten 2026-07-20)*
+- [x] NEW `tools/scope2csv.py` — the sim-side converter, same output contract *(2026-07-22)*
 - [ ] Simulink model (outside repo): adopt dot-naming or fill `map.yaml`; export `.mat`
 - [ ] `plotjuggler_mfc.xml` — no change expected; used as the load-check for every converter
 

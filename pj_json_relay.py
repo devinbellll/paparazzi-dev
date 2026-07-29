@@ -45,6 +45,11 @@ MFC-related branches are renamed so they sort together in the curve tree:
 STAB_MFC -> MFC_STAB, GUIDANCE_MFC -> MFC_GUIDANCE,
 GUIDANCE_MFC_ACC2ATT / ACC2ATT -> MFC_ACC2ATT. Pass --raw to disable.
 
+On top of the renaming, FIELD_ALIAS projects flight-only messages into the sim's
+key space (ROTORCRAFT_FP -> EST/*), unscaling the fixed-point wire values and
+flipping ENU->NED, so the state tabs of a layout also draw on the real-flight
+feed instead of sitting blank. Aliases only add keys, never overwrite.
+
 Usage (replaces the socat invocation):
     ./pj_json_relay.py --listen-addr 172.16.113.1 --listen-port 9870 \
                         --forward-addr 127.0.0.1  --forward-port 9870
@@ -83,6 +88,59 @@ BRANCH_MAP = {
     "ACC2ATT": "MFC_ACC2ATT",
 }
 
+# ── flight-feed parity aliases ───────────────────────────────────────────────
+# The sim's state branches (EST/*) come from the NPS scope, which does not exist
+# on real hardware. Their closest ivy equivalent is ROTORCRAFT_FP, so project it
+# into the same key space and one layout draws for both feeds.
+#
+# Two conversions are required, both easy to get wrong:
+#   * ROTORCRAFT_FP is raw FIXED-POINT int32 on the wire (server.ml emits the
+#     stored value, NOT the messages.xml alt_unit_coef scaling), so each field
+#     carries its own scale: position 1/2^8 m, velocity 1/2^19 m/s, angles
+#     1/2^12 rad. (messages.xml lists the angle coef in degrees; we want radians
+#     to match the rest of the schema.)
+#   * ROTORCRAFT_FP is ENU (east/north/UP) while EST/* is NED from
+#     stateGetPositionNed_f(), so the vertical axis is NEGATED, not just scaled.
+#
+# Format: source branch -> {source field: (target branch, target field, scale)}.
+POS_SCALE = 1.0 / (1 << 8)        # int32 pos -> m
+VEL_SCALE = 1.0 / (1 << 19)       # int32 vel -> m/s
+ANG_SCALE = 1.0 / (1 << 12)       # int32 angle -> rad
+FIELD_ALIAS = {
+    "ROTORCRAFT_FP": {
+        "north":  ("EST", "x",  POS_SCALE),
+        "east":   ("EST", "y",  POS_SCALE),
+        "up":     ("EST", "z", -POS_SCALE),   # ENU up -> NED down
+        "vnorth": ("EST", "vx", VEL_SCALE),
+        "veast":  ("EST", "vy", VEL_SCALE),
+        "vup":    ("EST", "vz", -VEL_SCALE),  # ENU up -> NED down
+        "phi":    ("EST", "phi",   ANG_SCALE),
+        "theta":  ("EST", "theta", ANG_SCALE),
+        "psi":    ("EST", "psi",   ANG_SCALE),
+    },
+}
+
+
+def apply_field_aliases(tree):
+    """Add aliased branches to a normalized tree, in place.
+
+    Aliases only ever ADD keys; the source branch is left untouched so the raw
+    ivy values stay available. An alias never overwrites a real value, so when
+    both feeds are live (sim scope + ivy) the genuine EST/* wins.
+    """
+    for src_branch, fields in FIELD_ALIAS.items():
+        src = tree.get(src_branch)
+        if not isinstance(src, dict):
+            continue
+        for src_field, (dst_branch, dst_field, scale) in fields.items():
+            val = src.get(src_field)
+            if not isinstance(val, (int, float)) or isinstance(val, bool):
+                continue
+            dst = tree.setdefault(dst_branch, {})
+            if isinstance(dst, dict):
+                dst.setdefault(dst_field, val * scale)
+    return tree
+
 
 def normalize_obj(obj):
     """Rewrite a parsed telemetry packet into the shared schema (see module doc).
@@ -106,6 +164,7 @@ def normalize_obj(obj):
             tree[BRANCH_MAP.get(head, head) + sep + rest] = sub
     if not tree:
         return obj
+    apply_field_aliases(tree)
     out = {NORMALIZED_ROOT: tree}
     out.update(passthrough)
     return out

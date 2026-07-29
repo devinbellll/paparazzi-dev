@@ -2,18 +2,17 @@
 """
 analyze_mfc.py — print a concise per-axis MFC stability report to guide tuning.
 
-Accepts EITHER feed (same metrics for sim and real flight — the whole point of
-the unified NPS_SCOPE schema):
-  • a wide CSV from sim_anton.py            (legacy keys: mfc_err_phi, agl, …)
-  • a unified scope-JSON stream / capture   (keys: mfc/roll/err, truth/agl, …)
-    — i.e. a recorded NPS scope capture, or the output of tools/sdlog2scope.py
-      on a downloaded SD flight log. One analyser, three feeds.
+Reads the canonical wide `/uav/...` CSV, which BOTH data paths now produce:
 
-Format is auto-detected from the file extension / first byte.
+  • a sim run          — sim_anton.py writes sim_logs/mfc_sim_<TS>.csv
+  • a real flight      — tools/sdlog2scope.py converts an SD log's .data
+
+so the same metrics grade a simulation and a flight with no per-feed special
+casing. Columns that a given feed doesn't carry (a flight has no /uav/TRUTH/*
+unless OptiTrack is running) simply report as n/a.
 
 Usage:
-    python3 analyze_mfc.py CAPTURE.csv  [--skip SEC] [--steady]
-    python3 analyze_mfc.py CAPTURE.json [--skip SEC] [--steady]   # scope ndjson
+    python3 analyze_mfc.py RUN.csv [--skip SEC] [--steady]
 
 Options:
     --skip SEC   Ignore the first SEC seconds (startup transient). Default: 5.0
@@ -21,94 +20,71 @@ Options:
 """
 
 import csv
-import json
 import math
 import sys
 
 R2D = math.degrees(1)
 
-# ── scope-key -> legacy-CSV-key mapping ───────────────────────────────────────
-# The rest of this script speaks the CSV keys (mfc_err_phi, …). A scope-JSON row
-# ({"t":…, "truth":{…}, "mfc/roll/err":…}) is translated into the same keys here,
-# preserving the CSV's UNIT conventions:
-#   • errors / fk / cmd  : radians / unitless — passed through as-is
-#   • phi/theta          : the script multiplies by R2D, so feed RADIANS
-#                          (truth/* angles are degrees in the scope → /R2D)
-#   • agl                : metres, as-is
-#   • rc_thrust          : motor-output proxy = mean(mfc/act) (pprz 0..9600)
-def _scope_row_to_csv(o):
-    """Flatten one scope-JSON object (truth nested or flat slash-keys) to the
-    legacy CSV key space used by the metrics below."""
-    g = {}
+# ── canonical column -> internal metric key ──────────────────────────────────
+# Everything below this point speaks the short internal keys. All angles in the
+# schema are RADIANS (the NPS scope emits the firmware's own units), and the
+# report converts to degrees where it prints them.
+COLUMN_MAP = {
+    "/uav/MFC_STAB/err_phi":   "mfc_err_phi",
+    "/uav/MFC_STAB/err_theta": "mfc_err_theta",
+    "/uav/MFC_STAB/err_psi":   "mfc_err_psi",
+    "/uav/MFC_STAB/fk_phi":    "mfc_fk_phi",
+    "/uav/MFC_STAB/fk_theta":  "mfc_fk_theta",
+    "/uav/MFC_STAB/fk_psi":    "mfc_fk_psi",
+    "/uav/MFC_STAB/cmd_phi":   "mfc_cmd_phi",
+    "/uav/MFC_STAB/cmd_theta": "mfc_cmd_theta",
+    "/uav/MFC_STAB/cmd_psi":   "mfc_cmd_psi",
+    "/uav/TRUTH/agl":          "agl",
+    "/uav/TRUTH/phi":          "phi",
+    "/uav/TRUTH/theta":        "theta",
+}
+# WLS actuator outputs -> mfc_u0..3; their mean is the thrust proxy.
+U_COLUMNS = [f"/uav/WLS_U/u/u_{i}" for i in range(4)]
 
-    def gv(k):
-        if k in o:
-            return o[k]
-        # truth.* may be nested under "truth"
-        if k.startswith("truth/") and isinstance(o.get("truth"), dict):
-            return o["truth"].get(k.split("/", 1)[1])
+
+def _num(v):
+    if v is None or v in ("", "None"):
         return None
+    try:
+        return float(v)
+    except ValueError:
+        return None      # array cells are comma-joined strings; not a metric
 
-    r = {}
-    r["wall"] = o.get("t")
-    r["mfc_err_phi"]   = gv("mfc/roll/err")
-    r["mfc_err_theta"] = gv("mfc/pitch/err")
-    r["mfc_err_psi"]   = gv("mfc/yaw/err")
-    r["mfc_fk_phi"]    = gv("mfc/roll/fk")
-    r["mfc_fk_theta"]  = gv("mfc/pitch/fk")
-    r["mfc_fk_psi"]    = gv("mfc/yaw/fk")
-    r["mfc_cmd_phi"]   = gv("mfc/roll/cmd")
-    r["mfc_cmd_theta"] = gv("mfc/pitch/cmd")
-    r["mfc_cmd_psi"]   = gv("mfc/yaw/cmd")
 
-    act = gv("mfc/act")
-    if isinstance(act, list):
-        for i in range(4):
-            r[f"mfc_u{i}"] = act[i] if i < len(act) else None
-        thr = [a for a in act[:4] if a is not None]
-        r["rc_thrust"] = sum(thr) / len(thr) if thr else None
-    else:
-        r["rc_thrust"] = None
-
-    agl = gv("truth/agl")
-    r["agl"] = agl
-    phi_deg   = gv("truth/phi")
-    theta_deg = gv("truth/theta")
-    # script expects radians (it applies *R2D); scope truth angles are degrees
-    r["phi"]   = (phi_deg   / R2D) if phi_deg   is not None else None
-    r["theta"] = (theta_deg / R2D) if theta_deg is not None else None
-    return r
+# The two converters name the leading time column differently, on purpose:
+# sdlog2scope.py keeps "Time" so its output stays diffable against the GCS's own
+# CSV export, while scope2csv.py uses lowercase "time". Accept either.
+TIME_COLUMNS = ("time", "Time")
 
 
 def _load_rows(path):
-    """Return list of CSV-key row dicts from a .csv or scope-.json/.ndjson file."""
-    # sniff: extension first, then first non-space byte
-    is_json = path.lower().endswith((".json", ".ndjson", ".jsonl"))
-    if not is_json:
-        with open(path) as f:
-            for ch in f.read(64):
-                if ch.isspace():
-                    continue
-                is_json = ch in "{["
-                break
-
+    """Return internal-key row dicts from a canonical wide /uav CSV."""
     rows = []
-    if is_json:
-        with open(path) as f:
-            for line in f:
-                line = line.strip().rstrip(",")
-                if not line or line in ("[", "]"):
-                    continue
-                try:
-                    obj = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                rows.append(_scope_row_to_csv(obj))
-    else:
-        with open(path, newline="") as f:
-            for row in csv.DictReader(f):
-                rows.append({k: float(v) if v not in ("", "None") else None
-                             for k, v in row.items()})
+    with open(path, newline="") as f:
+        reader = csv.DictReader(f)
+        fields = reader.fieldnames or []
+        time_col = next((c for c in TIME_COLUMNS if c in fields), None)
+        if time_col is None:
+            sys.exit(f"analyze_mfc: {path} is not a canonical /uav run CSV (no "
+                     f"{' or '.join(TIME_COLUMNS)} column). Convert it with "
+                     "tools/sdlog2scope.py or tools/scope2csv.py first.")
+        for src in reader:
+            r = {"wall": _num(src.get(time_col))}
+            for col, key in COLUMN_MAP.items():
+                r[key] = _num(src.get(col))
+            us = []
+            for i, col in enumerate(U_COLUMNS):
+                u = _num(src.get(col))
+                r[f"mfc_u{i}"] = u
+                if u is not None:
+                    us.append(u)
+            r["rc_thrust"] = sum(us) / len(us) if us else None
+            rows.append(r)
     return rows
 
 # ── parse args ────────────────────────────────────────────────────────────────
@@ -130,12 +106,11 @@ while i < len(args):
         i += 1
 
 if in_path is None:
-    print(f"Usage: {sys.argv[0]} <capture.csv|capture.json> [--skip SEC] [--steady]",
-          file=sys.stderr)
+    print(f"Usage: {sys.argv[0]} <run.csv> [--skip SEC] [--steady]", file=sys.stderr)
     sys.exit(1)
 csv_path = in_path   # kept for the report header below
 
-# ── load (CSV or unified scope JSON, auto-detected) ──────────────────────────
+# ── load the canonical wide /uav CSV ─────────────────────────────────────────
 rows = _load_rows(in_path)
 
 if not rows:
@@ -170,6 +145,10 @@ def rms(vs):
     return math.sqrt(sum(v*v for v in vs) / len(vs))
 
 def fmt_bar(val, lo, hi, width=20):
+    # A missing signal must not draw a FULL bar (nan comparisons are all False,
+    # which is how "no data" used to render as "pegged at maximum").
+    if val != val:
+        return f"[{'·' * width}] n/a"
     frac = max(0.0, min(1.0, (val - lo) / (hi - lo)))
     filled = int(frac * width)
     return f"[{'█' * filled}{'░' * (width - filled)}]"
@@ -253,7 +232,13 @@ diverged   = phi_max > 45 or theta_max > 45
 W = 60
 LINE = "─" * W
 
-def grade(rms_deg):
+def grade(rms_deg, vals=None):
+    # An identically-zero channel means the controller never ran (e.g. MFC left
+    # in shadow mode, or the message logged before the law was engaged). That is
+    # NOT perfect tracking -- say so, instead of awarding it a green GOOD.
+    if vals is not None and vals and not any(v for v in vals):
+        return "no signal"
+    if rms_deg != rms_deg: return "n/a"     # column absent in this feed
     if rms_deg < 1.0:  return "GOOD    ✓"
     if rms_deg < 3.0:  return "OK      ·"
     if rms_deg < 8.0:  return "MARGINAL"
@@ -275,9 +260,9 @@ if gz_sat_frac > 0.1:
 print()
 print("  ATTITUDE ERRORS (MFC stabilizer, after skip)")
 print(f"  {'Axis':6s}  {'RMS err':>9s}  {'Max |err|':>9s}  {'Grade':12s}  {'CmdSat':>7s}")
-print(f"  {'Roll':6s}  {rms_roll:>8.3f}°  {max_roll:>8.3f}°  {grade(rms_roll):12s}  {sat_roll:>7d}")
-print(f"  {'Pitch':6s}  {rms_pitch:>8.3f}°  {max_pitch:>8.3f}°  {grade(rms_pitch):12s}  {sat_pitch:>7d}")
-print(f"  {'Yaw':6s}  {rms_yaw:>8.3f}°  {max_yaw:>8.3f}°  {grade(rms_yaw):12s}  {sat_yaw:>7d}")
+print(f"  {'Roll':6s}  {rms_roll:>8.3f}°  {max_roll:>8.3f}°  {grade(rms_roll, err_roll):12s}  {sat_roll:>7d}")
+print(f"  {'Pitch':6s}  {rms_pitch:>8.3f}°  {max_pitch:>8.3f}°  {grade(rms_pitch, err_pitch):12s}  {sat_pitch:>7d}")
+print(f"  {'Yaw':6s}  {rms_yaw:>8.3f}°  {max_yaw:>8.3f}°  {grade(rms_yaw, err_yaw):12s}  {sat_yaw:>7d}")
 
 print()
 print("  F_k ESTIMATOR  (should track without saturation)")

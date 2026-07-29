@@ -2,10 +2,11 @@
 """sdlog2scope.py — convert a raw Paparazzi flight log (.log + .data) into the
 wide `/uav/...` CSV schema used by plotjuggler_mfc.xml.
 
-Same output contract as convert_sd_to_pj.py (identical BRANCH_MAP, identical
-`/uav/<BRANCH>/<field>` column names), but it reads the *raw* decoded log
-instead of the GCS-exported CSV. That means full message rate (every sample the
-recorder wrote) rather than the exporter's fixed 4 Hz resample, and no manual
+Same output contract as tools/scope2csv.py (identical BRANCH_MAP, identical
+`/uav/<BRANCH>/<field>` column names) so a flight run and a sim run load into
+the same PlotJuggler layout and the same analyser. It reads the *raw* decoded
+log rather than a GCS-exported CSV, which means full message rate (every sample
+the recorder wrote) instead of the exporter's fixed 4 Hz resample, and no manual
 CSV export step:
 
     *.TLM (SD card)  --sd2log-->  .log + .data  --sdlog2scope.py-->  _pj.csv
@@ -18,7 +19,7 @@ Rows are built by forward-filling: every message updates its columns, and a row
 is emitted per distinct timestamp (or per `--trigger` message). Values are
 written verbatim as the log stored them (raw units, no scaling), matching what
 the GCS CSV export produces. Array fields stay comma-joined in a single quoted
-cell, exactly as convert_sd_to_pj.py leaves them.
+cell.
 
 Usage:
     python3 sdlog2scope.py FLIGHT.data                    # -> FLIGHT_pj.csv
@@ -38,10 +39,12 @@ import os
 import sys
 import xml.etree.ElementTree as ET
 
-# Single source of truth for the branch renaming — shared with convert_sd_to_pj.py.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Single source of truth for the branch renaming: pj_json_relay.py, which applies
+# the same map to the live feeds. Keeping one definition is what stops the offline
+# and live schemas from drifting apart.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
-    from convert_sd_to_pj import BRANCH_MAP
+    from pj_json_relay import BRANCH_MAP
 except ImportError:  # standalone copy of this file
     BRANCH_MAP = {
         "STAB_MFC": "MFC_STAB",
@@ -54,7 +57,7 @@ LEAD_COLS = ["Time", "UTC", "GPS_lat(deg)", "GPS_long(deg)"]
 
 
 def column(msg, field):
-    """`STAB_MFC`, `sp_phi` -> `/uav/MFC_STAB/sp_phi` (same as convert_sd_to_pj)."""
+    """`STAB_MFC`, `sp_phi` -> `/uav/MFC_STAB/sp_phi`."""
     return f"/uav/{BRANCH_MAP.get(msg, msg)}/{field}"
 
 
@@ -213,7 +216,7 @@ def convert(data_path, out_path, log_path=None, ac_filter=None,
 def main():
     ap = argparse.ArgumentParser(
         description="Convert a raw Paparazzi .log/.data flight log to the /uav "
-                    "PlotJuggler CSV schema (same output as convert_sd_to_pj.py).")
+                    "PlotJuggler CSV schema (same columns as tools/scope2csv.py).")
     ap.add_argument("data", help="decoded log .data file (from sd2log)")
     ap.add_argument("-o", "--out", help="output CSV (default: <data>_pj.csv)")
     ap.add_argument("--log", help="the matching .log (default: alongside the .data)")

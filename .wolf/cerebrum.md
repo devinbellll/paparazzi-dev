@@ -405,3 +405,57 @@
 - Default row policy is one row per distinct timestamp with forward-fill (full message rate,
   ~18k rows vs the exporter's 153). `--trigger MSG` restores one-row-per-message if a single
   message's cadence is wanted.
+
+## Key Learnings additions (2026-07-22 — launcher cleanup)
+
+- **The two telemetry feeds have different packet SHAPES, not just different branches.**
+  The NPS scope puts every registered variable in every datagram (fixed key set, decided at
+  init); server's ivy stream sends ONE message per datagram. Any code that infers a schema
+  from "the first packet" works in sim and silently truncates in flight — this cost an
+  11-column CSV where 162 were expected. Buffer a warmup window (live) or two-pass (offline).
+- **Which branch comes from which feed** (the real reason PlotJuggler tabs look empty):
+  scope-only = `TRUTH/*`, `EST/*`, `SENSORS/*`, `SP/*`, `MODE/*`, `indi/*`, `mfc/z_*`;
+  ivy-only = `ROTORCRAFT_FP`, `STAB_ATTITUDE`; both = `MFC_STAB|GUIDANCE|ACC2ATT`, `WLS_U|V`.
+  In a real flight only the MFC + WLS tabs draw unless something bridges the gap.
+- **`ROTORCRAFT_FP` is raw fixed-point int32 on the wire.** server.ml emits the stored value,
+  NOT the `alt_unit_coef` scaling in messages.xml. Scales: position 1/2^8 m, velocity
+  1/2^19 m/s, angles 1/2^12 rad. It is **ENU** (east/north/up) while `EST/*` is **NED** from
+  `stateGetPositionNed_f()`, so the vertical axis must be NEGATED, not just scaled.
+- **The whole `/uav` schema is radians as of today.** `nps_scope.c` / `nps_scope_state.c` used
+  to convert to degrees while the controller branches published radians; overlaying them made
+  MFC curves look like flat lines. If you ever add a scope variable, do not convert units.
+- **`IvyMessagesInterface(start_ivy=True)` starts the bus inside `__init__`** — you can remove
+  every `subscribe()` call without breaking `send()`.
+- **`pprzsim-launch` cannot replace the direct `simsitl` invocation.** It is a thin `execv`
+  wrapper with a fixed flag list (fg/rc_script/norc/js_dev/spektrum/ivy_bus/time_factor/
+  nodisplay) and no passthrough — no `--scope_*`, no gdbserver wrap. Calling `simsitl`
+  directly IS the native CLI. (An old plan recommended the swap; it was wrong, now retracted.)
+- **Headless SITL in the sandbox does not take off** (pre-existing, 2026-07-22): `TRUTH/agl`
+  pinned at 0.098 m, `WLS_U` ~0 vs ~1918 in a working run, `MODE/ap`=13 NAV, GPS fix present,
+  but `MODE/nav_v`=0 and `SP/guidance/v_z`≈0 — no climb ever commanded. Not caused by the
+  telemetry/logging rework; the pre-change script produces an empty capture here too.
+
+## Decision Log additions (2026-07-22)
+
+- **This repo is now the programmatic/headless path only.** Interactive sim and flight run
+  from the Paparazzi GUI control panel (`conf/userconf/ENAC/control_panel_mfc.xml`). Anything
+  the GUI does well (strips, settings panels, live plots) must NOT be reimplemented here.
+  Chosen because the user now runs Paparazzi properly in a Linux VM; tenet was "if normal
+  paparazzi does it, strip it".
+- **One canonical on-disk format: the `/uav` wide CSV**, produced by BOTH `tools/scope2csv.py`
+  (sim) and `tools/sdlog2scope.py` (flight). One PlotJuggler layout, one analyser, both feeds.
+- **Layouts state their coverage in the tab name** (`INDI (sim only)`, `States (sim truth)`)
+  rather than silently drawing blank on the flight feed. Chosen over maintaining separate
+  sim/flight layout files.
+- **`--nav` takes block NAMES, not ids** (resolved from the generated `flight_plan.xml`), so a
+  flight-plan edit can't silently retarget the sequence.
+
+## Do-Not-Repeat additions (2026-07-22)
+
+- (2026-07-22) **Never grade a signal without checking it is alive.** `analyze_mfc.py` reported
+  `GOOD ✓` for a flight whose `MFC_STAB/*` was identically zero (MFC wasn't the active law).
+  An all-zero channel is "no signal", and nan must not render as a full progress bar — all
+  nan comparisons are False, so a naive clamp shows "pegged at maximum" for missing data.
+- (2026-07-22) **Don't drop an `#include` just because the symbol you removed came from it.**
+  Removing `DegOfRad()` uses from nps_scope_state.c tempted a removal of `#include "std.h"`,
+  which provides much more; restored immediately.

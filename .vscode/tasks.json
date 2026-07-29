@@ -139,12 +139,11 @@
             "problemMatcher": []
         },
         {
-            "label": "Sim: ANTON_MFC (render)",
+            "label": "Sim: Hoops_111_MFC (takeoff)",
             "type": "shell",
             "command": "${workspaceFolder}/sim.sh",
             "args": [
-                "--mfc",
-                "--render"
+                "Hoops_111_MFC"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -156,11 +155,11 @@
             "problemMatcher": []
         },
         {
-            "label": "Sim: ANTON_MFC (gdb wait :1234)",
+            "label": "Sim: Hoops_111_MFC (gdb wait :1234)",
             "type": "shell",
             "command": "${workspaceFolder}/sim.sh",
             "args": [
-                "--mfc",
+                "Hoops_111_MFC",
                 "--gdb"
             ],
             "options": {

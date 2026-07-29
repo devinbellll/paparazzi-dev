@@ -4,11 +4,18 @@
 
   All curves are keyed under the fixed root "/uav"; both telemetry sources are
   normalized into this schema by pj_json_relay.py (see plotjuggler_mfc.xml for
-  the full schema notes). INDI-specific branches used here are the nps_scope
-  registrations from stabilization_indi.c (indi/*), guidance_indi.c thrust-MFC
-  loop (mfc/z_*), and the WLS allocator (WLS_U/WLS_V); TRUTH/EST/SENSORS/SP are
-  the generic sim-state branches. Real-flight ivy parity for the indi/* branches
-  does not exist yet — those plots are sim-only for now.
+  the full schema notes, including which tabs fill on which feed and the
+  radians-everywhere unit rule).
+
+  Tab coverage here:
+    * "INDI (sim only)" — indi/* comes from nps_scope registrations in
+      stabilization_indi.c and mfc/z_* from guidance_indi.c's thrust loop. These
+      are scope-only registrations with NO ivy message behind them, so the tab is
+      blank on a real flight. That is a missing telemetry section, not a bug in
+      this layout; the name says so rather than looking broken.
+    * WLS — both feeds.
+    * Estim — both feeds (via FIELD_ALIAS on the flight side).
+    * "States (sim truth)" — sim only.
 -->
 <root>
  <tabbed_widget parent="main_window" name="Main Window">
@@ -78,7 +85,7 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab containers="1" tab_name="INDI">
+  <Tab containers="1" tab_name="INDI (sim only)">
    <Container>
     <DockSplitter sizes="0.500000;0.500000" orientation="|" count="2">
      <DockSplitter sizes="0.500000;0.500000" orientation="-" count="2">
@@ -154,7 +161,7 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab containers="1" tab_name="States">
+  <Tab containers="1" tab_name="States (sim truth)">
    <Container>
     <DockSplitter sizes="0.333333;0.333333;0.333333" orientation="|" count="3">
      <DockSplitter sizes="0.500000;0.500000" orientation="-" count="2">
@@ -271,53 +278,6 @@
         <curve name="/uav/EST/ax" color="#1f77b4"/>
         <curve name="/uav/EST/ay" color="#d62728"/>
         <curve name="/uav/EST/az" color="#1ac938"/>
-       </plot>
-      </DockArea>
-     </DockSplitter>
-    </DockSplitter>
-   </Container>
-  </Tab>
-  <Tab containers="1" tab_name="Sensors">
-   <Container>
-    <DockSplitter sizes="0.500000;0.500000" orientation="|" count="2">
-     <DockSplitter sizes="0.500000;0.500000" orientation="-" count="2">
-      <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range left="0.0" bottom="-1.0" top="1.0" right="10.0"/>
-        <limitY/>
-        <curve name="/uav/SENSORS/mag_x" color="#1f77b4"/>
-        <curve name="/uav/SENSORS/mag_y" color="#d62728"/>
-        <curve name="/uav/SENSORS/mag_z" color="#1ac938"/>
-       </plot>
-      </DockArea>
-      <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range left="0.0" bottom="-1.0" top="1.0" right="10.0"/>
-        <limitY/>
-        <curve name="/uav/SENSORS/gyro_p" color="#1f77b4"/>
-        <curve name="/uav/SENSORS/gyro_q" color="#d62728"/>
-        <curve name="/uav/SENSORS/gyro_r" color="#1ac938"/>
-       </plot>
-      </DockArea>
-     </DockSplitter>
-     <DockSplitter sizes="0.500000;0.500000" orientation="-" count="2">
-      <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range left="0.0" bottom="-1.0" top="1.0" right="10.0"/>
-        <limitY/>
-        <curve name="/uav/SENSORS/gps_hmsl" color="#1f77b4"/>
-        <curve name="/uav/SENSORS/gps_vx" color="#d62728"/>
-        <curve name="/uav/SENSORS/gps_vy" color="#1ac938"/>
-        <curve name="/uav/SENSORS/gps_vz" color="#ff7f0e"/>
-       </plot>
-      </DockArea>
-      <DockArea name="...">
-       <plot mode="TimeSeries" line_width="1.0" flip_x="false" flip_y="false">
-        <range left="0.0" bottom="-1.0" top="1.0" right="10.0"/>
-        <limitY/>
-        <curve name="/uav/SENSORS/acc_x" color="#1f77b4"/>
-        <curve name="/uav/SENSORS/acc_y" color="#d62728"/>
-        <curve name="/uav/SENSORS/acc_z" color="#1ac938"/>
        </plot>
       </DockArea>
      </DockSplitter>

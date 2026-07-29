@@ -1,69 +1,69 @@
 #!/usr/bin/env python3
 """
-Launch a Paparazzi NPS simulation and print live aircraft state to the terminal.
-Sends a takeoff command sequence 1 second after the sim is ready.
+Launch a Paparazzi NPS simulation headlessly, drive it, and capture the run.
 
-Usage:  python3 sim_anton.py AIRCRAFT [--gdb] [--fg] [--render] [--rc_script N]
+This is the *programmatic* way into the sim: build, fly, watch stdout, get a CSV.
+For interactive work with a GUI, use the Paparazzi control panel instead
+(conf/userconf/ENAC/control_panel_mfc.xml, sessions "MFC VM SIM" /
+"ANTON_MFC VM SIM") — it runs the same processes with the GCS attached, and
+anything the GCS does well (strips, settings panels, live plotting) is not
+reimplemented here.
+
+Usage:  python3 sim_anton.py AIRCRAFT [flags]
         Ctrl-C to stop (kills child processes cleanly).
 
-  AIRCRAFT  Aircraft name as registered in the conf XML (e.g. ANTON_MFC).
+  AIRCRAFT  Aircraft name as registered in the conf XML (e.g. Hoops_111_MFC).
             The CONF env var selects which conf file to search
             (default: conf/userconf/ENAC/conf_mfc.xml, relative to PAPARAZZI_HOME).
 
 Flags:
-  --render          Enable the live TUI dashboard (default: plain debug log to stdout).
-  --fg              Stream NET_FDM pose to FlightGear on the Mac host (host.docker.internal:5501).
+  --nav SEQ         Comma-separated flight-plan BLOCK NAMES to run, with `+N`
+                    tokens to wait N seconds between them. Default:
+                    "Start Engine,Takeoff" (the usual auto-takeoff). Use
+                    --nav "" to send nothing and drive it yourself.
+                      --nav "Start Engine,Takeoff,+15,Nav"
+                    Names are resolved from var/aircrafts/<AC>/flight_plan.xml,
+                    so they are exactly the names on the GCS strip buttons; an
+                    unknown name lists what is available and exits.
+  --set NAME=VALUE  Set a GCS setting by shortname once the nav sequence is done.
+                    Repeatable. This is the "same flight, different gains" knob:
+                      --set guidance_mfc_kp=2.5 --set guidance_mfc_kd=0.8
   --rc_script N     Drive RC from a compiled-in NPS stick script instead of --norc
-                    (0=hover 1=step_roll 2=step_pitch 3=step_yaw 4=ff; auto-takeoff for first 8 s).
-                    Script 5 = FP takeoff (NAV) then ATTITUDE_Z_HOLD with a scheduled
-                    roll/pitch/yaw step sequence (ANTON_MFC: AUTO1=ATTITUDE_Z_HOLD).
-
-Interactive commands (type in the sim terminal, or pipe via pprz_ctrl.py):
-  block <id>              jump to flight plan block
-  setting <name> <float>  set a GCS setting by its shortname (var/aircrafts/<AC>/settings.xml)
-
-  From a second terminal on the host:
-    python3 pprz_ctrl.py AIRCRAFT block 5
-
-Takeoff sequence (flight plan blocks):
-  Block 2 "Start Engine" → NavResurrect() un-kills throttle
-  Block 3 "Takeoff"      → climbs to CLIMB waypoint at nav.climb_vspeed
+                    (0=hover 1=step_roll 2=step_pitch 3=step_yaw 4=ff; auto-takeoff
+                    for the first 8 s).
+  --fg              Stream NET_FDM pose to FlightGear on the Mac host (:5501).
+  --gdb             Wrap the sim in gdbserver :1234 and wait for a debugger.
+  --no-scope        Feed PlotJuggler (and the CSV) from server's ivy telemetry
+                    instead of the in-process NPS scope — i.e. exactly what a real
+                    flight looks like, downsampled and without ground truth.
 
 Command delivery:
-  Commands are sent as native Ivy messages (ground/JUMP_TO_BLOCK, ground/DL_SETTING) — the
-  same mechanism the GCS strip buttons and settings panel use. `server` decodes them into the
-  binary pprz frames and forwards them over the sim's datalink; we never touch that wire format.
+  Blocks and settings go out as native Ivy messages (ground/JUMP_TO_BLOCK,
+  ground/DL_SETTING) — the same mechanism the GCS strip buttons and settings panel
+  use. `server` encodes them into binary pprz frames and forwards them over the
+  sim's datalink; we never touch that wire format.
 
-Observability:
-  Layer 0 — JSBSim truth:   NPS_RATE_ATTITUDE, NPS_POS_LLH
-  Layer 1 — Firmware state: ROTORCRAFT_CMD (motor commands)
-
-  PlotJuggler feed — exactly ONE source streams to the Mac, in the shared
-  aircraft-agnostic schema (root "uav", MFC_* branches — see pj_json_relay.py):
-    default:     the in-process NPS scope emitter (nps_scope.c in simsitl) — ground
-                 truth + firmware-registered vars at full decimated sim rate. It sends
-                 to a local port; we normalize each packet and forward it on.
-    --no-scope:  fall back to server's ivy UDP/JSON telemetry stream (downsampled,
-                 walltime-stamped — what you'd have in real flight).
-  Because both sources are normalized to the same schema, plotjuggler_mfc.xml /
-  plotjuggler_indi.xml work unchanged for sim and real flight, any aircraft.
-  PJ_HOST / PJ_PORT env vars override the PlotJuggler destination (default: the
-  Mac host, 9870).
-
-  Logging: server's UDP/JSON telemetry stream is always captured (normalized) to a
-           .jsonl file — same schema PlotJuggler consumes, no bespoke CSV columns
-           to keep in sync with the firmware.
+Capture (PlotJuggler feed and the on-disk log are the SAME stream):
+    default:     the in-process NPS scope emitter (nps_scope.c in simsitl) —
+                 ground truth + firmware-registered vars at full decimated sim
+                 rate, on a local port.
+    --no-scope:  server's ivy UDP/JSON telemetry stream instead.
+  Whichever is selected is normalized to the shared aircraft-agnostic schema
+  (root "uav", MFC_* branches — see pj_json_relay.py), forwarded to PlotJuggler,
+  AND written to sim_logs/mfc_sim_<TS>.csv in the wide `/uav/...` CSV schema —
+  the same format tools/sdlog2scope.py produces from a real SD flight log, so one
+  layout and one analyser cover both. PJ_HOST / PJ_PORT override the PlotJuggler
+  destination (default: the Mac host, 9870).
 
 Note on `pprzsim-launch`: paparazzi ships sw/simulator/pprzsim-launch as the canonical NPS
-launcher, but it only knows how to `execv` simsitl with a handful of flags (fg/rc_script/norc/
-ivy_bus) — it does not support the in-process scope emitter or a gdbserver wrap, both of which
-this script needs by default. So simsitl is still invoked directly here; that is simsitl's own
+launcher, but it only `execv`s simsitl with a handful of flags (fg/rc_script/norc/js/
+ivy_bus) — it cannot express the in-process scope emitter or a gdbserver wrap, and has no
+passthrough for extra arguments. So simsitl is invoked directly here; that is simsitl's own
 native CLI, not something reinvented by this script.
 """
 
 import datetime
 import json
-import math
 import os
 import signal
 import socket
@@ -72,7 +72,6 @@ import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
-from collections import deque
 
 PPRZ = "/workspace/paparazzi"
 SERVER = f"{PPRZ}/sw/ground_segment/tmtc/server"
@@ -86,9 +85,11 @@ from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 from settings import PprzSettingsParser
 from pj_json_relay import sanitize as sanitize_json
+from tools.scope2csv import ScopeCsvWriter
 
 # ── Parse positional AC_NAME + flags ─────────────────────────────────────────
 _flags = {}
+_sets = []
 AC_NAME = None
 _args = sys.argv[1:]
 i = 0
@@ -96,6 +97,12 @@ while i < len(_args):
     a = _args[i]
     if a == "--rc_script" and i + 1 < len(_args):
         _flags["rc_script"] = int(_args[i + 1])
+        i += 2
+    elif a == "--nav" and i + 1 < len(_args):
+        _flags["nav"] = _args[i + 1]
+        i += 2
+    elif a == "--set" and i + 1 < len(_args):
+        _sets.append(_args[i + 1])
         i += 2
     elif a.startswith("-"):
         _flags[a] = True
@@ -107,15 +114,15 @@ while i < len(_args):
         i += 1
 
 if AC_NAME is None:
-    print(f"Usage: {sys.argv[0]} AIRCRAFT [--gdb] [--fg] [--render] [--rc_script N]",
-          file=sys.stderr)
+    print(f"Usage: {sys.argv[0]} AIRCRAFT [--nav SEQ] [--set NAME=VAL] "
+          "[--rc_script N] [--fg] [--gdb] [--no-scope]", file=sys.stderr)
     sys.exit(1)
 
-_USE_RENDER   = "--render"   in _flags
-_GDB          = "--gdb"      in _flags
-_USE_FG       = "--fg"       in _flags
-_USE_SCOPE    = "--no-scope" not in _flags
-_RC_SCRIPT    = _flags.get("rc_script")      # NPS compiled RC script index, or None
+_GDB       = "--gdb"      in _flags
+_USE_FG    = "--fg"       in _flags
+_USE_SCOPE = "--no-scope" not in _flags
+_RC_SCRIPT = _flags.get("rc_script")            # NPS compiled RC script index, or None
+_NAV       = _flags.get("nav", "Start Engine,Takeoff")
 
 # ── Look up AC_ID from the conf XML ──────────────────────────────────────────
 # Still needed: Ivy ground messages (JUMP_TO_BLOCK / DL_SETTING) address the
@@ -144,31 +151,25 @@ try:
     FG_HOST = socket.gethostbyname("host.docker.internal")
 except OSError:
     FG_HOST = "192.168.65.254"
-R2D = math.degrees(1)
 
 # PlotJuggler destination (Streaming → UDP Server, protocol JSON, timestamp field
 # "timestamp"). Overridable for testing / non-Mac setups.
 PJ_HOST = os.environ.get("PJ_HOST") or FG_HOST   # default: same egress path as FlightGear
 PJ_PORT = int(os.environ.get("PJ_PORT") or 9870)
 
-# Scope: in-process NPS emitter (nps_scope.c) → local port → normalize → PJ_HOST.
-# Routed through this process (not straight to the Mac) so every packet gets the
-# shared aircraft-agnostic schema rewrite from pj_json_relay.normalize_obj.
-SCOPE_LOCAL_PORT = 9871
-SCOPE_DECIM = 2         # emit every Nth sim step (~500 Hz at 1 kHz sim rate)
-
-# Telemetry JSON stream: server's own UDP/JSON emitter is the real PlotJuggler bridge
-# (see pj_json_relay.py). Point it at a local port so we can tee it to a capture file;
-# it is only forwarded to PlotJuggler when the scope is disabled (--no-scope), so the
-# GUI never gets the same signals from two sources at once.
-TELEM_JSON_LOCAL_PORT = 9870
+# The selected feed arrives on a local port, gets normalized, and is then both
+# forwarded to PlotJuggler and written to the CSV. Two ports so the scope and
+# server can never collide when both happen to be running.
+SCOPE_LOCAL_PORT = 9871      # in-process NPS emitter (nps_scope.c)
+TELEM_LOCAL_PORT = 9870      # server.ml's UDP/JSON telemetry
+SCOPE_DECIM = 2              # emit every Nth sim step (~500 Hz at 1 kHz sim rate)
 
 # Logs land in /workspace/sim_logs/ (bind-mounted to the host) so they survive
-# container exit. Fall back to /tmp if running outside a container.
+# container exit.
 _LOG_DIR = os.environ.get("MFC_LOG_DIR", "/workspace/sim_logs")
 os.makedirs(_LOG_DIR, exist_ok=True)
 _TS = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-LOG_FILE = os.path.join(_LOG_DIR, f"mfc_sim_{_TS}.jsonl")
+LOG_FILE = os.path.join(_LOG_DIR, f"mfc_sim_{_TS}.csv")
 DEBUG_LOG_FILE = os.path.join(_LOG_DIR, f"mfc_sim_{_TS}_debug.log")
 
 # ── settings.xml (name → index), for DL_SETTING by name ─────────────────────
@@ -179,38 +180,51 @@ except Exception as e:
     print(f"Warning: could not parse {SETTINGS_XML}: {e}", file=sys.stderr)
     SETTINGS = None
 
+# ── flight plan (block name → id) ────────────────────────────────────────────
+# The build generates var/aircrafts/<AC>/flight_plan.xml with exactly what we
+# need: <block name="Start Engine" no="2">. Using names instead of the numeric
+# ids means a flight-plan edit can't silently retarget the sequence.
+FLIGHT_PLAN_XML = f"{PPRZ}/var/aircrafts/{AC_NAME}/flight_plan.xml"
 
-# ── shared state ─────────────────────────────────────────────────────────────
-state = {
-    "phi": 0.0, "theta": 0.0, "psi": 0.0,
-    "p":   0.0, "q":     0.0, "r":   0.0,
-    "lat": 0.0, "lon":   0.0,
-    "alt": 0.0, "agl":   0.0,
-    "rc_roll": 0, "rc_pitch": 0, "rc_yaw": 0, "rc_thrust": 0,
-    "t":   0.0,
-    "cmd": "",
-}
 
-debug_log: deque = deque(maxlen=20)
+def load_blocks() -> dict:
+    """Return {block name: id}, empty if the flight plan isn't generated yet."""
+    try:
+        tree = ET.parse(FLIGHT_PLAN_XML)
+    except Exception as e:
+        print(f"Warning: could not parse {FLIGHT_PLAN_XML}: {e}", file=sys.stderr)
+        return {}
+    return {b.get("name"): int(b.get("no"))
+            for b in tree.getroot().iter("block")
+            if b.get("name") is not None and b.get("no") is not None}
 
-# ── Ivy callbacks (PprzMessage, named field access — no manual parsing) ─────
-def on_rate_attitude(ac_id, msg):
-    if str(ac_id) != str(AC_ID): return
-    state["p"], state["q"], state["r"] = msg["p"], msg["q"], msg["r"]
-    state["phi"], state["theta"], state["psi"] = msg["phi"], msg["theta"], msg["psi"]
-    state["t"] = time.monotonic()
 
-def on_pos_llh(ac_id, msg):
-    if str(ac_id) != str(AC_ID): return
-    state["lat"] = msg["lat_geod"] * R2D
-    state["lon"] = msg["lon"] * R2D
-    state["alt"] = msg["asl"]
-    state["agl"] = msg["agl"]
+BLOCKS = load_blocks()
 
-def on_rotorcraft_cmd(ac_id, msg):
-    if str(ac_id) != str(AC_ID): return
-    state["rc_roll"], state["rc_pitch"] = msg["cmd_roll"], msg["cmd_pitch"]
-    state["rc_yaw"], state["rc_thrust"] = msg["cmd_yaw"], msg["cmd_thrust"]
+
+def parse_nav(spec: str):
+    """'Start Engine,+15,Nav' -> [('block','Start Engine'), ('wait',15.0), ...].
+
+    Exits with the available block names if one doesn't exist, rather than
+    sending a JUMP_TO_BLOCK for a guessed id.
+    """
+    steps = []
+    for raw in spec.split(","):
+        tok = raw.strip()
+        if not tok:
+            continue
+        if tok.startswith("+"):
+            try:
+                steps.append(("wait", float(tok[1:])))
+            except ValueError:
+                sys.exit(f"sim_anton: bad --nav wait token {tok!r} (expected e.g. +15)")
+        elif tok in BLOCKS:
+            steps.append(("block", tok))
+        else:
+            avail = "\n  ".join(sorted(BLOCKS)) or "(flight plan not generated — build first)"
+            sys.exit(f"sim_anton: no flight-plan block named {tok!r} for {AC_NAME}.\n"
+                     f"Available blocks:\n  {avail}")
+    return steps
 
 
 # ── simsitl stdout reader ─────────────────────────────────────────────────────
@@ -218,95 +232,16 @@ def sim_stdout_reader(proc):
     with open(DEBUG_LOG_FILE, "w", buffering=1) as f:
         for line in proc.stdout:
             stripped = line.rstrip()
-            debug_log.append(stripped)
             f.write(stripped + "\n")
-            if not _USE_RENDER:
-                print(stripped, flush=True)
+            print(stripped, flush=True)
 
 
-# ── display ───────────────────────────────────────────────────────────────────
-def bar(val, lo, hi, width=18, unit=""):
-    frac = max(0.0, min(1.0, (val - lo) / (hi - lo)))
-    filled = int(frac * width)
-    return f"[{'█' * filled}{'░' * (width - filled)}] {val:+8.2f}{unit}"
-
-CLEAR  = "\033[H\033[J"
-BOLD   = "\033[1m"
-RESET  = "\033[0m"
-CYAN   = "\033[36m"
-GREEN  = "\033[32m"
-YELLOW = "\033[33m"
-GREY   = "\033[90m"
-
-def render():
-    s = state
-    age = time.monotonic() - s["t"]
-    stale = age > 1.0
-    status = f"{GREY}stale ({age:.1f}s){RESET}" if stale else f"{GREEN}live{RESET}"
-    cmd_line = f"  {YELLOW}CMD:{RESET} {s['cmd']}" if s["cmd"] else f"  {GREY}no command sent yet{RESET}"
-
-    lines = [
-        f"{BOLD}{'─' * 60}{RESET}",
-        f"  {BOLD}{CYAN}{AC_NAME} NPS (ac_id {AC_ID}){RESET}   {status}",
-        f"  {cmd_line.strip()}",
-        f"{'─' * 60}",
-        "",
-        f"  {BOLD}JSBSim truth{RESET}",
-        f"    Lat {s['lat']:+12.6f}°   Lon {s['lon']:+12.6f}°",
-        f"    Alt {s['alt']:+10.2f} m MSL   AGL {s['agl']:+8.2f} m",
-        f"    Roll  {bar(s['phi'],   -45, 45, unit='°')}",
-        f"    Pitch {bar(s['theta'], -45, 45, unit='°')}",
-        f"    Yaw   {s['psi']:+8.2f}°",
-        f"    p {bar(s['p'], -60, 60, unit='°/s')}",
-        f"    q {bar(s['q'], -60, 60, unit='°/s')}",
-        f"    r {bar(s['r'], -60, 60, unit='°/s')}",
-        "",
-        f"  {BOLD}Motor commands (ROTORCRAFT_CMD){RESET}",
-        f"    roll {s['rc_roll']:+6d}  pitch {s['rc_pitch']:+6d}  yaw {s['rc_yaw']:+6d}  thrust {s['rc_thrust']:+6d}",
-        "",
-        f"  {BOLD}DEBUG{RESET}",
-        *[f"    {GREY}{line}{RESET}" for line in list(debug_log)[-6:]],
-        f"{'─' * 60}",
-        f"  {GREY}Telemetry capture → {LOG_FILE}   Ctrl-C to stop{RESET}",
-        f"  {GREY}Deeper MFC/INDI/WLS signals: PlotJuggler on {PJ_HOST}:{PJ_PORT}{RESET}",
-    ]
-    sys.stdout.write(CLEAR + "\n".join(lines) + "\n")
-    sys.stdout.flush()
-
-
-# ── telemetry JSON capture + relay ────────────────────────────────────────────
-# server streams its UDP/JSON telemetry to TELEM_JSON_LOCAL_PORT on localhost;
-# we tee every (sanitized + normalized) datagram to LOG_FILE. It is forwarded to
-# PlotJuggler only when the scope emitter is off (--no-scope): in a SITL run the
-# scope carries the same signals as ivy telemetry at full rate plus ground truth,
-# so forwarding both would draw every curve twice from two clocks.
-def telemetry_capture_relay():
+# ── feed capture + relay ──────────────────────────────────────────────────────
+# One stream in, two consumers: PlotJuggler (UDP) and the run CSV. Both see the
+# identical normalized packets, so what you watched live is what you can replot.
+def feed_relay(local_port: int, csv_writer: ScopeCsvWriter):
     recv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    recv_sock.bind(("127.0.0.1", TELEM_JSON_LOCAL_PORT))
-    send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    forward_to = (PJ_HOST, PJ_PORT)
-    with open(LOG_FILE, "w", buffering=1) as f:
-        while True:
-            data, _ = recv_sock.recvfrom(65535)
-            clean = sanitize_json(data)
-            if clean is None:
-                continue
-            f.write(clean.decode("utf-8", errors="replace") + "\n")
-            if _USE_SCOPE:
-                continue
-            try:
-                send_sock.sendto(clean, forward_to)
-            except OSError:
-                pass
-
-
-# ── scope normalize + relay ───────────────────────────────────────────────────
-# The in-process NPS scope emitter sends raw JSON (root "<AIRFRAME> (sim)") to
-# SCOPE_LOCAL_PORT; rewrite each packet to the shared "uav" schema and forward
-# it to PlotJuggler.
-def scope_relay():
-    recv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    recv_sock.bind(("127.0.0.1", SCOPE_LOCAL_PORT))
+    recv_sock.bind(("127.0.0.1", local_port))
     send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     forward_to = (PJ_HOST, PJ_PORT)
     while True:
@@ -318,88 +253,82 @@ def scope_relay():
             send_sock.sendto(clean, forward_to)
         except OSError:
             pass
+        try:
+            csv_writer.write_packet(json.loads(clean))
+        except (json.JSONDecodeError, ValueError):
+            pass
 
 
-# ── command senders (native Ivy ground messages, no hand-rolled frames) ─────
+# ── command senders (native Ivy ground messages) ─────────────────────────────
 def send_block(ivy: IvyMessagesInterface, block_id: int, label: str):
     msg = PprzMessage("ground", "JUMP_TO_BLOCK")
     msg["ac_id"] = AC_ID
     msg["block_id"] = block_id
     ivy.send(msg)
-    state["cmd"] = f"BLOCK {block_id} ({label})"
+    print(f"[nav] block {block_id} ({label})", flush=True)
 
-def send_setting_by_name(ivy: IvyMessagesInterface, name: str, value: float, label: str = None):
+
+def send_setting_by_name(ivy: IvyMessagesInterface, name: str, value: float):
     if SETTINGS is None:
-        print(f"[ctrl] no settings.xml for {AC_NAME} ({SETTINGS_XML} missing) — rebuild first", flush=True)
+        print(f"[set] no settings.xml for {AC_NAME} ({SETTINGS_XML} missing) — rebuild first",
+              flush=True)
         return
     try:
         setting = SETTINGS[name]
     except AttributeError:
-        print(f"[ctrl] unknown setting '{name}' for {AC_NAME}", flush=True)
+        print(f"[set] unknown setting '{name}' for {AC_NAME}", flush=True)
         return
     msg = PprzMessage("ground", "DL_SETTING")
     msg["ac_id"] = AC_ID
     msg["index"] = setting.index
     msg["value"] = float(value)
     ivy.send(msg)
-    state["cmd"] = label or f"SETTING {name}={value}"
-
-def takeoff_sequence(ivy: IvyMessagesInterface):
-    time.sleep(5.0)
-    send_block(ivy, 2, "Start Engine")
-    time.sleep(0.5)
-    send_block(ivy, 3, "Takeoff")
+    print(f"[set] {name} = {value}", flush=True)
 
 
-def cmd_loop(ivy: IvyMessagesInterface):
-    """Read text commands from stdin and dispatch them. Runs as a daemon thread.
-
-    Accepts:  block <id> | setting <name> <float>
-    """
-    for raw in sys.stdin:
-        parts = raw.strip().split()
-        if not parts:
+def nav_sequence(ivy: IvyMessagesInterface, steps, sets):
+    """Run the --nav steps, then apply --set values. Daemon thread."""
+    time.sleep(5.0)                      # let the sim settle / GPS fix
+    for kind, val in steps:
+        if kind == "wait":
+            time.sleep(val)
+        else:
+            send_block(ivy, BLOCKS[val], val)
+            time.sleep(0.5)
+    for spec in sets:
+        name, _, value = spec.partition("=")
+        if not _:
+            print(f"[set] ignoring {spec!r} (expected NAME=VALUE)", flush=True)
             continue
-        cmd = parts[0]
         try:
-            if cmd == "block" and len(parts) >= 2:
-                send_block(ivy, int(parts[1]), parts[1])
-            elif cmd == "setting" and len(parts) >= 3:
-                send_setting_by_name(ivy, parts[1], float(parts[2]))
-                print(f"[ctrl] setting {parts[1]}={parts[2]}", flush=True)
-            else:
-                print(
-                    f"[cmd] unknown: {raw.strip()!r}  "
-                    "(commands: block <id> | setting <name> <val>)",
-                    flush=True,
-                )
-        except Exception as exc:
-            print(f"[cmd] error: {exc}", flush=True)
+            send_setting_by_name(ivy, name.strip(), float(value))
+        except ValueError:
+            print(f"[set] {spec!r}: {value!r} is not a number", flush=True)
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
 def main():
     env = {**os.environ, "PAPARAZZI_HOME": PPRZ}
+    steps = parse_nav(_NAV)
+    local_port = SCOPE_LOCAL_PORT if _USE_SCOPE else TELEM_LOCAL_PORT
 
     print("Starting Paparazzi server …")
-    server = subprocess.Popen(
-        [SERVER, "-b", IVY_BUS, "-n", "-udp_json_stream_addr", "127.0.0.1",
-         "-udp_json_stream_port", str(TELEM_JSON_LOCAL_PORT)],
-        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-    )
+    server_cmd = [SERVER, "-b", IVY_BUS, "-n"]
+    if not _USE_SCOPE:
+        # Only ask server for its JSON stream when it is the selected feed.
+        server_cmd += ["-udp_json_stream_addr", "127.0.0.1",
+                       "-udp_json_stream_port", str(TELEM_LOCAL_PORT)]
+    server = subprocess.Popen(server_cmd, env=env,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     print("Starting Paparazzi link (UDP 4242) …")
-    link = subprocess.Popen(
-        [LINK, "-b", IVY_BUS, "-udp"],
-        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-    )
+    link = subprocess.Popen([LINK, "-b", IVY_BUS, "-udp"], env=env,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # RC source: a compiled-in NPS script (--rc_script N) drives the sticks
-    # (script 0=hover, 1=step_roll, 2=step_pitch, 3=step_yaw, 4=ff; all auto-
-    # take off for the first 8 s — see sw/simulator/nps/nps_radio_control.c).
-    # Otherwise RC is disabled (--norc) and control comes from the flight plan.
-    # (simsitl's own native CLI — see the pprzsim-launch note in the module
-    # docstring for why we call it directly instead of through that launcher.)
+    # (0=hover, 1=step_roll, 2=step_pitch, 3=step_yaw, 4=ff; all auto-take off for
+    # the first 8 s — see sw/simulator/nps/nps_radio_control.c). Otherwise RC is
+    # disabled (--norc) and control comes from the flight plan.
     _sim_cmd = [SIMSITL]
     _sim_cmd += ["--rc_script", str(_RC_SCRIPT)] if _RC_SCRIPT is not None else ["--norc"]
     if _USE_FG:
@@ -411,17 +340,16 @@ def main():
     if _GDB:
         _sim_cmd = ["gdbserver", ":1234"] + _sim_cmd
     print("Starting NPS sim …" + (" (gdbserver :1234, waiting for debugger)" if _GDB else ""))
-    sim = subprocess.Popen(
-        _sim_cmd,
-        env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-        text=True, bufsize=1,
-    )
+    sim = subprocess.Popen(_sim_cmd, env=env, stdout=subprocess.PIPE,
+                           stderr=subprocess.DEVNULL, text=True, bufsize=1)
 
     ivy = IvyMessagesInterface(f"sim_anton_{AC_NAME}", ivy_bus=IVY_BUS)
+    csv_writer = ScopeCsvWriter(LOG_FILE)
 
     def shutdown(sig=None, frame=None):
-        print("\nShutting down …")
+        print(f"\nShutting down … ({csv_writer.n_rows} rows → {LOG_FILE})")
         sim.terminate(); link.terminate(); server.terminate()
+        csv_writer.close()
         try: ivy.shutdown()
         except Exception: pass
         sys.exit(0)
@@ -432,31 +360,20 @@ def main():
     print("Waiting for sim to start …")
     time.sleep(3)
 
-    ivy.subscribe(on_rate_attitude,  PprzMessage("telemetry", "NPS_RATE_ATTITUDE"))
-    ivy.subscribe(on_pos_llh,        PprzMessage("telemetry", "NPS_POS_LLH"))
-    ivy.subscribe(on_rotorcraft_cmd, PprzMessage("telemetry", "ROTORCRAFT_CMD"))
+    threading.Thread(target=sim_stdout_reader, args=(sim,), daemon=True).start()
+    threading.Thread(target=feed_relay, args=(local_port, csv_writer), daemon=True).start()
+    if steps or _sets:
+        threading.Thread(target=nav_sequence, args=(ivy, steps, _sets), daemon=True).start()
 
-    state["t"] = time.monotonic()
-    threading.Thread(target=sim_stdout_reader,       args=(sim,), daemon=True).start()
-    threading.Thread(target=takeoff_sequence,        args=(ivy,), daemon=True).start()
-    threading.Thread(target=telemetry_capture_relay, daemon=True).start()
-    threading.Thread(target=cmd_loop,                args=(ivy,), daemon=True).start()
-    if _USE_SCOPE:
-        threading.Thread(target=scope_relay, daemon=True).start()
-    print(f"Telemetry capture → {LOG_FILE}   Debug → {DEBUG_LOG_FILE}")
-    if _USE_SCOPE:
-        print(f"PlotJuggler feed: NPS scope (normalized '/uav' schema) → {PJ_HOST}:{PJ_PORT} "
-              f"(decim {SCOPE_DECIM}, ~{1000//SCOPE_DECIM} Hz)")
-    else:
-        print(f"PlotJuggler feed: ivy telemetry (normalized '/uav' schema) → {PJ_HOST}:{PJ_PORT}")
+    feed = "NPS scope" if _USE_SCOPE else "ivy telemetry"
+    rate = f", decim {SCOPE_DECIM}, ~{1000 // SCOPE_DECIM} Hz" if _USE_SCOPE else ""
+    print(f"Feed: {feed} (normalized '/uav' schema) → PlotJuggler {PJ_HOST}:{PJ_PORT}{rate}")
+    print(f"Run capture → {LOG_FILE}   Debug → {DEBUG_LOG_FILE}")
+    if steps:
+        print("Nav: " + " ".join(f"+{v}s" if k == "wait" else f"[{v}]" for k, v in steps))
 
-    if _USE_RENDER:
-        while True:
-            render()
-            time.sleep(0.1)
-    else:
-        while True:
-            time.sleep(1)
+    while True:
+        time.sleep(1)
 
 
 if __name__ == "__main__":

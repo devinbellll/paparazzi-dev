@@ -9,14 +9,30 @@
 
     SITL (./sim.sh):  NPS scope emitter (nps_scope.c) — ground truth (TRUTH) +
                       firmware-registered vars at full decimated sim rate,
-                      normalized/forwarded by sim_anton.py. Ivy telemetry is
-                      captured to .jsonl but NOT forwarded (no duplicate curves).
+                      normalized and forwarded by sim_anton.py, which writes the
+                      SAME packets to sim_logs/mfc_sim_<TS>.csv.
     Real flight:      server.ml UDP/JSON (port 9870) through pj_json_relay.py,
                       which normalizes by default.
 
   One UDP-Server instance on port 9870, protocol JSON, timestamp field
-  "timestamp". Sim-only branches (TRUTH, EST, SENSORS, SP, MODE) simply don't
-  draw in real flight.
+  "timestamp".
+
+  WHICH TABS FILL ON WHICH FEED — the two feeds do not carry the same branches,
+  so tabs are named for what they can actually show:
+    * MFC_RPY / MFC_XYZ / ACCEL2ATT / WLS  — both feeds (the controller
+      publishes these to the scope AND over ivy).
+    * Estim (EST/*)  — both feeds. In flight there is no scope, so
+      pj_json_relay.py's FIELD_ALIAS projects ROTORCRAFT_FP into EST/* (fixed-
+      point unscaled, ENU->NED) to fill it.
+    * "States (sim truth)" (TRUTH/*) — SIM ONLY. JSBSim ground truth has no
+      real-flight counterpart (short of OptiTrack).
+    * SPvMEAS — mixed: EST + MFC curves draw on both feeds, TRUTH and SP/* only
+      in sim.
+
+  UNITS: every angle in this schema is RADIANS. The scope used to emit TRUTH/EST
+  in degrees while the controller branches were radians, which made MFC curves
+  look flat next to truth on the shared SPvMEAS axes; nps_scope.c and
+  nps_scope_state.c now emit the firmware's native radians.
 -->
 <root>
  <tabbed_widget parent="main_window" name="Main Window">
@@ -307,7 +323,7 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="States" containers="1">
+  <Tab tab_name="States (sim truth)" containers="1">
    <Container>
     <DockSplitter sizes="1" orientation="-" count="1">
      <DockSplitter sizes="0.333685;0.332629;0.333685" orientation="|" count="3">
@@ -428,53 +444,6 @@
         </plot>
        </DockArea>
       </DockSplitter>
-     </DockSplitter>
-    </DockSplitter>
-   </Container>
-  </Tab>
-  <Tab tab_name="Sensors" containers="1">
-   <Container>
-    <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
-     <DockSplitter sizes="0.5;0.5" orientation="|" count="2">
-      <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-3836.050000" top="5154.050000" left="17.557000" />
-        <limitY />
-        <curve color="#9467bd" name="/uav/SENSORS/mag_x" />
-        <curve color="#17becf" name="/uav/SENSORS/mag_y" />
-        <curve color="#bcbd22" name="/uav/SENSORS/mag_z" />
-       </plot>
-      </DockArea>
-      <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-249875.225000" top="178828.225000" left="17.557000" />
-        <limitY />
-        <curve color="#1ac938" name="/uav/SENSORS/gyro_p" />
-        <curve color="#ff7f0e" name="/uav/SENSORS/gyro_q" />
-        <curve color="#f14cc1" name="/uav/SENSORS/gyro_r" />
-       </plot>
-      </DockArea>
-     </DockSplitter>
-     <DockSplitter sizes="0.50211;0.49789" orientation="|" count="2">
-      <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-4.116629" top="154.642991" left="17.557000" />
-        <limitY />
-        <curve color="#1f77b4" name="/uav/SENSORS/gps_hmsl" />
-        <curve color="#d62728" name="/uav/SENSORS/gps_vx" />
-        <curve color="#1ac938" name="/uav/SENSORS/gps_vy" />
-        <curve color="#ff7f0e" name="/uav/SENSORS/gps_vz" />
-       </plot>
-      </DockArea>
-      <DockArea name="...">
-       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
-        <range right="36.821000" bottom="-4617.950000" top="293.950000" left="17.557000" />
-        <limitY />
-        <curve color="#bcbd22" name="/uav/SENSORS/acc_x" />
-        <curve color="#1f77b4" name="/uav/SENSORS/acc_y" />
-        <curve color="#d62728" name="/uav/SENSORS/acc_z" />
-       </plot>
-      </DockArea>
      </DockSplitter>
     </DockSplitter>
    </Container>

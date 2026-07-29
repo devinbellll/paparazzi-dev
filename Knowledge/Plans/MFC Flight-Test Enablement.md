@@ -195,6 +195,14 @@ output schema == the scope schema.
 
 ## Phase 4 — Fold `tune_mfc.sh` + `analyze_mfc.py` into the unified system
 
+> **STATUS 2026-07-22 — resolved differently; do not action this phase as written.**
+> `tune_mfc.sh` was **deleted** (never used). `analyze_mfc.py` was retargeted onto the
+> canonical `/uav` wide CSV, which both `tools/scope2csv.py` (sim) and
+> `tools/sdlog2scope.py` (flight) now produce — so one analyser already grades both feeds.
+> The loop this phase describes is now just:
+> `./sim.sh <AC>` → `python3 analyze_mfc.py sim_logs/mfc_sim_<TS>.csv`.
+> See `Knowledge/Sessions/2026-07-22-launcher-cleanup.md`.
+
 Today `analyze_mfc.py` reads the bespoke wide CSV that `sim_anton.py` writes (keys like
 `mfc_err_phi`, `mfc_fk_phi`, `agl`, `rc_thrust`). Retarget it onto the unified JSON schema so the
 **same analyser works on sim captures and real flights**:
