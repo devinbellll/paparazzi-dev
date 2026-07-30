@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T10:38:56.682Z
-> Files: 773 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-29T11:13:20.091Z
+> Files: 774 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -1034,6 +1034,10 @@
 ## paparazzi/sw/ground_segment/tmtc/
 
 - `server.ml` — Declares msg (~11553 tok)
+
+## paparazzi/sw/simulator/
+
+- `pprzsim-launch` — This file is part of Paparazzi. (~2145 tok)
 
 ## paparazzi/sw/simulator/nps/
 
