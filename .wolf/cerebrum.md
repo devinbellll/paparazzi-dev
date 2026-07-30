@@ -459,3 +459,26 @@
 - (2026-07-22) **Don't drop an `#include` just because the symbol you removed came from it.**
   Removing `DegOfRad()` uses from nps_scope_state.c tempted a removal of `#include "std.h"`,
   which provides much more; restored immediately.
+
+## Do-Not-Repeat additions (2026-07-30)
+
+- (2026-07-30) **When "the sim doesn't take off" — check `MODE/motors_on`/`MODE/arming` and
+  `MODE/nav_v` (nav.vertical_mode) via NPS scope BEFORE suspecting the flight plan.** For
+  ANTON_MFC, `--nav` (default "Start Engine,Takeoff") printed the block-jump lines locally but
+  telemetry showed `nav.vertical_mode` pinned at MANUAL(0) and motors_on/arming/in_flight
+  pinned at 0 for 90s straight — the aircraft never left its FIRST block (Wait GPS, which
+  calls NavKillThrottle()). Confirmed with a debug Ivy subscription to the aircraft's own
+  `ROTORCRAFT_NAV_STATUS` downlink (1.6s period): it never arrived once in 40s, meaning Ivy
+  traffic isn't flowing between sim_anton.py and the firmware/server at all in this sandboxed
+  docker setup — NOT the vto_survey flight plan (block names/exceptions all check out fine by
+  static read) and NOT `modules/checks/preflight_checks` (not compiled into ANTON_MFC at all —
+  don't assume that module gates arming without checking the airframe's module list first).
+  See bug-227. Left the debug listener in `sim_anton.py` (harmless when no message arrives).
+- (2026-07-30) **`accel_to_att_sp()` in guidance_mfc.c has a live scale bug**: the tilt-scaling
+  denominator `mfc_thrust_physical` is hardcoded to the nominal-hover constant instead of the
+  actual filtered thrust (`filt_thrust.o[0]` is computed then thrown away) — a `// TODO` marks
+  it. Left unfixed (pre-existing since before the current regression per `git log`, not
+  newly introduced) pending empirical flight verification once bug-227 (no takeoff) is
+  resolved — don't silently change control-loop scaling without a way to test it. See
+  bug-226. Also fixed a real but currently-inert copy-paste: `mfc_gx`/`mfc_gz.use_trajec_sp`
+  were both reading `GUIDANCE_MFC_GY_USE_TRAJECTORY_SP`.

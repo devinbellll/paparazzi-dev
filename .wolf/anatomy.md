@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-29T11:13:20.091Z
-> Files: 774 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-30T15:48:01.687Z
+> Files: 775 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -77,7 +77,7 @@
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2345 tok)
 - `probe_msgs.py` — frame, cb (~466 tok)
 - `README.md` — Project documentation (~1408 tok)
-- `sim_anton.py` — load_blocks, parse_nav, sim_stdout_reader, feed_relay (~4580 tok)
+- `sim_anton.py` — load_blocks, parse_nav, sim_stdout_reader, feed_relay (~4636 tok)
 - `sim.sh` — ── Run an NPS / SITL simulation in an ephemeral container ──────────────────── (~1391 tok)
 
 ## .claude/
@@ -264,6 +264,7 @@
 - `2026-07-16-mfc-si-units.md` — Session — 2026-07-16: MFC SI-unit refactor (Hoops_111_MFC) (~1531 tok)
 - `2026-07-20-sdlog2scope-rewrite.md` — 2026-07-20 — sdlog2scope.py rewritten to the /uav CSV schema (~776 tok)
 - `2026-07-22-launcher-cleanup.md` — Session 2026-07-22 — Launcher / sim-stack cleanup (~1641 tok)
+- `2026-07-30-mfc-xy-oscillation-and-nav-takeoff.md` — Session: 2026-07-30 — MFC X/Y Oscillation + Headless Nav Takeoff (~1099 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -997,7 +998,7 @@
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
 - `guidance_indi.c` — Declares is (~6074 tok)
-- `guidance_mfc.c` (~6476 tok)
+- `guidance_mfc.c` (~6516 tok)
 - `guidance_mfc.h` (~558 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/

@@ -318,12 +318,10 @@ def main():
         # Only ask server for its JSON stream when it is the selected feed.
         server_cmd += ["-udp_json_stream_addr", "127.0.0.1",
                        "-udp_json_stream_port", str(TELEM_LOCAL_PORT)]
-    server = subprocess.Popen(server_cmd, env=env,
-                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    server = subprocess.Popen(server_cmd, env=env)
 
     print("Starting Paparazzi link (UDP 4242) …")
-    link = subprocess.Popen([LINK, "-b", IVY_BUS, "-udp"], env=env,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    link = subprocess.Popen([LINK, "-b", IVY_BUS, "-udp"], env=env)
 
     # RC source: a compiled-in NPS script (--rc_script N) drives the sticks
     # (0=hover, 1=step_roll, 2=step_pitch, 3=step_yaw, 4=ff; all auto-take off for
@@ -345,6 +343,12 @@ def main():
 
     ivy = IvyMessagesInterface(f"sim_anton_{AC_NAME}", ivy_bus=IVY_BUS)
     csv_writer = ScopeCsvWriter(LOG_FILE)
+
+    def _debug_nav_status(ac_id, msg):
+        print(f"[NAV_STATUS] ac_id={ac_id} block={msg['cur_block']} stage={msg['cur_stage']} "
+              f"block_time={msg['block_time']} stage_time={msg['stage_time']} "
+              f"hmode={msg['horizontal_mode']}", flush=True)
+    ivy.subscribe(_debug_nav_status, PprzMessage("telemetry", "ROTORCRAFT_NAV_STATUS"))
 
     def shutdown(sig=None, frame=None):
         print(f"\nShutting down … ({csv_writer.n_rows} rows → {LOG_FILE})")
