@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-30T15:48:01.687Z
-> Files: 775 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-31T22:07:20.457Z
+> Files: 797 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -17,6 +17,7 @@
 
 ## ../../../../../../home/agent/.claude/plans/
 
+- `can-you-add-a-groovy-marble.md` — Plan: Canned flat-trajectory demo (self-triggered, no external stream) (~2163 tok)
 - `clean-up-task-i-wise-shamir.md` — Clean up MFC config: conf split, flight-plan rework, rc_script verification (~1706 tok)
 - `create-a-plan-for-serialized-yao.md` — Plan — Big Cleanup of the Command-Line Sim/Launch Stack (~3836 tok)
 - `foamy-growing-origami.md` — MFC tuneability: runtime toggles + unified shortnames (~1744 tok)
@@ -28,6 +29,7 @@
 - `resource-users-devinbellll-workspace-en-prancy-cupcake.md` — Plan: Fix IntelliSense — two separate root causes (~906 tok)
 - `serialized-sleeping-liskov.md` — Plan: NPS-scope ↔ ivy-server PlotJuggler parity (MFC) (~2400 tok)
 - `the-complete-mfc-stack-mutable-whistle.md` — Plan: Complete parallel MFC stack (guidance + stabilization) alongside INDI (~3363 tok)
+- `write-a-plan-to-cheerful-hearth.md` — Plan: write a Knowledge doc — "Flatness-Based Trajectory Setpoints (pos→snap, psi→psi-snap)" (~2228 tok)
 
 ## ../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/
 
@@ -179,8 +181,9 @@
 
 ## Knowledge/
 
-- `00 - Index.md` — Paparazzi Control System — Knowledge Base (~413 tok)
+- `00 - Index.md` — Paparazzi Control System — Knowledge Base (~459 tok)
 - `02 - INDI Stabilization Deep Dive.md` — INDI Stabilization Deep Dive (~1765 tok)
+- `07 - All Touch Points Cheatsheet.md` — All Touch Points Cheatsheet (~1617 tok)
 - `08 - Paparazzi Build System and VS Code Integration.md` — Paparazzi Build System — Makefile Chain and VS Code Integration (~2285 tok)
 - `09 - FlightGear 3D Visualization.md` — FlightGear 3D Visualization for NPS (~1076 tok)
 - `10 - Simplified Autopilots & Flight Modes.md` — 10 - Simplified Autopilots & Flight Modes (~2177 tok)
@@ -214,6 +217,7 @@
 
 - `Dual-Controller Handover Mode.md` — Plan — Dual-Controller Handover Mode (switch MFC ↔ INDI in flight) (~1755 tok)
 - `Dual-Controller Shadow Mode.md` — Plan — Dual-Controller Shadow Mode (MFC alongside INDI) (~2092 tok)
+- `Flatness Trajectory Setpoints (Pos-Vel-Accel-Jerk-Snap + Psi).md` — Flatness Trajectory Setpoints (Pos–Vel–Accel–Jerk–Snap + Psi) (~2650 tok)
 - `MFC Data Management & Comparison.md` — Plan — MFC Data Management & Comparison (flight ↔ sim ↔ Simulink) (~3340 tok)
 - `MFC Flight-Test Enablement.md` — Plan — MFC Flight-Test Enablement (telemetry + SD fast-logging + analysis) (~4006 tok)
 - `NPS-Scope Ivy PlotJuggler Parity.md` — NPS-scope ↔ ivy-server PlotJuggler parity (MFC) (~2399 tok)
@@ -265,6 +269,8 @@
 - `2026-07-20-sdlog2scope-rewrite.md` — 2026-07-20 — sdlog2scope.py rewritten to the /uav CSV schema (~776 tok)
 - `2026-07-22-launcher-cleanup.md` — Session 2026-07-22 — Launcher / sim-stack cleanup (~1641 tok)
 - `2026-07-30-mfc-xy-oscillation-and-nav-takeoff.md` — Session: 2026-07-30 — MFC X/Y Oscillation + Headless Nav Takeoff (~1099 tok)
+- `2026-07-31-flatness-trajectory-implementation.md` — Session — 2026-07-31: Flatness Trajectory Setpoints implementation (~5366 tok)
+- `2026-07-31-flatness-trajectory-setpoint-plan.md` — 2026-07-31 — Flatness trajectory setpoint plan (~790 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -949,7 +955,7 @@
 - `cobraV2.xml` (~2527 tok)
 - `crow_indoor.xml` (~2351 tok)
 - `goose.xml` (~2697 tok)
-- `hoops_111_indoor.xml` (~4032 tok)
+- `hoops_111_indoor.xml` (~2156 tok)
 - `hoops_111_mfc.xml` (~4844 tok)
 - `maya_outdoor.xml` (~2343 tok)
 - `robobee.xml` (~2518 tok)
@@ -965,11 +971,14 @@
 ## paparazzi/conf/flight_plans/ENAC/
 
 - `anton_mfc_nav.xml` (~610 tok)
+- `flat_traj_demo.xml` (~1051 tok)
 
 ## paparazzi/conf/modules/
 
+- `autopilot_guided.xml` — Declares for (~214 tok)
 - `guidance_mfc_oneloop.xml` (~215 tok)
 - `guidance_mfc.xml` (~2500 tok)
+- `nav_flat_traj.xml` (~210 tok)
 - `nps_scope_state.xml` (~240 tok)
 - `oneloop_mfc.xml` (~1908 tok)
 - `stabilization_mfc_oneloop.xml` (~272 tok)
@@ -986,7 +995,7 @@
 
 ## paparazzi/conf/userconf/ENAC/
 
-- `conf_mfc.xml` (~867 tok)
+- `conf_mfc.xml` (~887 tok)
 
 ## paparazzi/sw/airborne/
 
@@ -994,12 +1003,22 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/
 
+- `autopilot_guided.c` (~2170 tok)
+- `autopilot_guided.h` — Declares description (~1361 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
+- `guidance_h_ref.c` — Declares float (~2191 tok)
+- `guidance_h_ref.h` (~1170 tok)
+- `guidance_h.c` (~5787 tok)
+- `guidance_h.h` (~2314 tok)
 - `guidance_indi.c` — Declares is (~6074 tok)
 - `guidance_mfc.c` (~6516 tok)
 - `guidance_mfc.h` (~558 tok)
+- `guidance_v_ref.c` — Declares float (~1828 tok)
+- `guidance_v_ref.h` (~955 tok)
+- `guidance_v.c` — Declares int32_t (~3962 tok)
+- `guidance_v.h` (~1707 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
 
@@ -1019,6 +1038,12 @@
 
 - `eff_scheduling_rotwing_V2.c` — Declares into (~4590 tok)
 
+## paparazzi/sw/airborne/modules/nav/
+
+- `flat_traj_demo_data.h` — Declares struct (~1076 tok)
+- `nav_flat_traj.c` — Declares struct (~1091 tok)
+- `nav_flat_traj.h` (~944 tok)
+
 ## paparazzi/sw/airborne/modules/nps_scope/
 
 - `nps_scope_state.c` — include "nps_scope_state.h" (~2440 tok)
@@ -1030,7 +1055,7 @@
 
 ## paparazzi/sw/ext/pprzlink/message_definitions/v1.0/
 
-- `messages.xml` — Declares name (~51120 tok)
+- `messages.xml` — Declares name (~51688 tok)
 
 ## paparazzi/sw/ground_segment/tmtc/
 

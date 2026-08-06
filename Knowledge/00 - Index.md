@@ -18,6 +18,7 @@ Index of all notes. Designed for Obsidian; internal links use `[[Note Name]]` st
 | [[11 - In-Flight Controller Switching (Oneloop Pattern)]] | How Paparazzi switches control laws in flight (XML→codegen→runtime); oneloop ANDI/INDI precedent |
 | [[Plans/Dual-Controller Shadow Mode]] | Plan: run MFC + INDI together, INDI drives, MFC shadowed for validation |
 | [[Plans/Dual-Controller Handover Mode]] | Plan: in-flight bumpless switch of motor authority between MFC and INDI |
+| [[Plans/Flatness Trajectory Setpoints (Pos-Vel-Accel-Jerk-Snap + Psi)]] | Plan: extend GUIDED-mode trajectory setpoints to jerk/snap + psi derivatives, generically for INDI/MFC |
 
 ## Quick-start question
 

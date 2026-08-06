@@ -13,6 +13,16 @@
 #                                        #   0=hover 1=step_roll 2=step_pitch 3=step_yaw 4=ff
 #                                        #   (all auto-take off for the first 8 s; default is --norc)
 #   CONF="conf/userconf/tudelft/conf.xml" ./sim.sh RW3C_DePonti_Simulation
+#   ./sim.sh ANTON_MFC --ic reset_inflight.xml --nav "Start Engine,+0.5,Standby"
+#                                        # spawn the FDM already airborne (2 m AGL hover)
+#                                        # instead of on the ground. --ic alone only changes
+#                                        # the physics: the autopilot still boots with motors
+#                                        # killed, so --nav must still run "Start Engine"
+#                                        # (resurrects motors) before jumping into a
+#                                        # hold/guided block -- "Takeoff" itself is skippable
+#                                        # since altitude is already there. --nav "" alone
+#                                        # leaves it hanging with motors dead (looks frozen).
+#                                        # File is resolved under conf/simulator/jsbsim/aircraft/.
 #
 # For interactive/GUI work use the Paparazzi control panel instead
 # (conf/userconf/ENAC/control_panel_mfc.xml). This script is the headless path:

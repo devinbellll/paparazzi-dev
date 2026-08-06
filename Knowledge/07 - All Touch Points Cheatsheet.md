@@ -105,6 +105,22 @@ Quick-reference for every file that must change per type of modification.
 
 ---
 
+## Add Higher-Order (Jerk/Snap) Trajectory Setpoints
+
+| File | Change |
+|------|--------|
+| `sw/ext/pprzlink/message_definitions/v1.0/messages.xml` * | New `GUIDED_TRAJECTORY_NED` message (jerk/snap/heading-derivative fields) |
+| `sw/airborne/firmwares/rotorcraft/guidance/guidance_h.h` / `.c` * | Extend `sp`/`ref` structs, add `guidance_h_set_flat()` |
+| `sw/airborne/firmwares/rotorcraft/guidance/guidance_v.h` / `.c` * | Vertical equivalent |
+| `sw/airborne/firmwares/rotorcraft/guidance/guidance_h_ref.h` / `.c` * | Taylor-extrapolation reference model (`gh_update_ref_from_flat_ref`) |
+| `sw/airborne/firmwares/rotorcraft/guidance/guidance_v_ref.h` / `.c` * | Vertical equivalent |
+| `sw/airborne/firmwares/rotorcraft/autopilot_guided.h` / `.c` * | New `autopilot_guided_parse_GUIDED_TRAJECTORY()` |
+| `sw/airborne/firmwares/rotorcraft/guidance/guidance_mfc.c` ? | Follow-up: wire `ref.speed/accel` into MFC feedforward |
+
+See [[Plans/Flatness Trajectory Setpoints (Pos-Vel-Accel-Jerk-Snap + Psi)]] for the full design.
+
+---
+
 ## File Path Quick Reference
 
 ```

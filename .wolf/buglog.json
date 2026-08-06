@@ -3905,6 +3905,230 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-30T15:41:54.384Z"
+    },
+    {
+      "id": "bug-229",
+      "timestamp": "2026-07-31T12:08:38.501Z",
+      "error_message": "Wrong condition in logic",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_h.c",
+      "root_cause": "Condition was: if (guidance_h.sp.h_mask == GUIDANCE_H_SP_ACCEL)",
+      "fix": "Changed to: if (guidance_h.sp.h_mask == GUIDANCE_H_SP_FLAT)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-31T12:09:01.658Z"
+    },
+    {
+      "id": "bug-230",
+      "timestamp": "2026-07-31T12:08:52.821Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_h.c",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→22 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T12:08:52.821Z"
+    },
+    {
+      "id": "bug-231",
+      "timestamp": "2026-07-31T12:54:57.005Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/airframes/ENAC/conf_enac.xml",
+      "root_cause": "Had \"flight_plans/ENAC/rotorcraft_survey_vto.xml\"",
+      "fix": "Changed to \"flight_plans/ENAC/flat_traj_demo.xml\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-31T12:59:39.887Z"
+    },
+    {
+      "id": "bug-232",
+      "timestamp": "2026-07-31T12:56:47.163Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/modules/nav/flat_traj_demo_data.h",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 8→16 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "h"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T12:56:47.163Z"
+    },
+    {
+      "id": "bug-233",
+      "timestamp": "2026-07-31T12:59:46.385Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/userconf/ENAC/conf_mfc.xml",
+      "root_cause": "Had \"flight_plans/ENAC/rotorcraft_survey_vto.xml\"",
+      "fix": "Changed to \"flight_plans/ENAC/flat_traj_demo.xml\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-31T13:03:45.834Z"
+    },
+    {
+      "id": "bug-234",
+      "timestamp": "2026-07-31T13:13:56.264Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/userconf/ENAC/conf_mfc.xml",
+      "root_cause": "Had \"flight_plans/ENAC/rotorcraft_survey_vto.xml\"",
+      "fix": "Changed to \"flight_plans/ENAC/flat_traj_demo.xml\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T13:13:56.264Z"
+    },
+    {
+      "id": "bug-235",
+      "timestamp": "2026-07-31T13:21:25.760Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/modules/nav/nav_flat_traj.h",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→15 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "h"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T13:21:25.760Z"
+    },
+    {
+      "id": "bug-236",
+      "timestamp": "2026-07-31T13:27:52.407Z",
+      "error_message": "Wrong reference: 250 should be 20",
+      "file": "paparazzi/sw/airborne/modules/nav/flat_traj_demo_data.h",
+      "root_cause": "Used \"250\" instead of \"20\"",
+      "fix": "Changed 250 → 20",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "h"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T13:27:52.407Z"
+    },
+    {
+      "id": "bug-237",
+      "timestamp": "2026-07-31T13:28:16.989Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/userconf/ENAC/conf_mfc.xml",
+      "root_cause": "Had \"flight_plans/ENAC/flat_traj_demo.xml\"",
+      "fix": "Changed to \"flight_plans/ENAC/rotorcraft_survey_vto.xml\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T13:28:16.989Z"
+    },
+    {
+      "id": "bug-238",
+      "timestamp": "2026-07-31T14:56:58.819Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/modules/nav/nav_flat_traj.c",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 43→56 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T14:56:58.819Z"
+    },
+    {
+      "id": "bug-239",
+      "timestamp": "2026-07-31T14:57:39.789Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/modules/nav/nav_flat_traj.h",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 15→21 lines (3 removed) | Also: /** Capture the current NED position/heading as th; * playback from t=0. Call once on entering the dem",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "h"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-31T14:57:50.456Z"
+    },
+    {
+      "id": "bug-240",
+      "timestamp": "2026-07-31T15:24:00.959Z",
+      "error_message": "Incorrect value in code",
+      "file": "paparazzi/conf/flight_plans/ENAC/flat_traj_demo.xml",
+      "root_cause": "Had \"152\"",
+      "fix": "Changed to \"149\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T15:24:00.959Z"
+    },
+    {
+      "id": "bug-241",
+      "timestamp": "2026-07-31T20:20:26.926Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_h.c",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 25→30 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T20:20:26.926Z"
+    },
+    {
+      "id": "bug-242",
+      "timestamp": "2026-07-31T20:48:22.286Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/conf/flight_plans/ENAC/flat_traj_demo.xml",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 10→4 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-31T20:48:22.286Z"
     }
   ]
 }

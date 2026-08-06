@@ -28,6 +28,19 @@ Flags:
   --set NAME=VALUE  Set a GCS setting by shortname once the nav sequence is done.
                     Repeatable. This is the "same flight, different gains" knob:
                       --set guidance_mfc_kp=2.5 --set guidance_mfc_kd=0.8
+  --ic FILE         Override the JSBSim initial-conditions file (default: the
+                    aircraft's compiled-in NPS_JSBSIM_INIT, or reset00.xml, both
+                    on-ground). FILE is resolved relative to
+                    conf/simulator/jsbsim/aircraft/, e.g. reset_inflight.xml
+                    spawns 2 m AGL already hovering. This only changes the FDM's
+                    physical state -- the autopilot still boots with motors
+                    killed (NavKillThrottle in Wait GPS / Holding point), so
+                    pair it with --nav jumping through "Start Engine" (which
+                    resurrects the motors) straight into a hold/guided block,
+                    skipping "Takeoff" since altitude is already there:
+                      --ic reset_inflight.xml --nav "Start Engine,+0.5,Standby"
+                    --nav "" alone leaves it hanging in "Wait GPS" with motors
+                    dead -- looks frozen, not flying.
   --rc_script N     Drive RC from a compiled-in NPS stick script instead of --norc
                     (0=hover 1=step_roll 2=step_pitch 3=step_yaw 4=ff; auto-takeoff
                     for the first 8 s).
@@ -101,6 +114,9 @@ while i < len(_args):
     elif a == "--nav" and i + 1 < len(_args):
         _flags["nav"] = _args[i + 1]
         i += 2
+    elif a == "--ic" and i + 1 < len(_args):
+        _flags["ic"] = _args[i + 1]
+        i += 2
     elif a == "--set" and i + 1 < len(_args):
         _sets.append(_args[i + 1])
         i += 2
@@ -114,7 +130,7 @@ while i < len(_args):
         i += 1
 
 if AC_NAME is None:
-    print(f"Usage: {sys.argv[0]} AIRCRAFT [--nav SEQ] [--set NAME=VAL] "
+    print(f"Usage: {sys.argv[0]} AIRCRAFT [--nav SEQ] [--set NAME=VAL] [--ic FILE] "
           "[--rc_script N] [--fg] [--gdb] [--no-scope]", file=sys.stderr)
     sys.exit(1)
 
@@ -123,6 +139,7 @@ _USE_FG    = "--fg"       in _flags
 _USE_SCOPE = "--no-scope" not in _flags
 _RC_SCRIPT = _flags.get("rc_script")            # NPS compiled RC script index, or None
 _NAV       = _flags.get("nav", "Start Engine,Takeoff")
+_IC        = _flags.get("ic")                   # JSBSim initial-conditions file override, or None
 
 # ── Look up AC_ID from the conf XML ──────────────────────────────────────────
 # Still needed: Ivy ground messages (JUMP_TO_BLOCK / DL_SETTING) address the
@@ -288,7 +305,7 @@ def send_setting_by_name(ivy: IvyMessagesInterface, name: str, value: float):
 
 def nav_sequence(ivy: IvyMessagesInterface, steps, sets):
     """Run the --nav steps, then apply --set values. Daemon thread."""
-    time.sleep(5.0)                      # let the sim settle / GPS fix
+    time.sleep(2.0)                      # let the sim settle / GPS fix
     for kind, val in steps:
         if kind == "wait":
             time.sleep(val)
@@ -309,6 +326,8 @@ def nav_sequence(ivy: IvyMessagesInterface, steps, sets):
 # ── main ──────────────────────────────────────────────────────────────────────
 def main():
     env = {**os.environ, "PAPARAZZI_HOME": PPRZ}
+    if _IC:
+        env["NPS_JSBSIM_INIT_OVERRIDE"] = _IC
     steps = parse_nav(_NAV)
     local_port = SCOPE_LOCAL_PORT if _USE_SCOPE else TELEM_LOCAL_PORT
 
