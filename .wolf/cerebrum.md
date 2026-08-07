@@ -482,3 +482,70 @@
   resolved — don't silently change control-loop scaling without a way to test it. See
   bug-226. Also fixed a real but currently-inert copy-paste: `mfc_gx`/`mfc_gz.use_trajec_sp`
   were both reading `GUIDANCE_MFC_GY_USE_TRAJECTORY_SP`.
+
+## Key Learnings additions (2026-08-06 — MFC decoupled core port, HEOL stage 1)
+
+- **The MFC gain convention changed.** `mfc_core`'s `kp`/`kd` are now the raw
+  coefficients of the closed-loop polynomial `s^2 + kd*s + kp`. They are NOT
+  `wn`/`zeta` any more, and `use_Kd` is deleted repo-wide. Conversion from the
+  old convention: `kp_new = kp_old^2`, and `kd_new = 2*kd_old*kp_old` when
+  `use_Kd=TRUE`, else `kd_new = 2*kp_old`. Any tuning written before 2026-08-06
+  is in the old convention and must be converted before use.
+- **"Decoupled" in MFC does not mean per-axis.** The six `MfcParameters`
+  instances were always independent. `decoupled` selects what drives the
+  *estimator*: FALSE (coupled) drives it with the tracking error and folds the
+  closed-loop polynomial into `F_hat` as known coefficients `a=-kd`, `b=-kp`;
+  TRUE (decoupled) drives it with the measurement, folds nothing (`a=b=0`), and
+  an explicit iPD(I) law supplies `kp`/`kd`/`ki` in the command.
+- **The flag must gate BOTH the drive signal and the folding, together.**
+  Splitting them applies `kp` twice — once inside `F_hat`, once in the explicit
+  feedback — and the loop silently runs at double proportional gain. Nothing
+  errors.
+- **Sign contract, non-negotiable:** `error = measure - setpoint_trajec` and the
+  command law SUBTRACTS `fb`: `u = (-F_k + xdd_ref - fb) / alpha`. The folded
+  `-kp`, `-kd` are derived against this convention. Feeding `setpoint - measure`
+  inverts the folded poles and the loop diverges. `mfc_core.c` already had this
+  right — do not "fix" it.
+- `ki` is explicit in BOTH structures and is never folded. It uses a trapezoidal
+  integral with anti-windup: the integral is frozen (candidate rolled back) in
+  any sample where the `u_min`/`u_max` clamp bites.
+- The estimator numerator kernel and both `(W^2 + 2W + 1)` IIR smoothers already
+  match the upstream Simulink model character-for-character. Only the estimator's
+  *input* changed in this port. Do not rederive them.
+- **HEOL does not exist in this firmware** (`grep -rni heol` = 0 hits); it lives
+  only as a Simulink variant subsystem in the MFC_SISO model repo. Stage 2 builds
+  it as a separate library with `mfc_core` as a dependency, NOT by widening
+  `mfc_core` — HEOL's estimator is fed `u_fb` (the feedback component only, not
+  total `u`), which is exactly what `mfc_core`'s `d2u` term gives when `mfc_core`
+  *is* the `u_fb` block. Stage 1's core needs no further change to support it.
+- **Verifying a control-law refactor without a toolchain on the host:**
+  `mfc_core.c` has only two external deps (`get_sys_time_float`,
+  `float_vect_zero`), so old and new versions can be compiled standalone with
+  trivial stubs and diffed sample-by-sample. There is no `gcc` in the sbx
+  sandbox — run it inside `paparazzi-build:latest` with the harness dir mounted.
+  This proved the coupled path bit-for-bit identical over 4000 samples.
+
+## Decision Log additions (2026-08-06)
+
+- **Adopted the upstream model's gain convention rather than keeping wn/zeta.**
+  A tuning found in the Simulink model must mean the same thing when typed into
+  an airframe XML or a GCS slider; two conventions made that impossible, which is
+  why the model tuning was never validated on SITL.
+- **`decoupled` is a per-axis runtime `dl_setting`, default FALSE (coupled).**
+  The upstream model treats the structure as a block choice, not a parameter.
+  Deliberate divergence: a flight controller needs an in-flight A/B against a
+  flight-tested tuning, and the coupled path is the flight-tested fallback.
+- **Scope held to `mfc_core` + the standalone path.** `oneloop_mfc` got converted
+  gains and `use_Kd` removal so it keeps working, but no new settings.
+- **Setting ranges widened to `kp,kd in [0,200]`, `ki in [0,50]`.** Under the new
+  convention the pitch axis alone needs `kd = 80`; the old `[0,20]`/`[0,10]`
+  bounds would have silently clipped valid tunings.
+
+## Do-Not-Repeat additions (2026-08-06)
+
+- Do not treat `mfc_core`'s `kp` as a natural frequency or `kd` as a damping
+  ratio. That convention died on 2026-08-06.
+- Do not add an explicit P or D feedback term to the coupled path "for symmetry"
+  — they are already inside `F_hat`.
+- Do not build HEOL by adding a feedforward input to `mfc_core`. See the Key
+  Learnings entry above for why it must be its own library.

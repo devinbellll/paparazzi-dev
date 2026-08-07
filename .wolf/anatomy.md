@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-31T22:07:20.457Z
-> Files: 797 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-07T08:22:30.895Z
+> Files: 800 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -19,6 +19,7 @@
 
 - `can-you-add-a-groovy-marble.md` — Plan: Canned flat-trajectory demo (self-triggered, no external stream) (~2163 tok)
 - `clean-up-task-i-wise-shamir.md` — Clean up MFC config: conf split, flight-plan rework, rc_script verification (~1706 tok)
+- `continue-with-the-next-melodic-fairy.md` — Plan — HEOL Stages 2+3: the `heol` library and ANTON_HEOL guidance (~3589 tok)
 - `create-a-plan-for-serialized-yao.md` — Plan — Big Cleanup of the Command-Line Sim/Launch Stack (~3836 tok)
 - `foamy-growing-origami.md` — MFC tuneability: runtime toggles + unified shortnames (~1744 tok)
 - `look-at-build-fw-sh-and-async-kettle.md` — Plan: Decouple Claude/VSCode from the Paparazzi build env via ephemeral arm64 containers (~2405 tok)
@@ -218,6 +219,7 @@
 - `Dual-Controller Handover Mode.md` — Plan — Dual-Controller Handover Mode (switch MFC ↔ INDI in flight) (~1755 tok)
 - `Dual-Controller Shadow Mode.md` — Plan — Dual-Controller Shadow Mode (MFC alongside INDI) (~2092 tok)
 - `Flatness Trajectory Setpoints (Pos-Vel-Accel-Jerk-Snap + Psi).md` — Flatness Trajectory Setpoints (Pos–Vel–Accel–Jerk–Snap + Psi) (~2650 tok)
+- `HEOL Stages 2+3 (heol Library and ANTON_HEOL Guidance).md` — Plan — HEOL Stages 2+3: the `heol` library and ANTON_HEOL guidance (~3604 tok)
 - `MFC Data Management & Comparison.md` — Plan — MFC Data Management & Comparison (flight ↔ sim ↔ Simulink) (~3340 tok)
 - `MFC Flight-Test Enablement.md` — Plan — MFC Flight-Test Enablement (telemetry + SD fast-logging + analysis) (~4006 tok)
 - `NPS-Scope Ivy PlotJuggler Parity.md` — NPS-scope ↔ ivy-server PlotJuggler parity (MFC) (~2399 tok)
@@ -271,6 +273,7 @@
 - `2026-07-30-mfc-xy-oscillation-and-nav-takeoff.md` — Session: 2026-07-30 — MFC X/Y Oscillation + Headless Nav Takeoff (~1099 tok)
 - `2026-07-31-flatness-trajectory-implementation.md` — Session — 2026-07-31: Flatness Trajectory Setpoints implementation (~5366 tok)
 - `2026-07-31-flatness-trajectory-setpoint-plan.md` — 2026-07-31 — Flatness trajectory setpoint plan (~790 tok)
+- `2026-08-06-mfc-decoupled-core-port.md` — Session: executed HEOL stage 1 — mfc_core kp/kd retyped to s^2+kd*s+kp coefficients, per-axis `decoupled` estimator flag, explicit ki + anti-windup, use_Kd deleted repo-wide, gains converted across 4 consumers + 4 airframes; 5/5 targets link, coupled path proven bit-for-bit identical vs HEAD. (~700 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -1012,8 +1015,8 @@
 - `guidance_h_ref.h` (~1170 tok)
 - `guidance_h.c` (~5787 tok)
 - `guidance_h.h` (~2314 tok)
-- `guidance_indi.c` — Declares is (~6074 tok)
-- `guidance_mfc.c` (~6516 tok)
+- `guidance_indi.c` — Declares is (~6111 tok)
+- `guidance_mfc.c` (~6754 tok)
 - `guidance_mfc.h` (~558 tok)
 - `guidance_v_ref.c` — Declares float (~1828 tok)
 - `guidance_v_ref.h` (~955 tok)
@@ -1027,11 +1030,11 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
-- `mfc_core.c` (~1553 tok)
-- `mfc_core.h` (~907 tok)
+- `mfc_core.c` (~1912 tok)
+- `mfc_core.h` (~1158 tok)
 - `stabilization_indi.c` (~12056 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
-- `stabilization_mfc.c` (~12959 tok)
+- `stabilization_mfc.c` (~13268 tok)
 - `stabilization_mfc.h` — PPRZ command to each actuator (~728 tok)
 
 ## paparazzi/sw/airborne/modules/ctrl/
