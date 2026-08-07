@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-07T09:28:07.062Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-07T09:45:37.821Z
 > Files: 808 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
@@ -74,7 +74,7 @@
 - `mfc_ivy_probe.py` — Temporary probe: tap the Ivy bus for STAB_MFC + GUIDANCE_MFC, print decoded (~535 tok)
 - `pj_json_relay.py` — apply_field_aliases, normalize_obj, repair_json_text, flush_word (~4644 tok)
 - `plotjuggler_indi.xml` (~4317 tok)
-- `plotjuggler_mfc.xml` (~6650 tok)
+- `plotjuggler_mfc.xml` (~6856 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~840 tok)
 - `pprz_wls.m` — MATLAB System object port of the Paparazzi WLS active-set allocator (wls_alloc.c) with ANTON_MFC defaults: B=(G1,G1+G2 yaw)/1000, Wv=[1000 1000 1 100], gamma_sq=1e4, u∈[0,9600], imax=10 (~2000 tok)
 - `pprz.sh` — ── pprz.sh — single Paparazzi build / IDE tool (ephemeral arm64 container) ──── (~2345 tok)
@@ -274,7 +274,7 @@
 - `2026-07-31-flatness-trajectory-implementation.md` — Session — 2026-07-31: Flatness Trajectory Setpoints implementation (~5366 tok)
 - `2026-07-31-flatness-trajectory-setpoint-plan.md` — 2026-07-31 — Flatness trajectory setpoint plan (~790 tok)
 - `2026-08-06-mfc-decoupled-core-port.md` — Session: executed HEOL stage 1 — mfc_core kp/kd retyped to s^2+kd*s+kp coefficients, per-axis `decoupled` estimator flag, explicit ki + anti-windup, use_Kd deleted repo-wide, gains converted across 4 consumers + 4 airframes; 5/5 targets link, coupled path proven bit-for-bit identical vs HEAD. (~700 tok)
-- `2026-08-07-heol-stage-2-3.md` — 2026-08-07 — HEOL stages 2+3: the `heol` library and ANTON_HEOL guidance (~1730 tok)
+- `2026-08-07-heol-stage-2-3.md` — 2026-08-07 — HEOL stages 2+3: the `heol` library and ANTON_HEOL guidance (~2142 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -1019,7 +1019,7 @@
 - `guidance_h_ref.h` (~1170 tok)
 - `guidance_h.c` (~5787 tok)
 - `guidance_h.h` (~2314 tok)
-- `guidance_heol.c` (~4009 tok)
+- `guidance_heol.c` — Declares ANTON_HEOL (~4988 tok)
 - `guidance_heol.h` (~526 tok)
 - `guidance_indi.c` — Declares is (~6111 tok)
 - `guidance_mfc.c` (~6754 tok)
@@ -1036,8 +1036,8 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
-- `heol.c` (~330 tok)
-- `heol.h` (~809 tok)
+- `heol.c` (~337 tok)
+- `heol.h` (~920 tok)
 - `mfc_core.c` (~1912 tok)
 - `mfc_core.h` (~1158 tok)
 - `stabilization_indi.c` (~12056 tok)

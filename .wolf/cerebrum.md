@@ -588,3 +588,15 @@
   in `<module>` (`doc,settings*,dep?,header?,init*,...,makefile*`) — putting
   `header` first (as briefly done for `heol.xml`) fails codegen with
   "Unexpected tag : 'DEP'", not an XML syntax error.
+- **`heol->mfc.measure` is NOT the real measurement — it's `epsilon`.**
+  `heol_run()` passes `epsilon` (not the caller's raw `measure`) into
+  `mfc_siso_run()`, so the embedded `MfcParameters.measure` field ends up
+  holding the residual, by design (see `heol.h`). Wiring telemetry's `me_*`
+  field to `heol_gx.mfc.measure` silently duplicated `err_*` — caught by
+  actually inspecting SITL CSV output (`me_z` sat near 0 instead of tracking
+  `/uav/EST/z`), not by code review. Fixed by adding a dedicated
+  `HeolParameters.measure` field, set at the top of `heol_run()`. General
+  lesson: when a wrapper struct embeds another struct and calls its function
+  with a *transformed* argument, don't assume the embedded struct's
+  same-named field still means what it means in the original context — verify
+  wrapper telemetry against a live run, don't just typecheck it.

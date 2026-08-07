@@ -33,6 +33,18 @@
   in degrees while the controller branches were radians, which made MFC curves
   look flat next to truth on the shared SPvMEAS axes; nps_scope.c and
   nps_scope_state.c now emit the firmware's native radians.
+
+  ANTON_HEOL: guidance_heol.c sends its state under this SAME MFC_GUIDANCE
+  branch (it's a generic per-axis SISO guidance record, not MFC-specific), so
+  the MFC_XYZ / SPvMEAS tabs draw HEOL curves with no separate layout. One
+  field's MEANING differs, though: MFC_GUIDANCE/sp_traj_{x,y,z} holds the
+  reference-filter output for MFC guidance, but for HEOL it's repurposed to
+  hold u_ff (the flatness feedforward) — HEOL's own setpoint is always pinned
+  to 0, so that slot would otherwise be dead zeros. u_ff's units differ from
+  sp_traj's (m/s^2 for x/y, N for z, vs metres) and from sp/me on the same
+  MFC_XYZ sub-plot, so on an ANTON_HEOL run that curve may need its own
+  y-axis or a separate plot — split it out if it reads as flat/off-scale next
+  to sp_*/me_*.
 -->
 <root>
  <tabbed_widget parent="main_window" name="Main Window">
