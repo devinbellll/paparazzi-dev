@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-07T08:22:30.895Z
-> Files: 800 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-07T09:28:07.062Z
+> Files: 808 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -274,6 +274,7 @@
 - `2026-07-31-flatness-trajectory-implementation.md` — Session — 2026-07-31: Flatness Trajectory Setpoints implementation (~5366 tok)
 - `2026-07-31-flatness-trajectory-setpoint-plan.md` — 2026-07-31 — Flatness trajectory setpoint plan (~790 tok)
 - `2026-08-06-mfc-decoupled-core-port.md` — Session: executed HEOL stage 1 — mfc_core kp/kd retyped to s^2+kd*s+kp coefficients, per-axis `decoupled` estimator flag, explicit ki + anti-windup, use_Kd deleted repo-wide, gains converted across 4 consumers + 4 airframes; 5/5 targets link, coupled path proven bit-for-bit identical vs HEAD. (~700 tok)
+- `2026-08-07-heol-stage-2-3.md` — 2026-08-07 — HEOL stages 2+3: the `heol` library and ANTON_HEOL guidance (~1730 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -952,6 +953,7 @@
 
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
+- `anton_heol.xml` (~4223 tok)
 - `anton_indi_aruco.xml` (~2774 tok)
 - `anton_mfc.xml` (~4114 tok)
 - `anton_oneloop.xml` (~4194 tok)
@@ -979,8 +981,10 @@
 ## paparazzi/conf/modules/
 
 - `autopilot_guided.xml` — Declares for (~214 tok)
+- `guidance_heol.xml` (~2576 tok)
 - `guidance_mfc_oneloop.xml` (~215 tok)
 - `guidance_mfc.xml` (~2500 tok)
+- `heol.xml` (~196 tok)
 - `nav_flat_traj.xml` (~210 tok)
 - `nps_scope_state.xml` (~240 tok)
 - `oneloop_mfc.xml` (~1908 tok)
@@ -998,7 +1002,7 @@
 
 ## paparazzi/conf/userconf/ENAC/
 
-- `conf_mfc.xml` (~887 tok)
+- `conf_mfc.xml` (~1091 tok)
 
 ## paparazzi/sw/airborne/
 
@@ -1015,6 +1019,8 @@
 - `guidance_h_ref.h` (~1170 tok)
 - `guidance_h.c` (~5787 tok)
 - `guidance_h.h` (~2314 tok)
+- `guidance_heol.c` (~4009 tok)
+- `guidance_heol.h` (~526 tok)
 - `guidance_indi.c` — Declares is (~6111 tok)
 - `guidance_mfc.c` (~6754 tok)
 - `guidance_mfc.h` (~558 tok)
@@ -1030,6 +1036,8 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
+- `heol.c` (~330 tok)
+- `heol.h` (~809 tok)
 - `mfc_core.c` (~1912 tok)
 - `mfc_core.h` (~1158 tok)
 - `stabilization_indi.c` (~12056 tok)

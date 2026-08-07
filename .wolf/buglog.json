@@ -4213,6 +4213,39 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-06T00:00:00.000Z"
+    },
+    {
+      "id": "bug-248",
+      "timestamp": "2026-08-07T09:13:45.029Z",
+      "error_message": "Significant refactor of ",
+      "file": "paparazzi/sw/airborne/firmwares/rotorcraft/guidance/guidance_heol.c",
+      "root_cause": "17 lines replaced/restructured",
+      "fix": "Rewrote 21\u21926 lines (17 removed) | Also: #if PERIODIC_TELEMETRY; register_periodic_telemetry(DefaultPeriodic, PPRZ_ | Also: #include \"generated/airframe.h\"   /* AC_ID for tel; #if PERIODIC_TELEMETRY",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "c"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-08-07T09:14:25.878Z"
+    },
+    {
+      "id": "bug-249",
+      "timestamp": "2026-08-07T11:17:00.000Z",
+      "error_message": "DTD prove error in .../heol.xml: Unexpected tag : 'DEP'",
+      "file": "paparazzi/conf/modules/heol.xml",
+      "root_cause": "module.dtd requires <module> children in a fixed order: (doc,settings_file*,settings*,dep?,header?,init*,periodic*,event*,datalink*,makefile*). heol.xml put <header> before <dep>, which is out of order.",
+      "fix": "Moved <dep> above <header> to match the DTD sequence.",
+      "tags": [
+        "build",
+        "module-xml",
+        "dtd",
+        "heol"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-07T11:17:00.000Z"
     }
   ]
 }

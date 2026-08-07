@@ -549,3 +549,42 @@
   — they are already inside `F_hat`.
 - Do not build HEOL by adding a feedforward input to `mfc_core`. See the Key
   Learnings entry above for why it must be its own library.
+- When copying `mfc_core`'s per-axis knobs into a new context (e.g. HEOL's
+  decoupled-only `u_fb` loop), don't assume `time_trajec` and `int_window`
+  are both "reference-filter, coupled-mode only" concepts — they are not.
+  `time_trajec` (step 1, gated by `use_trajec_sp`) is; `int_window` (the F_k
+  estimator's own integration window, step 3) and `command_filter` (step 4)
+  run unconditionally regardless of `use_trajec_sp`/`decoupled`. Dropping
+  them "because HEOL doesn't need the reference filter" would have silently
+  broken the estimator. Caught by re-reading `mfc_core.c` before implementing
+  rather than trusting the plan's own summary of itself.
+
+## Decision Log additions (2026-08-07)
+
+- **HEOL (stage 2/3) is a thin wrapper (`heol.c`/`.h`), not a new estimator.**
+  `struct HeolParameters` embeds an `MfcParameters` and drives it with
+  `setpoint = 0`, `measure = epsilon` (`= measure - trajectory_ref`), decoupled
+  and `use_trajec_sp = false` hardcoded in `heol_init`. `u = u_ff + u_fb`,
+  with `u_ff` computed entirely outside `heol.c` by the caller (the guidance
+  layer) from the flat trajectory reference — `heol.c` never sees the
+  trajectory shape, only the residual. Proven bit-identical to a plain
+  decoupled `mfc_core` loop (with `u_ff=0`, `setpoint=trajectory_ref` directly)
+  over 4000 samples via the same host-side harness technique as stage 1.
+- **`guidance_heol.c` mirrors `guidance_mfc.c` structurally**, same
+  plug-function seam (`guidance_h_run_pos/speed/accel`, etc.), same
+  Butterworth filtering/mode-entry seeding/thrust packaging — only the per-axis
+  struct type and the added `u_ff` term differ. `u_ff` for gx/gy is
+  `gh->ref.accel` directly (command unit is already m/s²); for gz it's
+  `MASS * (zdd_ref - 9.81)` (command unit is Newtons, so needs the mass/gravity
+  inversion) — `gv->zdd_ref`/`gh->ref.accel` come pre-populated by the
+  Taylor-extrapolating flat reference model (`guidance_h_ref.c`/
+  `guidance_v_ref.c`, built after stage 1's plan was originally sketched).
+- **New ANTON_HEOL aircraft** (`anton_heol.xml`, ac_id 219, registered in
+  `conf/userconf/ENAC/conf_mfc.xml` — NOT `conf/airframes/ENAC/conf_enac.xml`,
+  where ANTON_MFC/ANTON_ONELOOP/Hoops_111_MFC also actually live) rather than
+  a flag on ANTON_MFC, so ANTON_MFC stays the untouched flight-tested fallback.
+  Stabilization stays `type="mfc"`; only the guidance module changes.
+- Module XML element order is DTD-enforced: `dep` must come before `header`
+  in `<module>` (`doc,settings*,dep?,header?,init*,...,makefile*`) — putting
+  `header` first (as briefly done for `heol.xml`) fails codegen with
+  "Unexpected tag : 'DEP'", not an XML syntax error.
