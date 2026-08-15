@@ -718,3 +718,19 @@
   sends on GUIDANCE_MFC but sp_traj_* means u_ff (N or m/s^2), not a position
   setpoint — so the shared layout drew newtons against metres on one y-axis.
   When repurposing a message field, check every layout that draws it.
+
+### Do-Not-Repeat (added 2026-08-15)
+- **Do not build on a model of the code when the code is available to measure.**
+  A numpy float32 model said single precision could not replay the golden traces
+  (worst rel err 4.571e+00); the actual compiled C gives 7.3e-4. The model
+  rounded every intermediate, the compiler does not. That wrong number justified
+  an MFC_FLOAT_T typedef across four file pairs, which then forced float mirrors
+  into two more files -- all reverted. The harness that would have falsified it
+  in one run already existed.
+- When a build's types change, DISTRUST THE LOG BEFORE THE CONTROLLER. A double
+  build produced 3e38 telemetry values that looked like divergence; it was the
+  scope reading half a double as a float. The flight was fine.
+- Eliminated for the HEOL horizontal SITL divergence (do not re-test): sensor
+  noise (reproduces with all NPS noise zeroed) and arithmetic precision
+  (reproduces with cores in double). Not the same failure as the Simulink
+  noise instability, despite looking alike.
