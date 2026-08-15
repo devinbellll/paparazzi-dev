@@ -12,7 +12,7 @@ pprz_run -- bash -c '
   set -e
   cd /workspace
   gcc -O2 -Wall -Wextra -std=c11 \
-      -I tests/stubs -I paparazzi/sw/airborne -DMFC_FLOAT_T=double \
+      -I tests/stubs -I paparazzi/sw/airborne \
       tests/mimo_golden_test.c \
       paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/mfc_core.c \
       paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/mfc_core_mimo.c \
