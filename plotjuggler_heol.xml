@@ -1,0 +1,241 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  HEOL PlotJuggler layout — ANTON_HEOL / guidance_heol.c.
+
+  WHY THIS EXISTS, AND NOT plotjuggler_mfc.xml
+  ============================================
+  guidance_heol.c reports on the SHARED GUIDANCE_MFC message (it is a generic
+  per-axis SISO guidance record), so the MFC layout technically draws it. But
+  one field's MEANING differs, and it is the field that breaks the plot:
+
+      sp_traj_{x,y,z}  is  u_ff,  NOT a position setpoint trajectory.
+
+  So on the MFC layout's shared XYZ axes, sp_traj_z (a THRUST, ~-7.8 N at
+  hover) is drawn against sp_z / me_z (a POSITION, ~-2 m). Two different units
+  on one y-axis: the position curves get squashed into a thin band near the
+  top, and the thrust curve looks like a wild excursion below them. Nothing is
+  wrong with the data — the axes are just meaningless together.
+
+  This layout separates them. Every plot below holds ONE unit:
+
+    Z: position [m]        sp_z / me_z / truth, and the residual err_z
+    Z: thrust [N]          sp_traj_z (= u_ff = T*), cmd_z (total), fk_z
+    XY: position [m]       sp_/me_/truth per axis
+    XY: accel cmd [m/s^2]  sp_traj_ (= u_ff) and cmd_ per axis, plus fk_
+    Nominal inputs         T*, phi*, theta* straight off the flat table
+    Input sensitivity      alpha_z vs what the gz loop actually runs with,
+                           and the four alpha_xy entries (telemetry-only)
+
+  READING "Z: thrust [N]": cmd_z is clamped to the physical range
+  [-GZ_MAX_THRUST, 0] (0 = motors off, negative = up). If cmd_z is sitting ON
+  those two values and switching between them, the vertical loop is
+  bang-banging, not tracking — check the altitude on the "Z: position" tab
+  before reading anything else on the run.
+
+  Same transport as the MFC layout: one UDP-Server on port 9870, protocol
+  JSON, timestamp field "timestamp". HEOL_NOMINAL/* and HEOL_ALPHA/* come from
+  the NPS scope (SITL only); everything else draws on both feeds.
+-->
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <Tab tab_name="Z: position [m]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.500000;0.500000" orientation="-" count="2">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/sp_z" />
+         <curve color="#d62728" name="/uav/MFC_GUIDANCE/me_z" />
+         <curve color="#1ac938" name="/uav/TRUTH/z" />
+         <curve color="#ff7f0e" name="/uav/EST/z" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/err_z" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Z: thrust [N]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.333333;0.333333;0.333333" orientation="-" count="3">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/sp_traj_z" />
+         <curve color="#d62728" name="/uav/HEOL_NOMINAL/T_star" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/cmd_z" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/fk_z" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="XY: position [m]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.500000;0.500000" orientation="-" count="2">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/sp_x" />
+         <curve color="#d62728" name="/uav/MFC_GUIDANCE/me_x" />
+         <curve color="#1ac938" name="/uav/TRUTH/x" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/sp_y" />
+         <curve color="#d62728" name="/uav/MFC_GUIDANCE/me_y" />
+         <curve color="#1ac938" name="/uav/TRUTH/y" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="XY: accel cmd [m/s^2]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.333333;0.333333;0.333333" orientation="-" count="3">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/sp_traj_x" />
+         <curve color="#d62728" name="/uav/MFC_GUIDANCE/cmd_x" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/sp_traj_y" />
+         <curve color="#d62728" name="/uav/MFC_GUIDANCE/cmd_y" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_GUIDANCE/fk_x" />
+         <curve color="#d62728" name="/uav/MFC_GUIDANCE/fk_y" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Nominal inputs" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.500000;0.500000" orientation="-" count="2">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/HEOL_NOMINAL/T_star" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/HEOL_NOMINAL/phi_star" />
+         <curve color="#d62728" name="/uav/HEOL_NOMINAL/theta_star" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Input sensitivity" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.500000;0.500000" orientation="-" count="2">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/HEOL_ALPHA/alpha_z" />
+         <curve color="#d62728" name="/uav/HEOL_ALPHA/gz_alpha_used" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/HEOL_ALPHA/alpha_xy_00" />
+         <curve color="#d62728" name="/uav/HEOL_ALPHA/alpha_xy_01" />
+         <curve color="#1ac938" name="/uav/HEOL_ALPHA/alpha_xy_10" />
+         <curve color="#ff7f0e" name="/uav/HEOL_ALPHA/alpha_xy_11" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0" />
+ </tabbed_widget>
+ <use_relative_time_offset enabled="0" />
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <parameters time_axis="" delimiter="0" />
+  </plugin>
+  <plugin ID="DataLoad MCAP" />
+  <plugin ID="DataLoad Parquet">
+   <default dateFromat="yyyy-MM-dd hh:mm:ss" parseDateTime="0" radioIndexChecked="0" prevTimestamp="" />
+  </plugin>
+  <plugin ID="DataLoad ULog" />
+  <plugin ID="Foxglove ROS2 Bridge">
+   <foxglove_client address="127.0.0.1" clamp_large_arrays="0" port="8765" max_array_size="500" use_timestamp="0">
+    <topics />
+   </foxglove_client>
+  </plugin>
+  <plugin ID="MQTT Subscriber (Mosquitto)" />
+  <plugin ID="PlotJuggler ROS2 Bridge">
+   <websocket_client address="127.0.0.1" clamp_large_arrays="0" port="9090" max_array_size="500" use_timestamp="0">
+    <topics />
+   </websocket_client>
+  </plugin>
+  <plugin ID="UDP Server" />
+  <plugin ID="WebSocket Server" />
+  <plugin ID="ZMQ Subscriber" />
+  <plugin ID="Fast Fourier Transform" />
+  <plugin ID="Quaternion to RPY" />
+  <plugin ID="Reactive Script Editor">
+   <library code="--[[ Helper function to create a series from arrays&#10;&#10; new_series: a series previously created with ScatterXY.new(name)&#10; prefix:     prefix of the timeseries, before the index of the array&#10; suffix_X:   suffix to complete the name of the series containing the X value. If [nil], use the index of the array.&#10; suffix_Y:   suffix to complete the name of the series containing the Y value&#10; timestamp:   usually the tracker_time variable&#10;              &#10; Example:&#10; &#10; Assuming we have multiple series in the form:&#10; &#10;   /trajectory/node.{X}/position/x&#10;   /trajectory/node.{X}/position/y&#10;   &#10; where {N} is the index of the array (integer). We can create a reactive series from the array with:&#10; &#10;   new_series = ScatterXY.new(&quot;my_trajectory&quot;) &#10;   CreateSeriesFromArray( new_series, &quot;/trajectory/node&quot;, &quot;position/x&quot;, &quot;position/y&quot;, tracker_time );&#10;--]]&#10;&#10;function CreateSeriesFromArray( new_series, prefix, suffix_X, suffix_Y, timestamp )&#10;  &#10;  --- clear previous values&#10;  new_series:clear()&#10;  &#10;  --- Append points to new_series&#10;  index = 0&#10;  while(true) do&#10;&#10;    x = index;&#10;    -- if not nil, get the X coordinate from a series&#10;    if suffix_X ~= nil then &#10;      series_x = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_X) )&#10;      if series_x == nil then break end&#10;      x = series_x:atTime(timestamp)&#09; &#10;    end&#10;    &#10;    series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_Y) )&#10;    if series_y == nil then break end &#10;    y = series_y:atTime(timestamp)&#10;    &#10;    new_series:push_back(x,y)&#10;    index = index+1&#10;  end&#10;end&#10;&#10;--[[ Similar to the built-in function GetSeriesNames(), but select only the names with a give prefix. --]]&#10;&#10;function GetSeriesNamesByPrefix(prefix)&#10;  -- GetSeriesNames(9 is a built-in function&#10;  all_names = GetSeriesNames()&#10;  filtered_names = {}&#10;  for i, name in ipairs(all_names)  do&#10;    -- check the prefix&#10;    if name:find(prefix, 1, #prefix) then&#10;      table.insert(filtered_names, name);&#10;    end&#10;  end&#10;  return filtered_names&#10;end&#10;&#10;--[[ Modify an existing series, applying offsets to all their X and Y values&#10;&#10; series: an existing timeseries, obtained with TimeseriesView.find(name)&#10; delta_x: offset to apply to each x value&#10; delta_y: offset to apply to each y value &#10;  &#10;--]]&#10;&#10;function ApplyOffsetInPlace(series, delta_x, delta_y)&#10;  -- use C++ indices, not Lua indices&#10;  for index=0, series:size()-1 do&#10;    x,y = series:at(index)&#10;    series:set(index, x + delta_x, y + delta_y)&#10;  end&#10;end&#10;" />
+   <scripts />
+  </plugin>
+  <plugin ID="CSV Exporter" />
+ </Plugins>
+ <previouslyLoaded_Datafiles />
+ <customMathEquations />
+ <snippets />
+ <colorMaps />
+</root>

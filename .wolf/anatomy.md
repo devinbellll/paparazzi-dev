@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-07T09:45:37.821Z
-> Files: 808 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-15T13:46:57.246Z
+> Files: 816 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -192,6 +192,7 @@
 - `12 - First-Order Actuator Dynamics (JSBSim vs Firmware).md` — First-Order Actuator Dynamics — JSBSim Model vs Firmware (ANTON / ANTON_MFC) (~2106 tok)
 - `13 - G2 in Allocation — Incremental (INDI) vs Absolute (MFC).md` — Why (G1+G2) yaw row is exact for INDI increments but ~31x overstates steady yaw effectiveness under MFC absolute allocation; the G2_IN_ALLOCATION fix, WLS saturation impact, Simulink plant guidance (~1700 tok)
 - `13 - G2 in Allocation — Incremental (INDI) vs Absolute (MFC).md` — G2 in the Allocation Matrix — Why (G1+G2) Is Correct for INDI's Incremental Commands but Wrong for M (~1750 tok)
+- `14 - Flat Nominal Inputs Plumbing Decision.md` — 14 — Flat Nominal Inputs: Plumbing Route Decision (~1168 tok)
 
 ## Knowledge/Daily Notes/
 
@@ -275,6 +276,8 @@
 - `2026-07-31-flatness-trajectory-setpoint-plan.md` — 2026-07-31 — Flatness trajectory setpoint plan (~790 tok)
 - `2026-08-06-mfc-decoupled-core-port.md` — Session: executed HEOL stage 1 — mfc_core kp/kd retyped to s^2+kd*s+kp coefficients, per-axis `decoupled` estimator flag, explicit ki + anti-windup, use_Kd deleted repo-wide, gains converted across 4 consumers + 4 airframes; 5/5 targets link, coupled path proven bit-for-bit identical vs HEAD. (~700 tok)
 - `2026-08-07-heol-stage-2-3.md` — 2026-08-07 — HEOL stages 2+3: the `heol` library and ANTON_HEOL guidance (~2142 tok)
+- `2026-08-14-heol-flat-nominal-inputs.md` — 2026-08-14 — HEOL guidance: flat nominal inputs (T*, phi*, theta*) (~2840 tok)
+- `2026-08-14-heol-guidance-fixes.md` — 2026-08-14 — HEOL guidance: feedforward enable, unit fix, gain reconciliation (~1977 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -953,7 +956,7 @@
 
 ## paparazzi/conf/airframes/ENAC/quadrotor/
 
-- `anton_heol.xml` (~4223 tok)
+- `anton_heol.xml` (~4305 tok)
 - `anton_indi_aruco.xml` (~2774 tok)
 - `anton_mfc.xml` (~4114 tok)
 - `anton_oneloop.xml` (~4194 tok)
@@ -981,9 +984,10 @@
 ## paparazzi/conf/modules/
 
 - `autopilot_guided.xml` — Declares for (~214 tok)
-- `guidance_heol.xml` (~2576 tok)
+- `guidance_heol.xml` (~2680 tok)
 - `guidance_mfc_oneloop.xml` (~215 tok)
 - `guidance_mfc.xml` (~2500 tok)
+- `guidance_rotorcraft.xml` (~888 tok)
 - `heol.xml` (~196 tok)
 - `nav_flat_traj.xml` (~210 tok)
 - `nps_scope_state.xml` (~240 tok)
@@ -1015,11 +1019,13 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/guidance/
 
+- `guidance_flat_nominal.c` (~497 tok)
+- `guidance_flat_nominal.h` (~1395 tok)
 - `guidance_h_ref.c` — Declares float (~2191 tok)
 - `guidance_h_ref.h` (~1170 tok)
 - `guidance_h.c` (~5787 tok)
 - `guidance_h.h` (~2314 tok)
-- `guidance_heol.c` — Declares ANTON_HEOL (~4988 tok)
+- `guidance_heol.c` — Declares ANTON_HEOL (~7158 tok)
 - `guidance_heol.h` (~526 tok)
 - `guidance_indi.c` — Declares is (~6111 tok)
 - `guidance_mfc.c` (~6754 tok)
@@ -1028,6 +1034,8 @@
 - `guidance_v_ref.h` (~955 tok)
 - `guidance_v.c` — Declares int32_t (~3962 tok)
 - `guidance_v.h` (~1707 tok)
+- `heol_input_sensitivity.c` — Declares float (~639 tok)
+- `heol_input_sensitivity.h` (~1612 tok)
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
 
@@ -1036,10 +1044,10 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
-- `heol.c` (~337 tok)
-- `heol.h` (~920 tok)
-- `mfc_core.c` (~1912 tok)
-- `mfc_core.h` (~1158 tok)
+- `heol.c` (~878 tok)
+- `heol.h` (~1493 tok)
+- `mfc_core.c` (~1983 tok)
+- `mfc_core.h` — Declares for (~1802 tok)
 - `stabilization_indi.c` (~12056 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
 - `stabilization_mfc.c` (~13268 tok)
@@ -1051,8 +1059,8 @@
 
 ## paparazzi/sw/airborne/modules/nav/
 
-- `flat_traj_demo_data.h` — Declares struct (~1076 tok)
-- `nav_flat_traj.c` — Declares struct (~1091 tok)
+- `flat_traj_demo_data.h` — Declares struct (~86242 tok)
+- `nav_flat_traj.c` — Declares struct (~1220 tok)
 - `nav_flat_traj.h` (~944 tok)
 
 ## paparazzi/sw/airborne/modules/nps_scope/

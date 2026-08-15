@@ -600,3 +600,121 @@
   with a *transformed* argument, don't assume the embedded struct's
   same-named field still means what it means in the original context — verify
   wrapper telemetry against a live run, don't just typecheck it.
+
+## Key Learnings additions (2026-08-14 — HEOL feedforward + gain reconciliation)
+
+- `guidance_heol_vert()` (guidance_heol.c) is wired unconditionally into
+  `guidance_v_run_pos/speed/accel` — i.e. it always reads `gv->zdd_ref` for
+  `z_ff`, even when the active vertical guided mode is plain position hold
+  (e.g. Standby's `stay wp=STDBY alt=2.0`), not just the flat-trajectory
+  path. Observed in SITL: `sp_traj_z` (telemetry alias for `heol_gz.u_ff`)
+  steps to a fixed non-hover value (~-4.71 for ANTON_HEOL) right at the
+  flight-plan block handoff away from `Flat_Traj_Demo`, reproducing
+  identically even with `FLAT_TRAJ_DEMO_ORDER=0` (no feedforward at all) —
+  so it's an existing quirk of the vertical reference-model transition
+  between guided sub-modes, unrelated to the flat-trajectory feature.
+  Worth a look if MIMO guidance work touches `guidance_v_ref.c`.
+- HEOL's decoupled per-axis MFC `u_fb` loop nulls the position residual
+  regardless of `u_ff` in SITL (ideal actuators) — turning on the flat-traj
+  feedforward did NOT reduce `err_x/y/z` RMS in the sim comparison (both
+  ORDER=0 and ORDER=4 gave ~0.007/0.009/0.06 m RMS over the same window).
+  The feedforward's expected benefit is less `u_fb` effort / less lag, not
+  necessarily a smaller final position error against a sim with no
+  actuator/model mismatch — don't expect the tracking-error number alone to
+  demonstrate the feedforward is working; check `u_ff` (`sp_traj_*`) shape
+  directly instead.
+- MFC/HEOL gain convention is the raw coefficients of `s^2 + kd*s + kp`
+  (mfc_core.c: `fb = kd*edot + kp*e`), NOT Simulink's second-order form
+  (`P=wn^2`, `D=2*zeta*wn`). Convert Simulink -> firmware gains in
+  Simulink/MATLAB, never in firmware code.
+- `sim.sh`/`sim_anton.py` never exits on its own after the `--nav` sequence
+  finishes (loops forever waiting for Ctrl-C) — for a scripted/headless
+  capture, launch with `nohup ... &`, poll the stdout log for the expected
+  `[nav] block ...` lines to know when the sequence is done, then
+  `docker ps -q | xargs -r docker stop` (or `kill` the nohup'd bash PID) to
+  end it. Always `docker ps -a` / `rm -f` stray containers before a fresh
+  run — a killed `sim.sh` doesn't always take the container down with it.
+
+## Session 2026-08-14 (HEOL flat nominal inputs)
+
+### Key Learnings
+- **A constant `alpha` error is self-cancelling in the decoupled iPD/MFC law.**
+  With `du = (-F_hat + f_f - fb)/alpha`, the estimator absorbs a constant alpha
+  error into `F_hat`, so the closed-loop polynomial stays `s^2 + kd*s + kp`
+  regardless of alpha. Consequence: you cannot compensate an alpha change by
+  rescaling the PD — verified empirically (÷5 PD made it worse, not better).
+  What a smaller alpha really does is amplify *estimator* error by `1/alpha`,
+  because `-F_hat/alpha` dominates `-fb/alpha`.
+- `heol->mfc.command[]` holds the **correction u_fb**, not the total command —
+  unlike `guidance_mfc`, where `mfc.command[0]` IS the total. Any code copied
+  between the two must account for this (it caused a 2x-hover mode-entry seed).
+- `sat(u* + du)` over `[lo,hi]` == `u* + sat(du)` over `[lo-u*, hi-u*]`. Use the
+  shifted form when the anti-windup freeze lives inside the inner clamp.
+- `guidance_heol_vert()` runs for EVERY vertical mode (`guidance_v_run_pos` is
+  used by NAV altitude hold, GUIDED ZHOLD, GUIDED ALL and GUIDED FLAT), not just
+  the flat-trajectory path. Anything it computes must have a sane non-flat
+  fallback.
+- Vertical reference-model accel limits (`GUIDANCE_V_REF_MIN/MAX_ZDD`, ±0.4 g on
+  ANTON_HEOL) show up directly in `sp_traj_z` as `m*(±3.924 - 9.81)` =
+  `-10.9855` / `-4.7105` at MASS 0.8. Recognise these before calling them a bug.
+- `sim.sh --set` applies settings only AFTER the `--nav` sequence finishes, so it
+  cannot be used to change gains before a mid-flight trajectory block. Edit the
+  airframe XML and rebuild instead (incremental, ~1 min).
+- The NPS sim does not self-terminate after the `--nav` sequence; wrap it in
+  `timeout` or it runs until killed (and the CSV grows to hundreds of MB).
+
+### Decision Log
+- Flat nominal inputs (`T*`, `phi*`, `theta*`) get their own zero-order-hold
+  latch (`guidance_flat_nominal.{c,h}` in `guidance_rotorcraft`), NOT the
+  reference model's Taylor extrapolation — they are inputs, not derivatives of
+  position, so there is no held higher derivative to extrapolate from. Staleness
+  timeout replaces a mode flag. Full rationale:
+  `Knowledge/14 - Flat Nominal Inputs Plumbing Decision.md`.
+- The Input-Sensitivity Transformation was built WHOLE (emitting both
+  `alpha_xy` and `alpha_z`) even though only `alpha_z` has a consumer, so the
+  MIMO stage does not have to refactor it out inside a control-structure commit.
+- Did NOT land `alpha_z` live despite it being in the plan: it destabilizes the
+  vertical loop and the required retune is an estimator-parameter campaign, not
+  the PD retune the plan anticipated. Landing an unstable default was judged
+  worse than deferring, and the finding itself is the valuable output.
+
+### Do-Not-Repeat
+- 2026-08-14: Do not assume a large `alpha` change needs a proportional PD
+  rescale in an MFC/HEOL loop. Check whether the estimator absorbs it first
+  (see Key Learnings). Three SITL runs were spent confirming the naive
+  assumption was wrong.
+- 2026-08-14: Do not read `sp_traj_z = -10.9855` as `-9.81*MASS`. With
+  MASS=0.8 hover is `-7.848`; `-10.9855` is the MIN_ZDD reference-model
+  saturation. An earlier session note made exactly this misreading.
+
+### User Preferences (update 2026-08-14, supersedes the earlier blanket reading)
+- **Flags ARE wanted for genuinely open structural questions on a WIP
+  controller.** The earlier "prefers direct fixes over compat flags" learning
+  (from the rejected G2_IN_ALLOCATION toggle) is narrower than it looked: what
+  was rejected there was a *backward-compatibility* toggle preserving old
+  behaviour for its own sake. When two alternatives are both live research
+  questions — e.g. clamp the total command vs the correction; estimator taps
+  pre- vs post-saturation; alpha from the Jacobian vs a constant — the user
+  wants BOTH plumbed and selectable from the GCS, defaulting to the spec.
+  Ask "is this a compat shim, or an open question?" before deciding.
+- **Do not withhold a change because a loop is untuned.** On HEOL the user
+  explicitly said none of these controllers are tuned or complete, so a tuning
+  cost is not a reason to hold back a structurally correct change. Land it,
+  default it to the spec, and document the tuning debt with the measured
+  numbers. Backing out `alpha_z` for this reason was over-cautious.
+- The user pushes back on inherited concerns that were never load-bearing —
+  check where a flagged issue actually *factors in* before amplifying it. The
+  ZXY/ZYX warning was inherited from the plan and blown up into a large header
+  banner, when in fact it touches exactly one quantity that has no consumer.
+
+### Do-Not-Repeat (added 2026-08-14)
+- Do NOT judge a control change by RMS-over-a-window alone. It reported "0.5 m
+  RMS, ~10x worse" for a vertical loop that was actually bang-banging between
+  both thrust clamps and flying the aircraft 7.7 m off altitude. ALWAYS also
+  check: (a) the absolute state excursion, (b) whether the command is pinned at
+  its clamps and for what fraction of samples. "Reaches both clamps" in a
+  metrics dump is a red flag to investigate, not a footnote to report.
+- Telemetry field REUSE across controllers breaks shared plot layouts. HEOL
+  sends on GUIDANCE_MFC but sp_traj_* means u_ff (N or m/s^2), not a position
+  setpoint — so the shared layout drew newtons against metres on one y-axis.
+  When repurposing a message field, check every layout that draws it.
