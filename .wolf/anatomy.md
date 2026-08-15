@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-15T13:46:57.246Z
-> Files: 816 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-15T20:03:22.199Z
+> Files: 821 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -1044,8 +1044,12 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/stabilization/
 
+- `heol_mimo.c` — Declares mfc_float_t (~1057 tok)
+- `heol_mimo.h` — Declares mfc_float_t (~1473 tok)
 - `heol.c` (~878 tok)
 - `heol.h` (~1493 tok)
+- `mfc_core_mimo.c` — Declares float (~2427 tok)
+- `mfc_core_mimo.h` — Declares float (~1929 tok)
 - `mfc_core.c` (~1983 tok)
 - `mfc_core.h` — Declares for (~1802 tok)
 - `stabilization_indi.c` (~12056 tok)
@@ -1105,7 +1109,28 @@
 - `sw/simulator/nps/nps_scope.c` — controller-agnostic. Includes `generated/airframe.h`; emits `{ "<AIRFRAME_NAME> (sim)": { "TRUTH":{…}, "<MSG>/<field>":v … }, "timestamp": fdm.time }` (mirrors the ivy-server tree so one PlotJuggler template matches both feeds). Registered vars (`nps_scope_register`/`_array`) sit inside the root; buf 16384. (~900 tok)
 - `sw/simulator/nps/nps_scope.h` — adds `nps_scope_type_t` enum + register prototypes. (~250 tok)
 
+## tests/
+
+- `mimo_golden_test.c` — Declares char (~2334 tok)
+
 ## tools/
 
 - `scope2csv.py` — scope2csv.py — write NPS scope packets to the wide `/uav/...` CSV schema. (~2209 tok)
 - `sdlog2scope.py` — sdlog2scope.py — convert a raw Paparazzi flight log (.log + .data) into the (~2626 tok)
+
+### sw/airborne/firmwares/rotorcraft/stabilization/mfc_core_mimo.h/.c (~2200 tok)
+MIMO (n=2) Model-Free Control core. Per-element estimator numerator, SCALAR
+SHARED denominator (estimator_den[3], not [3][N]), one integration window,
+closed-form 2x2 inverse, alpha scheduled once per tick via mfc_mimo_set_alpha()
+so estimator and command law use the same matrix. Reuses mfc_core.h's
+mfc_iir_step/mfc_est_num/mfc_est_den rather than reimplementing them.
+
+### sw/airborne/firmwares/rotorcraft/stabilization/heol_mimo.h/.c (~1100 tok)
+heol.h for the 2-vector case: u = u_ff + u_fb, same invariant (estimator sees
+only epsilon and only the correction). Three clamp modes. For the horizontal
+guidance channel the command is an ATTITUDE [rad], not an acceleration.
+
+### tests/mimo_golden_test.c, tests/run_mimo_golden.sh, tests/stubs/ (~1800 tok)
+Host harness replaying the sim repo's reference traces (tests/golden/) through
+the real firmware sources in the build container, cores compiled
+-DMFC_FLOAT_T=double. Rungs 0-4; all pass.
