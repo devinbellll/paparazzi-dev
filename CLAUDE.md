@@ -218,6 +218,83 @@ paparazzi/sw/airborne/state.h       ← stateGetNedToBodyQuat_f(), stateGetBodyR
 
 The `WLS_N_U_MAX` / `WLS_N_V_MAX` defines must be inside the `<module>` tag (not the section), since they set compile-time matrix sizes.
 
+## Tuning is debugging
+
+A controller that will not tune is usually not badly tuned — it is wired wrong,
+signed wrong, fed the wrong reference, or asked to reject noise it was never
+given a filter for. Diagnose first, tune last. Searching gains against a broken
+structure produces a number that means nothing and looks like a result.
+
+### You may break the controller to find out
+
+Standing permission, no need to ask case by case:
+
+- Open a loop — fly `stabilization` alone under RC with guidance off, or freeze
+  the outer loop and drive the inner one directly.
+- Comment out or `#if 0` a term: an integrator, a feedforward, a cross-coupling,
+  an anti-windup branch, a WLS priority, an estimator update.
+- Zero a gain in the airframe XML to remove a term without deleting code.
+- Freeze the MFC/HEOL estimator (`F_hat` and friends) at a constant, or feed it a
+  known value, to separate estimator dynamics from loop dynamics.
+- Zero the NPS noise sources. Noise off is a diagnostic condition, not a cheat.
+- Raise saturation limits, bypass filters, or remove actuator dynamics, to find
+  out whether the limit is the controller or the plant model.
+- Flip a sign to test a convention (NED, Euler sequence, quaternion sign, rotor
+  numbering, G1 column order) and add logging or a PlotJuggler field for any
+  signal you need to see.
+
+### Restore or promote — no third option
+
+Every diagnostic modification ends either **reverted** (clean `git diff` on the
+touched paths) or **promoted** to an explicit, named, defaulted-off switch — an
+airframe XML `<define>`, a module `#define`, or a GCS settings entry — *before*
+any gain set, metric, or result is recorded. A gain tuned against a silently
+commented-out term is a fabricated experimental fact and is indistinguishable
+from a real one later. Re-fly against the restored configuration and record from
+that flight, not from the diagnostic one.
+
+This matters more here than in sim: a `#if 0` inside a `.c` disappears from the
+airframe XML entirely, so the configuration no longer describes what flew.
+
+### Isolation ladder
+
+Climb down until it works, then back up one rung at a time. When a rung fails,
+the fault is between it and the rung below — which you already verified. Don't
+skip rungs.
+
+1. **Conventions and units** — frame, Euler sequence, quaternion sign, rotor
+   order and spin, G1 column order, SI vs internal scaling, rad vs deg.
+2. **Rate loop alone**, RC-driven, no attitude reference.
+3. **Attitude**, rate closed and known good — `Start Engine,Takeoff,Standby`
+   under RC is enough.
+4. **Vertical guidance** independently of horizontal.
+5. **Horizontal guidance**, attitude closed and known good.
+6. **Trajectory / nav blocks** with everything closed.
+7. **Noise sources back on**, one at a time.
+
+### Noise is an axis, not a condition
+
+Works clean and diverges with noise is a bandwidth or differentiation problem,
+not a gain problem. **Test it — don't assume it.** Re-fly with every NPS noise
+source zeroed before concluding noise is the cause; a divergence that reproduces
+with perfect sensors is structural, and no amount of noise-side work will fix
+it. Look at the estimator output before the loop output: a runaway estimate with
+near-zero tracking error is diagnostic on its own.
+
+Two failures on the sim side and the firmware side that look alike need not
+share a cause. Verify each independently.
+
+### Recording
+
+- Final gains from a restored-or-promoted airframe XML, not from a diagnostic build.
+- The no-noise and with-noise result as a pair.
+- Which rung each intermediate failure was found on, and what fixed it — that is
+  usually worth more than the gains, and it belongs in the session note.
+- Never invent or back-fill a metric, gain, or parameter. If a number did not
+  come from a log read this session, say you don't have it.
+- Report a controller as tuned only with the flight log that shows it. One that
+  works up to some rung is described by that rung, not by the goal.
+
 ## Airframe XML structure
 
 ```xml
