@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-15T20:03:22.199Z
-> Files: 821 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-17T20:06:15.529Z
+> Files: 829 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -43,6 +43,11 @@
 - `plotjuggler-server-udp-json.md` (~417 tok)
 - `prefers-direct-fixes-over-compat-flags.md` (~272 tok)
 - `runtime-sandbox-and-build-model.md` (~1213 tok)
+
+## ../../../../../../tmp/claude-1000/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/825dcde6-5a4c-4adb-9e5d-71483e7fd38e/scratchpad/
+
+- `look.py` — Quick window summary of a /uav wide CSV. (~638 tok)
+- `steps.py` — Attitude step-response metrics from a /uav wide CSV, per axis independently. (~1154 tok)
 
 ## ../home/vscode/.claude/plans/
 
@@ -193,6 +198,8 @@
 - `13 - G2 in Allocation — Incremental (INDI) vs Absolute (MFC).md` — Why (G1+G2) yaw row is exact for INDI increments but ~31x overstates steady yaw effectiveness under MFC absolute allocation; the G2_IN_ALLOCATION fix, WLS saturation impact, Simulink plant guidance (~1700 tok)
 - `13 - G2 in Allocation — Incremental (INDI) vs Absolute (MFC).md` — G2 in the Allocation Matrix — Why (G1+G2) Is Correct for INDI's Incremental Commands but Wrong for M (~1750 tok)
 - `14 - Flat Nominal Inputs Plumbing Decision.md` — 14 — Flat Nominal Inputs: Plumbing Route Decision (~1168 tok)
+- `15 - Simulink MFC Quad ↔ ANTON_MFC Firmware Correspondence.md` — Per-axis Simulink↔firmware parameter map: the kp=wn/kd=2ζ convention inference, ALPHA ratios, sample-count windows (tau=W/f_s), clamps, placeholder-mass caveat (~3863 tok)
+- `16 - The MFC Estimator Saturation Tap.md` — THE key MFC fix: the disturbance estimator must be fed the post-clamp command; pre-saturation tap winds F_hat up and limit-cycles any saturating axis. Mechanism, log signature, what it does NOT fix (~1674 tok)
 
 ## Knowledge/Daily Notes/
 
@@ -241,7 +248,7 @@
 - `2026-06-10-autopilot-stack-binding.md` — Session: 2026-06-10 — Autopilot ↔ stabilization/guidance binding (Q&A) (~864 tok)
 - `2026-06-10-inflight-stack-switching.md` — Session: 2026-06-10 — In-flight control-stack switching design (~5624 tok)
 - `2026-06-10-render-flag.md` — Session: 2026-06-10 — sim_anton render flag (~1291 tok)
-- `2026-06-11-mfc-per-axis-timing.md` — Session: 2026-06-11 — MFC per-axis timing refactor + workaround removal; Z guidance flies (~1500 tok)
+- `2026-06-11-mfc-per-axis-timing.md` — Session: 2026-06-11 — MFC per-axis timing refactor + workaround removal; Z guidance flies (~1674 tok)
 - `2026-06-11-mfc-thrust-unit-link.md` — Session: 2026-06-11 — MFC thrust-unit link between guidance and stabilizers (~990 tok)
 - `2026-06-15-nps-scope-state-folders.md` — Session — 2026-06-15: NPS scope est/sensors/setpoints/modes folders (~766 tok)
 - `2026-06-15-yaw-oscillation-mfc-indi.md` — 2026-06-15 — Yaw oscillation: MFC guidance + INDI stabilization (~715 tok)
@@ -278,6 +285,7 @@
 - `2026-08-07-heol-stage-2-3.md` — 2026-08-07 — HEOL stages 2+3: the `heol` library and ANTON_HEOL guidance (~2142 tok)
 - `2026-08-14-heol-flat-nominal-inputs.md` — 2026-08-14 — HEOL guidance: flat nominal inputs (T*, phi*, theta*) (~2840 tok)
 - `2026-08-14-heol-guidance-fixes.md` — 2026-08-14 — HEOL guidance: feedforward enable, unit fix, gain reconciliation (~1977 tok)
+- `2026-08-17-anton-mfc-sitl-tuning.md` — ANTON_MFC SITL rung 2: reference-filter/loop bandwidth mismatch (65% overshoot), wn 2–6 stability ceiling, both noise pairs, NPS noise switch + include-order bug (~4393 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -958,7 +966,7 @@
 
 - `anton_heol.xml` (~4305 tok)
 - `anton_indi_aruco.xml` (~2774 tok)
-- `anton_mfc.xml` (~4114 tok)
+- `anton_mfc.xml` (~4546 tok)
 - `anton_oneloop.xml` (~4194 tok)
 - `cobraV2.xml` (~2527 tok)
 - `crow_indoor.xml` (~2351 tok)
@@ -979,7 +987,7 @@
 ## paparazzi/conf/flight_plans/ENAC/
 
 - `anton_mfc_nav.xml` (~610 tok)
-- `flat_traj_demo.xml` (~1051 tok)
+- `flat_traj_demo.xml` (~1199 tok)
 
 ## paparazzi/conf/modules/
 
@@ -998,6 +1006,10 @@
 ## paparazzi/conf/simulator/flightgear/
 
 - `bebop-set.xml` (~361 tok)
+
+## paparazzi/conf/simulator/nps/
+
+- `nps_sensors_params_anton_mfc.h` — ANTON_MFC NPS sensor noise, stated explicitly and scalable: every stock default x NPS_NOISE_SCALE (per-source _ACCEL/_GYRO/_MAG/_BARO/_GPS/_SONAR). Selected via the airframe's NPS_SENSORS_PARAMS; 1=stock, 0=perfect sensors (~1278 tok)
 
 ## paparazzi/conf/telemetry/
 
@@ -1028,7 +1040,7 @@
 - `guidance_heol.c` — Declares ANTON_HEOL (~7158 tok)
 - `guidance_heol.h` (~526 tok)
 - `guidance_indi.c` — Declares is (~6111 tok)
-- `guidance_mfc.c` (~6754 tok)
+- `guidance_mfc.c` (~6818 tok)
 - `guidance_mfc.h` (~558 tok)
 - `guidance_v_ref.c` — Declares float (~1828 tok)
 - `guidance_v_ref.h` (~955 tok)
@@ -1050,7 +1062,7 @@
 - `heol.h` (~1493 tok)
 - `mfc_core_mimo.c` — Declares float (~2427 tok)
 - `mfc_core_mimo.h` — Declares float (~1929 tok)
-- `mfc_core.c` (~1983 tok)
+- `mfc_core.c` — Declares float (~2247 tok)
 - `mfc_core.h` — Declares for (~1802 tok)
 - `stabilization_indi.c` (~12056 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
@@ -1063,9 +1075,9 @@
 
 ## paparazzi/sw/airborne/modules/nav/
 
-- `flat_traj_demo_data.h` — Declares struct (~86242 tok)
-- `nav_flat_traj.c` — Declares struct (~1220 tok)
-- `nav_flat_traj.h` (~944 tok)
+- `flat_traj_demo_data.h` — ifndef FLAT_TRAJ_DEMO_DATA_H (~142098 tok)
+- `nav_flat_traj.c` — Declares struct (~1454 tok)
+- `nav_flat_traj.h` (~1038 tok)
 
 ## paparazzi/sw/airborne/modules/nps_scope/
 
@@ -1092,6 +1104,8 @@
 
 - `nps_radio_control.c` — Returns the yaw stick value for a center -> push -> center arming gesture (~2648 tok)
 - `nps_scope.c` — ifndef _GNU_SOURCE (~1851 tok)
+- `nps_sensor_accel.c` — include "nps_sensor_accel.h" (~688 tok)
+- `nps_sensors.c` — include "generated/airframe.h" (~784 tok)
 
 ## paparazzi/sw/simulator/nps/ (scope emitter — added 2026-06-05)
 
@@ -1100,7 +1114,7 @@
 
 ## scope registry redesign (2026-06-05)
 
-- `Knowledge/11 - In-Flight Controller Switching (Oneloop Pattern).md` — End-to-end trace of how Paparazzi switches control laws in flight: autopilot XML → gen_autopilot.ml codegen table → runtime mode/select/on_enter machine; oneloop ANDI/INDI as the one-law-at-a-time precedent; the WEAK set_rotorcraft_commands chokepoint. (~1500 tok)
+- `Knowledge/11 - In-Flight Controller Switching (Oneloop Pattern).md` — End-to-end trace of how Paparazzi switches control laws in flight: autopilot XML → gen_autopilot.ml codegen table → runtime mode/select/on_enter machine; oneloop ANDI/INDI as the one-law-at-a-time precedent; the WEAK set_rotorcraft_commands chokepoint. (~1674 tok)
 - `Knowledge/Plans/Dual-Controller Handover Mode.md` — Plan to switch motor authority MFC↔INDI in flight bumplessly (re-enter on switch), oneloop-style RC+GCS trigger; reuses Shadow Phase 0. (~950 tok)
 - `Knowledge/Plans/Dual-Controller Shadow Mode.md` — Plan to compile MFC + INDI together; Phase 0 de-confliction (symbol collisions: stabilization_attitude_run, set_rotorcraft_commands, g1g2/actuators_pprz globals) via a dual wrapper module; INDI drives, MFC shadowed + logged for validation. (~1100 tok)
 - `Knowledge/Plans/MFC Data Management & Comparison.md` — Plan (2026-07-16): unify flight-SD / NPS-sim / Simulink-.mat data into canonical wide-CSV runs (`/uav/...` columns) under `flight_data/runs/`; new `tools/mfcdata/` CLI (sd/sim/simulink/compare/report), matplotlib report figures; supersedes Flight-Test Enablement Phase 3b/4, retires sdlog2scope.py. (~2100 tok)
@@ -1117,20 +1131,3 @@
 
 - `scope2csv.py` — scope2csv.py — write NPS scope packets to the wide `/uav/...` CSV schema. (~2209 tok)
 - `sdlog2scope.py` — sdlog2scope.py — convert a raw Paparazzi flight log (.log + .data) into the (~2626 tok)
-
-### sw/airborne/firmwares/rotorcraft/stabilization/mfc_core_mimo.h/.c (~2200 tok)
-MIMO (n=2) Model-Free Control core. Per-element estimator numerator, SCALAR
-SHARED denominator (estimator_den[3], not [3][N]), one integration window,
-closed-form 2x2 inverse, alpha scheduled once per tick via mfc_mimo_set_alpha()
-so estimator and command law use the same matrix. Reuses mfc_core.h's
-mfc_iir_step/mfc_est_num/mfc_est_den rather than reimplementing them.
-
-### sw/airborne/firmwares/rotorcraft/stabilization/heol_mimo.h/.c (~1100 tok)
-heol.h for the 2-vector case: u = u_ff + u_fb, same invariant (estimator sees
-only epsilon and only the correction). Three clamp modes. For the horizontal
-guidance channel the command is an ATTITUDE [rad], not an acceleration.
-
-### tests/mimo_golden_test.c, tests/run_mimo_golden.sh, tests/stubs/ (~1800 tok)
-Host harness replaying the sim repo's reference traces (tests/golden/) through
-the real firmware sources in the build container, cores compiled
--DMFC_FLOAT_T=double. Rungs 0-4; all pass.

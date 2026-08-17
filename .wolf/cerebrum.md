@@ -734,3 +734,142 @@
   noise (reproduces with all NPS noise zeroed) and arithmetic precision
   (reproduces with cores in double). Not the same failure as the Simulink
   noise instability, despite looking alike.
+
+## Key Learnings additions (2026-08-17 — ANTON_MFC SITL, rung 2)
+
+- **`mfc_iir_step` has a DOUBLE POLE at `z = W/(W+1)`, so `tau ~= W / f_s`.**
+  `time_trajec`, `int_window` and `command_filter` are therefore **sample
+  counts**, not time constants — nothing using them transfers between two
+  models at different rates without scaling by `f_b/f_a`. At ANTON_MFC's 500 Hz:
+  attitude traj W=50 -> 0.10 s, int_window 5 -> 0.010 s, GX int_window
+  600 -> 1.20 s, command_filter (one-pole, `(W-1)/W`) 10 -> 0.020 s.
+- **The reference filter and the closed loop must be chosen together.** ANTON_MFC
+  carried a 0.10 s (~10 rad/s) reference filter driving a `wn = 2 rad/s` loop.
+  `mfc_core` feeds forward `dot_dot_setpoint_trajec/alpha`; a 0.235 rad step
+  through that filter yields `rddot ~= 22.6 rad/s^2`, which drives the whole
+  motion. Measured: 65 % overshoot, ringing at ~7 rad/s after the reference had
+  already settled. Slowing traj 50 -> 250 (tau 0.5 s) with **gains unchanged**
+  removed the overshoot entirely and cut control effort 9x and estimator
+  excursion 10x. Symptom looks exactly like bad gains; it is not.
+- **The coupled MFC attitude loop has a bandwidth ceiling between wn 2 and
+  wn 6 on ANTON_MFC.** `kp 36/kd 18` (wn 6) and `kp 100/kd 20` (wn 10) BOTH
+  diverge, command pinned at the +-5.22 N*m clamp, `fk` to ~4.5e4. Tested both
+  via `--set` in flight and baked into the XML from boot — same result, so it is
+  a real stability limit, not a bumpless-transfer artefact of changing a folded
+  gain mid-flight. Interpretation: in the coupled structure kp/kd raise the
+  ESTIMATOR's own gain on e/edot, and the folded-pole construction needs the
+  estimator much faster than the loop; with int_window tau 0.01 s, command
+  filter 0.02 s and ACT_FREQ 30.5 rad/s that separation is gone by wn 6.
+  **The stabilization_mfc.xml module defaults (roll wn 6, pitch wn 8) are ABOVE
+  this ceiling — do not adopt them for ANTON_MFC.**
+- **`NPS_*_NOISE_STD_DEV_*` are NOT `#ifndef`-guarded.** `nps_sensors.h:6`
+  includes `nps_sensors_params_default.h` unconditionally when
+  `NPS_SENSORS_PARAMS` is unset. An airframe cannot override them one by one
+  from its SIMULATOR section — it must select a params header with
+  `<define name="NPS_SENSORS_PARAMS" value="..." type="string"/>` (pattern:
+  `jpg_cyclone.xml:63`). ANTON_MFC now uses
+  `conf/simulator/nps/nps_sensors_params_anton_mfc.h`, which restates every
+  stock default x a scale, so `NPS_NOISE_SCALE=1` is identical to the old
+  implicit config and `=0` is perfect sensors (per-source
+  `NPS_NOISE_SCALE_ACCEL/_GYRO/_MAG/_BARO/_GPS/_SONAR`).
+- **The stock NPS gyro white noise is already ZERO.** The gyro's only stochastic
+  content is the 0.5 deg/s bias random walk in `nps_sensors_params_common.h`
+  (defined bare -> needs `#undef` to rescale). Don't look for gyro white noise.
+- **`--rc_script 1/2/3` are NOT an attitude instrument on ANTON_MFC.** They set
+  `MODE_SWITCH_AUTO2`, and anton_mfc.xml maps AUTO2 to `AP_MODE_NAV` — full
+  guidance, attitude sticks ignored. The attitude step instrument for this
+  airframe is **`--rc_script 5`** (`fp_takeoff_zhold`): NAV climb 15 s, then
+  AUTO1 = `AP_MODE_ATTITUDE_Z_HOLD` with +-0.3 stick steps cycling
+  pitch -> roll -> yaw, 4 s each (+-0.3 x SP_MAX_PHI 45 deg = +-13.5 deg).
+  **Yaw is stick-RATE commanded, so it ramps and a step analyser finds no yaw
+  edges — that is correct, not a bug.**
+- **guidance_mfc's gx/gy virtual command is a FORCE [N], not an acceleration.**
+  It is divided by `mfc_thrust_physical` [N] in `accel_to_att_sp()` and clamped
+  by `9.81*MASS*sin(MAX_BANK)*0.7` [N]. The anton_mfc.xml comment calling it
+  "NED acceleration [m/s^2] ... clamped to +-g*sin(MAX_BANK)" is wrong on both
+  counts. Harmless (clamp and denominator carry the same MASS), documentation
+  only. The `0.7` is an undocumented 70 % derating of GUIDANCE_H_MAX_BANK.
+- **Hover `gz` on ANTON_MFC reads -9.02 N against -m*g = -7.848 N** (14.9 %).
+  Per the airframe's own comment this measures G1-thrust-row/mass identification
+  error: JSBSim's motors are ~13 % LESS effective than the identified -1.5 row
+  (implied true row ~ -1.305). Absorbed by the F-estimator; err_z RMS 0.012 m.
+  Note this is the OPPOSITE sign to Hoops, where JSBSim was ~1.46x MORE
+  effective — the deviation is per-airframe, don't generalise it.
+
+## Do-Not-Repeat additions (2026-08-17)
+
+- **Do not attribute a sim CSV with `ls -t`.** `sim.sh`/`sim_anton.py` never
+  self-terminate, and `timeout -s INT` leaves the capture relay listening on
+  127.0.0.1:9871 — a second sim started while it lives is ingested into the
+  FIRST run's file. Two captures were contaminated this way and had to be
+  re-run. Serialize (`docker rm -f` + settle before AND after each sim), take
+  the CSV name from that run's own stdout, and validate every capture: expect
+  ~500 rows/s, zero duplicate timestamps, zero backward time steps.
+  (bug-270)
+- **Do not launch overlapping background sim tasks in this sandbox.** Several
+  `run_in_background` waits stacked up and re-entered the sim concurrently; that
+  is what caused bug-270 both times.
+- **Do not trust a step-response analyser that segments edges across axes.**
+  The first version merged roll and pitch edges and reported "-100 %" and
+  "+232 %" overshoot on a well-behaved run. Segment per axis, take the dwell as
+  the span to the next edge of the SAME axis, and baseline against the settled
+  post-edge setpoint.
+- **Before concluding gains are wrong on an MFC axis, check the reference
+  filter's bandwidth against the loop's.** `tau_ref = W/f_s` vs `1/wn`. If the
+  reference is faster, the `rddot` feedforward drives the response and the
+  overshoot is not a gain problem. See the Key Learnings entry above.
+
+## Key Learnings additions (2026-08-17 part 2 — MFC position loop works)
+
+- **In the COUPLED MFC structure, `int_window` is the ESTIMATOR BANDWIDTH, not a
+  noise filter — the estimator IS the feedback path** (poles folded into F_hat).
+  Raising ANTON_MFC's `GZ_INTEGRATION_WINDOW` 4 → 50 (the "obvious" fix for a
+  noisy z) detuned the controller 12× and made the vertical loop bang-bang
+  between both thrust clamps, 10–30 m excursions on a 3 m setpoint. Simulink can
+  run 50 there only because **its z axis is DECOUPLED**, where the poles are in
+  an explicit iPD and the estimator only cancels disturbance. Check `decoupled`
+  before reasoning about any window.
+- **Before filtering an MFC measurement, compare the filter's lag against that
+  axis's `int_window` and `ref_window` IN MILLISECONDS.** Adding the x/y 3 Hz
+  Butterworth (~60 ms lag) to gz — whose ref filter and estimator window are both
+  8 ms — produced the same clamp-to-clamp limit cycle. If the lag is comparable
+  or larger, slow the whole channel coherently instead. `guidance_mfc.c` now
+  documents why z stays on the raw measurement.
+- **`est_use_presat_command` was `true` (pre-saturation) on all six MFC axes;
+  the upstream Simulink feeds the POST-EMA, POST-CLAMP command.** Pre-saturation
+  makes F_hat drift to cover a command the plant never received and drives the
+  command further into the rail — a limit-cycle generator on any saturating axis.
+  Default flipped to `false` in `mfc_core.c`. Same defect had been found
+  independently on HEOL.
+- **Simulink `kd` is `zeta`, NOT `2*zeta`.** Correct conversion:
+  `kp_fw = kp_sim^2`, `kd_fw = 2*kd_sim*kp_sim`. (An earlier same-day inference
+  from second-hand quoted values dropped the 2 — corrected against measured
+  Simulink applied coefficients φ/θ = 4/12, ψ = 4/6, thrust = 16/5.6.)
+- **The real cause of ANTON_MFC's 65 % attitude overshoot was roll/pitch `Kd`
+  under-damped by exactly 2×** (6 vs the reference's 12), not the reference-filter
+  bandwidth. `Kd = 12` gives 34 % overshoot AND keeps the 0.175 s rise;
+  `TIME_TRAJECTORY` stays at its flight-validated 50. Raising Kd further (20)
+  only reaches 25 % for 40 % more command effort — not worth it. Note raising
+  `kp` still hits the wn 2–6 stability ceiling; raising `kd` alone is safe.
+- **ANTON_MFC position control WORKS** (2026-08-17): hover hold x/y rms
+  4.8/4.2 cm with noise, 0.62/0.45 cm without, command at 5 % of the ±1.879 N
+  rail; vertical alone err_z rms 1.7 mm, F̂_gz rms 57.5; `Flat_Traj_Demo`
+  tracking err x/y/z rms 6.1/5.7/0.8 cm. Reached rung 5. The two changes that did
+  it were the estimator tap and roll/pitch Kd — **nothing on the z or horizontal
+  channels was touched.**
+- **Horizontal `Kp 2 / Kd 25` vs Simulink `75 / 150` is a real 37×/6× gap**
+  (same structure, same alpha 18.75 — the one axis pair where a bare gain
+  comparison is legitimate). Kept the firmware values deliberately: firmware
+  holds 4.5 cm at 5 % rail, Simulink holds 2.5 cm with its command ON THE RAIL
+  73–92 % of the time. Don't chase the reference's rail fraction.
+
+## Do-Not-Repeat additions (2026-08-17 part 2)
+
+- Do NOT change several parameters on one MFC axis at once. Changing gz
+  structure + gains + both windows + command filter together broke the vertical
+  loop and cost three runs to bisect. One knob per run on a channel that works.
+- Do NOT assume a "too short" estimator window is starving a channel without
+  first checking whether that channel is coupled or decoupled — the sign of the
+  argument flips.
+- Do NOT reach for a measurement filter as the first response to "channel X is
+  noisy" in MFC. On a fast coupled channel it is destabilising, not smoothing.
