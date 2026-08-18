@@ -200,6 +200,7 @@
 - `14 - Flat Nominal Inputs Plumbing Decision.md` — 14 — Flat Nominal Inputs: Plumbing Route Decision (~1168 tok)
 - `15 - Simulink MFC Quad ↔ ANTON_MFC Firmware Correspondence.md` — Per-axis Simulink↔firmware parameter map: the kp=wn/kd=2ζ convention inference, ALPHA ratios, sample-count windows (tau=W/f_s), clamps, placeholder-mass caveat (~3863 tok)
 - `16 - The MFC Estimator Saturation Tap.md` — THE key MFC fix: the disturbance estimator must be fed the post-clamp command; pre-saturation tap winds F_hat up and limit-cycles any saturating axis. Mechanism, log signature, what it does NOT fix (~1674 tok)
+- `17 - The Flat Reference Fixed-Point Ratchet.md` — gv_update_ref_from_flat_ref() truncated Q37.26 through Q23.8 each tick; toward-zero truncation on negative NED altitude ratcheted +1 LSB/tick = +1.95 m/s phantom climb, 10 Hz sawtooth, MFC/HEOL clamp saturation (~1700 tok)
 
 ## Knowledge/Daily Notes/
 

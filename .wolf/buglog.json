@@ -4704,6 +4704,50 @@
    ],
    "occurrences": 3,
    "last_seen": "2026-08-17T19:55:44.998949Z"
+  },
+  {
+   "id": "bug-274",
+   "timestamp": "2026-08-18T12:31:54.185122Z",
+   "error_message": "Flat trajectory: vehicle climbs ~1.7 m past the endpoint and holds there; cmd_z slams between +7.848 N clamp and -18 N at 10 Hz; MFC_GUIDANCE/sp_z visibly hatched instead of a flat line",
+   "file": "sw/airborne/firmwares/rotorcraft/guidance/guidance_v_ref.c",
+   "root_cause": "gv_update_ref_from_flat_ref() round-tripped gv_z_ref (Q37.26) through INT32_POS_FRAC (Q23.8) every tick, discarding 18 fractional bits. BFP_OF_REAL truncates toward zero and NED altitude is negative, so the truncation moved the reference UP a whole LSB (3.9 mm) per 2 ms tick regardless of the true step size -- a ratchet, = +1.95 m/s phantom climb. gv_set_flat_ref() re-synced at the slower nav rate, making z_ref a ~10 Hz sawtooth. Invisible to a PID, but MFC/HEOL double-differentiate the setpoint (dot_dot_setpoint_trajec), so each snap-back was an rddot impulse ~1e4 m/s^2 that pinned the thrust command at its clamp.",
+   "fix": "Accumulate the position STEP at gv_z_ref's native Q37.26 resolution (llroundf) instead of round-tripping the absolute value; round rather than truncate the speed/accel write-backs. A float cannot hold the absolute value at Q37.26 (3 m * 2^26 = 2e8 > 24-bit mantissa), so converting the small step is the correct form. Verified by a standalone harness reproducing +1.95 m/s from the old arithmetic (matching the flight log to 3 s.f.) and ~1e-7 m error from the new; then confirmed in flight.",
+   "tags": [
+    "fixed-point",
+    "truncation",
+    "guidance_v",
+    "flat-trajectory",
+    "mfc",
+    "heol",
+    "ratchet",
+    "shared-code"
+   ],
+   "related_bugs": [
+    "bug-272"
+   ],
+   "occurrences": 1,
+   "last_seen": "2026-08-18T12:31:54.185122Z"
+  },
+  {
+   "id": "bug-275",
+   "timestamp": "2026-08-18T12:31:54.185122Z",
+   "error_message": "Flat trajectory run from the GCS reverts to a Standby-like hold on its own; GCS shows only a momentary flicker to GUIDED",
+   "file": "sw/airborne/modules/nav/nav_flat_traj.c, conf/flight_plans/ENAC/flat_traj_demo.xml",
+   "root_cause": "autopilot_static_on_rc_frame() re-derives the autopilot mode from the RC 3-way switch every RC frame, so autopilot_set_mode(AP_MODE_GUIDED) from the flight plan survived one frame before being stamped back to AP_MODE_NAV (AUTO2). The block kept running and kept calling guidance_h_set_flat(), but guidance_h.mode was GUIDANCE_H_MODE_NAV again, so guidance_h_from_nav() served the setpoint from nav.carrot -- the previous block's leftover waypoint (Standby's). No RC link exists in SITL, so it reproduced only from the GCS.",
+   "fix": "Stay in AP_MODE_NAV; set nav.horizontal_mode = NAV_HORIZONTAL_MODE_GUIDED and nav.vertical_mode = NAV_VERTICAL_MODE_GUIDED every tick in nav_flat_traj_run(). These are NAV sub-mode selectors, not autopilot modes, so the RC switch cannot touch them, and they dispatch to the same guided runners. Mirrors the stock NavGuided() macro. Removed autopilot_set_mode(AP_MODE_GUIDED) from the flight plan.",
+   "tags": [
+    "rc",
+    "autopilot-mode",
+    "guided",
+    "nav",
+    "flight-plan",
+    "gcs-only"
+   ],
+   "related_bugs": [
+    "bug-274"
+   ],
+   "occurrences": 1,
+   "last_seen": "2026-08-18T12:31:54.185122Z"
   }
  ]
 }

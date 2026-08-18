@@ -18,6 +18,7 @@ Index of all notes. Designed for Obsidian; internal links use `[[Note Name]]` st
 | [[11 - In-Flight Controller Switching (Oneloop Pattern)]] | How Paparazzi switches control laws in flight (XML→codegen→runtime); oneloop ANDI/INDI precedent |
 | [[15 - Simulink MFC Quad ↔ ANTON_MFC Firmware Correspondence]] | Per-axis Simulink↔firmware parameter map: gain conventions, alphas, sample-count windows, clamps |
 | [[16 - The MFC Estimator Saturation Tap]] | **The key MFC fix.** Why the estimator must be fed the post-clamp command, and the limit cycle it causes if not |
+| [[17 - The Flat Reference Fixed-Point Ratchet]] | Q37.26 reference truncated through Q23.8 every tick -> +1.95 m/s phantom climb; why it only hurts controllers that double-differentiate |
 | [[Plans/Dual-Controller Shadow Mode]] | Plan: run MFC + INDI together, INDI drives, MFC shadowed for validation |
 | [[Plans/Dual-Controller Handover Mode]] | Plan: in-flight bumpless switch of motor authority between MFC and INDI |
 | [[Plans/Flatness Trajectory Setpoints (Pos-Vel-Accel-Jerk-Snap + Psi)]] | Plan: extend GUIDED-mode trajectory setpoints to jerk/snap + psi derivatives, generically for INDI/MFC |

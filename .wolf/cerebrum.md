@@ -873,3 +873,48 @@
   argument flips.
 - Do NOT reach for a measurement filter as the first response to "channel X is
   noisy" in MFC. On a fast coupled channel it is destabilising, not smoothing.
+
+## Key Learnings additions (2026-08-18 — flat traj from the GCS)
+
+- **`autopilot_set_mode(AP_MODE_GUIDED)` from a flight plan does NOT survive with
+  an RC link connected.** `autopilot_static_on_rc_frame()` re-derives the mode
+  from the 3-way switch every RC frame and stamps it back to NAV (AUTO2). The
+  block keeps running but `guidance_h_from_nav()` then serves the setpoint from
+  `nav.carrot` -- the previous block's leftover waypoint. **Use the NAV sub-modes
+  instead**: `nav.horizontal_mode = NAV_HORIZONTAL_MODE_GUIDED` and
+  `nav.vertical_mode = NAV_VERTICAL_MODE_GUIDED`, re-asserted every tick. They
+  reach the same guided runners and the RC switch cannot touch them (this is what
+  the stock `NavGuided()` macro does). **SITL has no RC link, so this class of bug
+  is GCS/flight-only and cannot be reproduced headless.**
+- **Fixed-point round-trips inside a per-tick integrator integrate their own
+  quantization error.** `gv_update_ref_from_flat_ref()` pushed `gv_z_ref` (Q37.26)
+  through Q23.8 each tick; `BFP_OF_REAL` truncates toward zero and NED altitude is
+  negative, so it ratcheted UP one full LSB (3.9 mm) per 2 ms tick = +1.95 m/s
+  phantom climb, independent of the true step size. Ask of any such loop: (a) does
+  the read/write pair preserve the stored resolution, (b) does it round or
+  truncate, and is the quantity signed. Truncation toward zero is a *biased*
+  estimator for negatives, and bias inside an integrator is drift.
+- **A float cannot hold a Q37.26 position** (3 m * 2^26 = 2e8 > 24-bit mantissa).
+  Accumulate the small STEP at full resolution instead of round-tripping the
+  absolute value. See `Knowledge/17 - The Flat Reference Fixed-Point Ratchet.md`.
+- **Anything that double-differentiates its setpoint turns a benign reference
+  wobble into clamp saturation.** MFC and HEOL both do (`dot_dot_setpoint_trajec`).
+  A 0.06 m snap in one 2 ms sample is `rddot` ~1e4 m/s^2. A PID would ignore the
+  same signal entirely -- which is why these bugs survive in shared guidance code.
+- **The PlotJuggler tell for a sawtoothing setpoint is a "hatched"/thick line.**
+  Decimated plots average it into a clean line at the right value. Sample the raw
+  CSV at the loop tick before concluding a setpoint is clean.
+
+## Do-Not-Repeat additions (2026-08-18)
+
+- **Do not diagnose a GCS/flight-only bug from source alone.** I proposed three
+  candidate mechanisms from code reading and shipped a fix for one without
+  reproducing; the user identified the right one from operational experience.
+  When the symptom is only observable on the real system, ASK FOR THE LOG FIRST.
+  A per-tick CSV settled in one pass what code reading had not in several.
+- **Do not copy `GZ_MAX_THRUST` (or any `G1`-derived constant) between airframes.**
+  It must track that airframe's own G1 thrust row: `guidance_mfc_vert()` normalizes
+  by it and the stabilizer decodes through its own SI row, so a mismatch scales
+  every thrust command by the ratio (1.5 vs 0.7 = 2.14x, enough to stop it
+  climbing). Gains/windows/structure DO transfer between airframes at the same
+  loop rate; anything derived from G1, mass or inertia does NOT.
