@@ -21,20 +21,44 @@
     Z: position [m]        sp_z / me_z / truth, and the residual err_z
     Z: thrust [N]          sp_traj_z (= u_ff = T*), cmd_z (total), fk_z
     XY: position [m]       sp_/me_/truth per axis
-    XY: accel cmd [m/s^2]  sp_traj_ (= u_ff) and cmd_ per axis, plus fk_
-    Nominal inputs         T*, phi*, theta* straight off the flat table
+    XY: tilt cmd [rad]     sp_traj_ (= u_ff) and cmd_ per axis, plus fk_
+                           BEWARE THE INDEX CONVENTION on this tab: the
+                           horizontal channel is a 2x2 MIMO loop whose OUTPUT
+                           space is (x,y) but whose INPUT space is (phi,theta).
+                           cmd_x/sp_traj_x are heol_hxy.command[0]/u_ff[0] =
+                           PHI [rad]; cmd_y/sp_traj_y are index 1 = THETA [rad].
+                           They are NOT x/y accelerations. err_/me_/sp_ on the
+                           other tabs ARE x/y [m]. So the correct pairing for
+                           reading the loop is err_x (north) against cmd_y
+                           (theta), and err_y (east) against cmd_x (phi);
+                           the anti-diagonal alpha matrix is what crosses them.
+                           fk_x/fk_y are genuine accelerations [m/s^2] in the
+                           (x,y) output space, which is why they get their own
+                           plot rather than sharing an axis with the commands.
+    Nominal inputs         T*, phi*, theta* straight off the flat table, and
+                           the Mx*/My*/Mz* nominal moments for the attitude
+                           channels (SITL only, plumbing-check pair)
     Input sensitivity      alpha_z vs what the gz loop actually runs with,
                            and the four alpha_xy entries (telemetry-only)
+    Attitude [rad]         sp_/me_/TRUTH per axis, roll/pitch/yaw tracking
+    Attitude: torque [N*m] sp_traj_ (= u_ff) and cmd_ per axis, plus fk_,
+                           same total-command-clamp reading as "Z: thrust"
+    Motors [pprz]          u0..u3, the post-WLS actuator outputs
 
-  READING "Z: thrust [N]": cmd_z is clamped to the physical range
-  [-GZ_MAX_THRUST, 0] (0 = motors off, negative = up). If cmd_z is sitting ON
-  those two values and switching between them, the vertical loop is
-  bang-banging, not tracking — check the altitude on the "Z: position" tab
-  before reading anything else on the run.
+  READING "Z: thrust [N]" and "Attitude: torque [N*m]": cmd_* is clamped to
+  the physical range (thrust: [-GZ_MAX_THRUST, 0], 0 = motors off, negative =
+  up; torque: the per-axis max from stabilization_heol.c). If cmd_* is sitting
+  ON its two rail values and switching between them, that loop is
+  bang-banging, not tracking — check "Z: position" / "Attitude [rad]" before
+  reading anything else on the run.
 
   Same transport as the MFC layout: one UDP-Server on port 9870, protocol
   JSON, timestamp field "timestamp". HEOL_NOMINAL/* and HEOL_ALPHA/* come from
-  the NPS scope (SITL only); everything else draws on both feeds.
+  the NPS scope (SITL only); everything else draws on both feeds. Attitude
+  tracking (sp_phi/me_phi/...) is drawn from MFC_STAB (renamed on relay from
+  STAB_MFC, id 212 in messages.xml) — the SAME message shape stabilization_heol
+  reuses for roll/pitch/yaw the way guidance_heol.c reuses GUIDANCE_MFC for
+  x/y/z. sp_traj_phi/theta/psi is repurposed for u_ff, exactly like sp_traj_z.
 -->
 <root>
  <tabbed_widget parent="main_window" name="Main Window">
@@ -119,7 +143,7 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="XY: accel cmd [m/s^2]" containers="1">
+  <Tab tab_name="XY: tilt cmd [rad]" containers="1">
    <Container>
     <DockSplitter sizes="1" orientation="-" count="1">
      <DockSplitter sizes="0.333333;0.333333;0.333333" orientation="-" count="3">
@@ -154,7 +178,7 @@
   <Tab tab_name="Nominal inputs" containers="1">
    <Container>
     <DockSplitter sizes="1" orientation="-" count="1">
-     <DockSplitter sizes="0.500000;0.500000" orientation="-" count="2">
+     <DockSplitter sizes="0.333333;0.333333;0.333333" orientation="-" count="3">
        <DockArea name="...">
         <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
          <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
@@ -170,7 +194,108 @@
          <curve color="#d62728" name="/uav/HEOL_NOMINAL/theta_star" />
         </plot>
        </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/HEOL_NOMINAL/Mx_star" />
+         <curve color="#d62728" name="/uav/HEOL_NOMINAL/My_star" />
+         <curve color="#1ac938" name="/uav/HEOL_NOMINAL/Mz_star" />
+        </plot>
+       </DockArea>
      </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Attitude [rad]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.333333;0.333333;0.333333" orientation="-" count="3">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-1.000000" top="1.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_STAB/sp_phi" />
+         <curve color="#d62728" name="/uav/MFC_STAB/me_phi" />
+         <curve color="#1ac938" name="/uav/TRUTH/phi" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-1.000000" top="1.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_STAB/sp_theta" />
+         <curve color="#d62728" name="/uav/MFC_STAB/me_theta" />
+         <curve color="#1ac938" name="/uav/TRUTH/theta" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-1.000000" top="1.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_STAB/sp_psi" />
+         <curve color="#d62728" name="/uav/MFC_STAB/me_psi" />
+         <curve color="#1ac938" name="/uav/TRUTH/psi" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Attitude: torque [N*m]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.250000;0.250000;0.250000;0.250000" orientation="-" count="4">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-1.000000" top="1.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_STAB/sp_traj_phi" />
+         <curve color="#d62728" name="/uav/MFC_STAB/cmd_phi" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-1.000000" top="1.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_STAB/sp_traj_theta" />
+         <curve color="#d62728" name="/uav/MFC_STAB/cmd_theta" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-1.000000" top="1.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_STAB/sp_traj_psi" />
+         <curve color="#d62728" name="/uav/MFC_STAB/cmd_psi" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-1.000000" top="1.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/MFC_STAB/fk_phi" />
+         <curve color="#d62728" name="/uav/MFC_STAB/fk_theta" />
+         <curve color="#1ac938" name="/uav/MFC_STAB/fk_psi" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Motors [pprz]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+      <DockArea name="...">
+       <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+        <range right="40.000000" bottom="-10000.000000" top="10000.000000" left="10.000000" />
+        <limitY />
+        <curve color="#1f77b4" name="/uav/MFC_STAB/u0" />
+        <curve color="#d62728" name="/uav/MFC_STAB/u1" />
+        <curve color="#1ac938" name="/uav/MFC_STAB/u2" />
+        <curve color="#ff7f0e" name="/uav/MFC_STAB/u3" />
+       </plot>
+      </DockArea>
     </DockSplitter>
    </Container>
   </Tab>

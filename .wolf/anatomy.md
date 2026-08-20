@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-17T20:06:15.529Z
-> Files: 829 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-19T09:06:18.411Z
+> Files: 832 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -78,6 +78,7 @@
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 - `mfc_ivy_probe.py` — Temporary probe: tap the Ivy bus for STAB_MFC + GUIDANCE_MFC, print decoded (~535 tok)
 - `pj_json_relay.py` — apply_field_aliases, normalize_obj, repair_json_text, flush_word (~4644 tok)
+- `plotjuggler_heol.xml` (~5233 tok)
 - `plotjuggler_indi.xml` (~4317 tok)
 - `plotjuggler_mfc.xml` (~6856 tok)
 - `pprz_docker.sh` — ── Ephemeral Paparazzi build/sim container dispatcher ──────────────────────── (~840 tok)
@@ -287,6 +288,7 @@
 - `2026-08-14-heol-flat-nominal-inputs.md` — 2026-08-14 — HEOL guidance: flat nominal inputs (T*, phi*, theta*) (~2840 tok)
 - `2026-08-14-heol-guidance-fixes.md` — 2026-08-14 — HEOL guidance: feedforward enable, unit fix, gain reconciliation (~1977 tok)
 - `2026-08-17-anton-mfc-sitl-tuning.md` — ANTON_MFC SITL rung 2: reference-filter/loop bandwidth mismatch (65% overshoot), wn 2–6 stability ceiling, both noise pairs, NPS noise switch + include-order bug (~4393 tok)
+- `2026-08-19-heol-plotjuggler-and-divergence-check.md` — 2026-08-19 — HEOL PlotJuggler layout, post-fix SITL check, and the horizontal divergence root cause (~2039 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
