@@ -290,3 +290,77 @@ better than the 48/79 m recorded on 2026-08-15, because this build includes
 re-flown. **That fix appears to work**, and this is the first flight of it.
 Someone should confirm that deliberately rather than inheriting it from a
 side-observation in a different task's session note.
+
+---
+
+# ANTON_HEOL gain parity, GZ_ALPHA, and the derivative filter
+
+Author asked why `anton_heol.xml` doesn't match
+`scripts/controllers/heol_quad_params.m`, and whether `GZ_ALPHA` is still part
+of the α computation. Both questions had concrete answers.
+
+## The gains had drifted on three values
+
+| | reference (`heol_quad_params.m`) | airframe was |
+|---|---|---|
+| `HXY_KP` | wn=1 → **1** | **4** |
+| `HXY_EST_HOLD_TIME` | **0.8** | **0.1** |
+| `GZ_EST_HOLD_TIME` | **0.8** | **0.1** |
+
+**`HXY_KD` needed no change, and that is why this was easy to miss**: the sim
+went from (wn=2, ζ=0.7) to (wn=1, ζ=1.4), and `2·1.4·1 = 2·0.7·2 = 2.8`. Only
+`kp` moved. The airframe comment still described the old tuning, so it read as
+consistent.
+
+Everything else already matched — attitude 4/2.8 on all three axes, GZ 4/6, and
+the estimator windows (20 attitude, 500 on both guidance channels; the 500 is
+deliberate, they are position loops carrying GPS noise). **That corrects
+something I wrote earlier this session** in the FINDI spec, where I called
+`HXY_INTEGRATION_WINDOW = 500` "inherited and never re-justified".
+
+SITL, `Flat_Traj_Demo`, position error RMS x/y (m):
+
+| | trajectory | late hold | max traj | bank rail |
+|---|---|---|---|---|
+| before | 5.67 / 7.73 | 2.797 / 2.687 | 26.2 m | **97 %** |
+| after | 3.93 / 5.88 | **0.311 / 0.343** | 8.6 m | **44 %** |
+
+The hold is ~8× better and the loop spends less than half as long on the bank
+limit. It still tracks the trajectory poorly, so this is **not** the end of
+`heol-xy-divergence-diagnosis` — but a 97 % rail fraction was never going to be
+diagnosable, and it is now 44 %.
+
+## GZ_ALPHA was dead, and misleading
+
+`alpha_z = cos(θ*)cos(φ*)/m` is computed by `heol_input_sensitivity` and written
+to the channel every tick, so the define was live for at most the first tick —
+while reading like a tuning knob and sitting 5× off the real value (6.25 against
+a live 1.01–1.25). Removed; the power-on value is now `1/m`, which is that
+Jacobian at level. `GX_ALPHA`/`GY_ALPHA` went the same way when the MIMO channel
+landed.
+
+## The derivative filter N, and an unresolved discrepancy
+
+The sim's PD filters its derivative (N = 20 attitude/vertical, 50 horizontal),
+sized "for a MEASURED rate now, not a differentiated position". The firmware had
+no counterpart, which is why yesterday's measured-velocity path delivered an
+unfiltered full-gain derivative. Added as `mfc_deriv_filter_step()`, shared by
+both cores, zero = pass-through, defaulted off.
+
+It filters the D path regardless of source — which is what the Simulink block
+does — and that has a consequence worth stating: **N and the measured-derivative
+switch must move together.** N=50 against the differenced position measures
+badly (late hold 0.31/0.34 → 33.3/17.1 m). The airframe ships both at zero.
+
+**And the pairing still does not work.** Measured velocity + N at the sim's own
+50/20 diverges harder than measured velocity alone: final z −3624 m, late hold
+413/85 m. So the "kd was tuned against an attenuated derivative" explanation
+from earlier today is **not sufficient** — something else differs between the
+firmware PD and the Simulink one on this path, and it is not the filter.
+
+That is left open rather than papered over. Candidates not yet examined: whether
+the sim's PD filters the derivative of the *error* or of the *measurement*
+alone; whether its D path sees the reference velocity at all; and the caveat
+already recorded in the task note, that roll/pitch there used `p_ref`/`q_ref`
+rather than the PD's actual setpoint derivative. Anyone picking this up should
+read the Simulink PD block's wiring before touching the firmware again.
