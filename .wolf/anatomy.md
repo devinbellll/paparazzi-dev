@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-19T09:06:18.411Z
-> Files: 832 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-20T21:45:05.709Z
+> Files: 834 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -289,6 +289,7 @@
 - `2026-08-14-heol-guidance-fixes.md` — 2026-08-14 — HEOL guidance: feedforward enable, unit fix, gain reconciliation (~1977 tok)
 - `2026-08-17-anton-mfc-sitl-tuning.md` — ANTON_MFC SITL rung 2: reference-filter/loop bandwidth mismatch (65% overshoot), wn 2–6 stability ceiling, both noise pairs, NPS noise switch + include-order bug (~4393 tok)
 - `2026-08-19-heol-plotjuggler-and-divergence-check.md` — 2026-08-19 — HEOL PlotJuggler layout, post-fix SITL check, and the horizontal divergence root cause (~2039 tok)
+- `2026-08-20-darko-port-build-sitl.md` — 2026-08-20 — DarkO airframe port: build + SITL takeoff (~1481 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -963,6 +964,7 @@
 ## paparazzi/conf/airframes/ENAC/hybrid/
 
 - `cyfoam.xml` — Declares of (~3242 tok)
+- `darko.xml` — Declares of (~3800 tok)
 - `falcon_v2.xml` (~3611 tok)
 
 ## paparazzi/conf/airframes/ENAC/quadrotor/
