@@ -148,7 +148,14 @@ static void run_mimo(const float alpha[2][2], const struct Plant plant0[2],
 {
   struct MfcMimoParameters m;
   stub_sys_time = 0.f;
-  mfc_mimo_init(&m, TS);
+  mfc_mimo_init(&m, TS, 2);
+
+  /* The core takes a capacity-sized alpha and reads the leading n x n block.
+   * These traces are 2-vector, so widen once here and reuse it every tick. */
+  float alpha_w[MFC_MIMO_N_MAX][MFC_MIMO_N_MAX] = {{0.f}};
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 2; j++) { alpha_w[i][j] = alpha[i][j]; }
+  }
   m.decoupled = 1; m.use_trajec_sp = 1;
   m.time_trajec = FFILTER; m.int_window = WFILTER;
   m.kp = KP; m.kd = KD; m.ki = KI;
@@ -168,7 +175,7 @@ static void run_mimo(const float alpha[2][2], const struct Plant plant0[2],
 
     float y[2] = { p[0].y, p[1].y };
     /* One alpha per tick, reaching both the estimator and the command law. */
-    mfc_mimo_set_alpha(&m, alpha);
+    mfc_mimo_set_alpha(&m, alpha_w);
     mfc_mimo_run(false, &m, y);
 
     double *r = rec + k * 11;
