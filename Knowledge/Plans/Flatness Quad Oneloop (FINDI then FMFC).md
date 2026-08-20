@@ -359,9 +359,12 @@ there is no conditioning or singularity question. Consequences:
 - **Do not inherit `HXY_INTEGRATION_WINDOW = 500`**, or any other tuning
   constant, from the HEOL horizontal channel. That channel diverged in SITL on
   its last flown run (see `Knowledge/Sessions/2026-08-15-heol-mimo-port.md`),
-  and its window was inherited from a per-axis scalar value that was never
-  re-justified for the matrix form. Re-derive the windows here from the golden
-  traces.
+  and its window was believed to be an unjustified inheritance. **Correction
+  (2026-08-20): it is not.** `heol_quad_params.m` sets 500 deliberately on both
+  guidance channels because they are position loops carrying GPS noise, against
+  20 on the attitude channels. The estimator parameter that WAS wrong on that
+  channel is `est_hold_time`, 0.1 against a reference 0.8. Take the windows from
+  the reference rather than re-deriving them.
 - **`est_use_presat_command` defaults to the correction's *pre*-saturation
   value now** — `cfede3078` flipped the `mfc_core_mimo` default together with
   `HXY_EST_PRESAT`, `GZ_EST_PRESAT` and both module-XML defines, after the
