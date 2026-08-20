@@ -234,3 +234,59 @@ generated data table.
 - The ~0.2 m trajectory error and the slow drift during the hold are untuned
   outer-loop behaviour, not investigated.
 - Still no golden-trace comparison (`verify-flatness-quad-against-sim`).
+
+---
+
+# HEOL: the measured-velocity derivative (same session)
+
+The gap the author remembered is real and was still open in firmware. The
+attitude axes have taken their D term from the gyro since the HEOL stabilizer
+landed (`*_USE_MEASURED_RATE`, default true). **Neither guidance channel ever
+got the same option** — the vertical differenced its own epsilon history, and
+the horizontal MIMO core had no external-derivative path at all. The INS
+velocity sat there unread: the same published-but-unread structure the Simulink
+work found on both stacks.
+
+Added: `use_external_derivative` / `external_derivative[]` on `mfc_core_mimo`,
+`heol_mimo_set_derivative()`, and the wiring in both guidance channels.
+
+## Both default OFF, and that is the finding
+
+This is **a gain change, not a signal swap**. Differencing a position quantised
+to `INT32_POS_FRAC` at 500 Hz gives a derivative substantially corrupted by
+quantisation, which attenuates the D term. The INS velocity delivers the full
+`kd` — and `kd` was tuned against the attenuated one.
+
+ANTON_HEOL, `Flat_Traj_Demo`, position error RMS x/y in metres:
+
+| | trajectory 25–60 s | late hold t>65 s | final z |
+|---|---|---|---|
+| both off (baseline) | 5.67 / 7.73 | 2.797 / 2.687 | −1.997 |
+| **horizontal only** | 7.13 / 10.45 | **1.196 / 0.992** | −1.999 |
+| both on | 7.02 / 9.65 | 9.37 / 20.34 | **−1784.7** |
+
+With both on, the vertical loop is stable to 1 cm in hover and goes into a
+growing oscillation *the moment the reference starts moving* — `F_hat` 1.5 → 9.4,
+thrust command swinging −8.4 to −23.7 N.
+
+**The wiring was verified, not assumed.** Before concluding "needs a retune" I
+instrumented `z_ref`, `zd_ref`, a numerical derivative of `z_ref`, and `vz_meas`:
+`zd_ref` is the true derivative of `z_ref`, and `vz_meas` is the INS velocity.
+The signal is right; the gain is not. That probe was removed afterwards.
+
+The horizontal channel alone **improves the late hold ~2.4×** with the vertical
+untouched, so the retune burden is on the vertical. That is worth knowing before
+anyone starts a tuning campaign.
+
+## What this does and does not say about the divergence
+
+It does **not** fix `heol-xy-divergence-diagnosis`. The horizontal loop still
+diverges during the trajectory in every configuration above; the hold gets
+better, the trajectory segment does not. Treat the 2.4× as a lead, not a cure.
+
+Note also that these baseline numbers (5.67/7.73 traj, 2.80/2.69 hold) are much
+better than the 48/79 m recorded on 2026-08-15, because this build includes
+`cfede3078` — the `est_use_presat_command` fix that was written and never
+re-flown. **That fix appears to work**, and this is the first flight of it.
+Someone should confirm that deliberately rather than inheriting it from a
+side-observation in a different task's session note.
