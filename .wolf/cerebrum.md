@@ -920,3 +920,131 @@
   loop rate; anything derived from G1, mass or inertia does NOT.
 - [2026-08-20] **Darko (and Paparazzi tailsitters generally) use the hover body frame, not the fuselage frame.** `theta = 0` IS hover (rotors up, quadrotor-like); forward flight is `theta = TRANSITION_MAX_OFFSET = -75 deg`. The `cyclone` JSBSim model is built in the same frame (both motor `<force>` blocks point along body `-Z`; elevon moments are constant-coefficient about that frame's Y/Z, airspeed-independent). FlightGear is fed the FDM's body attitude directly, so a *level* aircraft render in hover is CORRECT and is not evidence of an axis mismatch — and because FG shows the same theta the controller uses, the render can never reveal a frame-convention error.
 - [2026-08-20] **Darko G1 vs `cyclone` JSBSim static effectiveness cross-check** (INDI_G_SCALING=1000, pprz full scale 9600 → alpha_full = G1*9.6 rad/s^2; Ixx/Iyy/Izz = 0.0179/0.00339/0.0203 kg*m^2): roll matches well (G1 144 vs model ~130 rad/s^2), but pitch (G1 ~40 vs model ~17) and yaw (G1 ~37 vs model ~23 per elevon) are OVER-estimated in G1 by ~2.4x and ~1.6x versus the sim plant. All signs agree with the model. Relevant to the unresolved ~1.2 Hz +/-35 deg pitch limit cycle. Static check only — not verified in flight.
+
+## Key Learnings additions (2026-08-20 — Darko flatness spine, stage 1)
+
+- **Darko needs TWO body frames and the whole port hinges on it.** The paper
+  (arXiv:2207.13218) / MATLAB sim frame puts rotor thrust along body **+x**, so
+  hover reads `theta_aero = +90 deg`. This firmware tree uses the Paparazzi
+  tailsitter hover frame (thrust along body **-z**), where `theta = 0` IS hover.
+  They differ by a constant y rotation: `R_h_i = Ry(-pi/2) R_b_i`, i.e.
+  `theta_hover = theta_aero - pi/2`, with **phi and psi identical in both** and
+  the ZXY structure preserved. `flatness_darko_force_transform()` therefore
+  emits both (`theta_aero`/`rmat_aero`/`quat_aero` vs `euler`/`rmat`/`quat`).
+  **Functions 2 and 3 are AERO-frame throughout** — their `R_i_b` input and
+  `m_body` output. Mixing frames maps roll->yaw and yaw->-roll, which on a
+  tailsitter is a plausible wrong answer, not a crash.
+- **The hover thrust is 1.9 % ABOVE weight and that is CORRECT.** Raw
+  `T = 4.9196 N` against `m*g = 4.8265 N`; propwash drag eats `cDT` of it, so
+  the net axial force is `T(1-cDT) = 4.826520 N`, matching weight to 6 decimals
+  (measured this session). Check `T*(1-cDT)`, never `T`, or the discrepancy
+  invites a "fix" that is actually a bug.
+- **Darko's applied-wrench model is EVEN in rotor speed** (every term is
+  `w_i^2`), so no residual/round-trip check can ever detect a wrongly-positive
+  `w2`. The allocator's emission of a NEGATIVE `w2` is the only guard there is.
+  Asserted explicitly in the harness so nobody hunts for a check that cannot
+  exist.
+- **A round-trip check cannot catch `cmu_sign_vs_paper`.** Allocation and wrench
+  both read the same field, so a flipped sign cancels and the round trip still
+  closes to 1e-6. The only check that discriminates is an **absolute** one
+  against the measured plant torque: at `(w1,w2) = (700,-500)` the plant gives
+  `-0.063360 N*m`; the paper's sign gives `+0.063360`. Both are asserted.
+- **Carrying measured constants as struct FIELDS (not bare #define uses) is what
+  makes "is this field actually read?" testable.** `struct FlatnessDarkoParams`
+  exists for that reason; the harness perturbs `cmu_sign_vs_paper` (must change
+  the output) and `cLT` (must NOT — bit-identical at 0 vs 1000).
+- **The docker test runners resolve `/workspace` from `WORKSPACE_DIR`**, which
+  under a vault-root Claude launch is the VAULT root, not `paparazzi_dev`. Both
+  `run_flatness_quad.sh` and `run_flatness_darko.sh` then fail with
+  "No such file or directory" on every source. Pre-existing, not a test failure:
+  run with `WORKSPACE_DIR=$PWD` from the repo root.
+- **`float[3][3]` -> `const float[3][3]` is a constraint violation in C before
+  C23** and `-Wpedantic` flags every call. There is no portable spelling that
+  keeps the const; drop it on the parameter.
+
+## Do-Not-Repeat additions (2026-08-20)
+
+- Do NOT set `cLT = NaN` to mark it unidentifiable. It only ever multiplies
+  `sin(alphabar) = 0`, and `0*NaN` is `NaN`, which poisons the entire attitude
+  solution — this produced `T = NaN` at hover once already. Use `0` and prove
+  unreachability with a 0-vs-1000 bit-identity check instead.
+- Do NOT use the FlightGear render to settle a tailsitter frame-convention
+  question. FG is fed the same `theta` the controller regulates, so a frame
+  error is invisible to it BY CONSTRUCTION.
+- Do NOT reuse the quad allocator's thrust convention for Darko. The quad
+  transform returns a SIGNED body-z force (negative in hover); the Darko
+  transform returns POSITIVE collective thrust. They are not sign-compatible.
+- Do NOT write a residual/round-trip check at a SYMMETRIC trim point and call
+  the sign story covered. `mu1 + mu2` is proportional to `w1^2 - w2^2` and
+  vanishes at `w1 = w2`, which is exactly how the inverted `cmu` sign survived
+  weeks in the sim repo. Every sign check must bank.
+
+## Decision Log additions (2026-08-20)
+
+- **Followed the `flatness_quad_test.c` fixture convention, not
+  `mimo_golden_test.c`.** The brief pointed at the MIMO harness, but the Darko
+  spine needs the REAL pprz quaternion algebra (`float_quat_of_rmat`), which is
+  precisely why `run_flatness_quad.sh` already exists as a second, stub-free
+  runner. `run_flatness_darko.sh` is a sibling of that one — same `ck`/`ck_near`
+  helpers, same compile shape — so it is the same convention, not a third.
+- **The quaternion attitude error is REUSED** (`flatness_quad_att_error()`, via
+  an include of `flatness_quad.h`) rather than duplicated: it is
+  vehicle-independent. Nothing else transfers from the quad spine.
+
+## Do-Not-Repeat additions (2026-08-21 — SITL run length)
+
+- **Do NOT run `./sim.sh` with multi-minute timeouts.** I used `timeout 420` and
+  `timeout 360` for a run whose nav sequence was 15 s. The user pushed back:
+  ~30 s of sim is enough for almost every diagnostic question.
+  **Right approach:** `timeout ≈ (sum of the --nav "+N" waits) + ~20 s startup
+  margin`. `--nav "Start Engine,Takeoff,+15,Standby"` → `timeout 45`.
+  Reach for a long run only when the question is genuinely long-horizon (slow
+  drift, windup over minutes), and say so explicitly.
+- **`./sim.sh` never exits on its own** — `sim_anton.py` ends in
+  `while True: time.sleep(1)` and has no `--duration` flag. Every run must be
+  killed externally, so a **non-zero exit (124 SIGTERM / 137 SIGKILL) is the
+  expected outcome, not a failure**. Judge the run by stdout + output files.
+- Consequence of always being SIGKILLed: **no exit flush**. Anything that only
+  writes on `fclose`/atexit loses its tail in SITL. Log writers must flush
+  periodically. (Suspected cause of `sim_logs/onboard/` being empty after the
+  aborted logger_mfc_csv validation run — unconfirmed, re-test.)
+- Recorded in `CLAUDE.md` under *Tooling scripts → "Running the sim headless"*.
+
+## User Preferences additions (2026-08-21)
+
+- Keep verification runs short and cheap. A long-blocking command that ties up
+  the session for minutes is itself a cost, independent of whether it works.
+
+## Key Learnings additions (2026-08-21 — NAV mode entry)
+
+- **AP_MODE_NAV does not "hold position" — it executes the current flight-plan
+  block.** Switching to NAV from a manual hand-flight drops the aircraft because
+  the plan is parked in `Holding point`, whose stage is
+  `<attitude throttle="0"/>`. The setpoint is not missing, it is zero.
+- `NavKillThrottle()` / `NavResurrect()` (navigation.h:229) are **no-ops unless
+  already in AP_MODE_NAV**.
+- `NavSetWaypointHere` == `waypoint_set_here_2d` — **horizontal only**, never
+  sets altitude.
+- **With an RC link connected the RC 3-way switch is the mode authority**:
+  `autopilot_static_on_rc_frame()` re-derives the mode every RC frame and stamps
+  back any GCS `autopilot_set_mode()`. A GCS button can prepare a target but
+  cannot perform a handover. (Same effect already documented in the
+  Flat_Traj_Demo block.)
+- **Block-level `pre_call` runs every nav tick** at the top of the block, before
+  the stage switch (gen_flight_plan.ml:715) — the hook for "track until the mode
+  changes, then freeze".
+- `call_once` / `pre_call` bodies are emitted **verbatim**; `cond=` / `alt=` go
+  through the expression parser. So `@DEREF` works in the latter only, `->` in
+  both.
+- The flight-plan `<header>` is emitted **before** the `WP_*` defines, so header
+  helpers cannot reference waypoint ids.
+
+## Do-Not-Repeat additions (2026-08-21 — SITL arming)
+
+- **Hoops_111_MFC SITL currently does not arm**: `arming_status` stays at
+  `AP_ARMING_STATUS_NO_RC` (0), motors never come on, no takeoff. Verified NOT
+  caused by the flat_traj_demo flight-plan edit (stash + rebuild + rerun of the
+  identical nav sequence reproduces it). **Intermittent** — the first run of the
+  2026-08-21 session armed and flew, every later run did not. Unexplained.
+  Do not treat a SITL "it didn't take off" as a control-law result until arming
+  is confirmed: check `/uav/MODE/arming` in the CSV first.

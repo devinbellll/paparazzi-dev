@@ -718,6 +718,7 @@
 - `krooz_sd_quad_pwm.xml` (~2304 tok)
 - `lisa_asctec.xml` (~2088 tok)
 - `logger_sd.xml` (~300 tok)
+- `logger_mfc_csv.xml` — module XML for the on-board MFC wide-CSV logger: deps (logger_utils), 500 Hz periodic, GCS settings (run/decim/drops/nan), and SDLOG_NUM_FILES=3 on the ap target (~700 tok)
 - `quad_cc3d.xml` (~2039 tok)
 - `quad_cjmcu.xml` (~2293 tok)
 - `quad_flip32.xml` (~2219 tok)
@@ -1074,6 +1075,17 @@
 - `stabilization_mfc.c` (~13268 tok)
 - `stabilization_mfc.h` — PPRZ command to each actuator (~728 tok)
 
+## paparazzi/sw/airborne/modules/loggers/
+
+- `logger_mfc_csv.c` — On-board wide-CSV logger for the MFC stack. 141 columns
+  named with the canonical `/uav/BRANCH/field` PlotJuggler keys, generated from
+  one X-macro list so header and row cannot drift. Own fixed-point float
+  formatter (NaN/Inf -> 0 + counter) and a chunked writer that stays under
+  SDLOG_MAX_MESSAGE_LEN. Runs on ChibiOS (own sdLog file) and on nps (plain
+  file, periodic fflush). (~3900 tok)
+- `logger_mfc_csv.h` — decimation / run / rows / drops / nan externs + the three
+  entry points (~450 tok)
+
 ## paparazzi/sw/airborne/modules/ctrl/
 
 - `eff_scheduling_rotwing_V2.c` — Declares into (~4590 tok)
@@ -1136,3 +1148,10 @@
 
 - `scope2csv.py` — scope2csv.py — write NPS scope packets to the wide `/uav/...` CSV schema. (~2209 tok)
 - `sdlog2scope.py` — sdlog2scope.py — convert a raw Paparazzi flight log (.log + .data) into the (~2626 tok)
+
+## Darko flatness spine (added 2026-08-20)
+
+- `flatness_darko.c` — Darko tailsitter flatness spine: force transform (eqs 17/21/22/23), applied wrench, sequential allocation (eqs 37/38/6/40/39). Stage 1, no controller. (~5200 tok)
+- `flatness_darko.h` — Darko spine API + measured plant constants + the AERO/HOVER frame contract and the three footguns. (~3400 tok)
+- `flatness_darko_test.c` — 53 analytic property checks on the Darko spine (no golden traces; MATLAB unavailable). (~3600 tok)
+- `run_flatness_darko.sh` — Runner for the Darko property checks; real pprz algebra, links flatness_quad.c for the reused attitude error. (~300 tok)

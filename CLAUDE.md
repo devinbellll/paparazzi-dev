@@ -126,6 +126,42 @@ emulation; keeps `USE_LTO=no`). Scripts are unchanged — only the image platfor
 | `pprz.sh <cmd> AIRCRAFT [TARGET]` | The build tool. `build` (incremental), `clean`, `rebuild`, `db` (compile_commands.json for clangd, `/workspace`→host rewritten), `codegen`, `bootstrap`. Runs native in-container, else dispatches into one. Accepts the VSCode picker form `"AIRCRAFT (target)"` too. |
 | `sim.sh [--no-build] <sim_anton flags>` | Build the `nps` target (build-if-needed via `pprz.sh build`) and run the NPS sim in a container (IVY local; PlotJuggler/FlightGear stream to the Mac). |
 
+### Running the sim headless: it never exits, so budget ~30 s
+
+**`./sim.sh` does not terminate on its own.** `sim_anton.py` ends in
+`while True: time.sleep(1)` and has no `--duration` flag, so the run continues
+until something kills it. Always wrap it:
+
+```bash
+timeout 45 ./sim.sh Hoops_111_MFC --no-build --nav "Start Engine,Takeoff,+15,Standby"
+```
+
+**A non-zero exit is the expected outcome** — 124 from `timeout`'s SIGTERM, 137
+if it escalates to SIGKILL. Neither means the sim failed. Judge the run by its
+stdout and its output files, never by the exit code.
+
+**Size the timeout from the nav sequence, not from caution.** NPS runs
+real-time, so wall clock ≈ sim time:
+
+    timeout ≈ (sum of the `+N` waits in --nav) + ~20 s startup margin
+
+Startup (FDM init, GPS fix, datalink up) is ~15 s. So `--nav
+"Start Engine,Takeoff,+15,Standby"` needs `timeout 45`, not 300. **~30–60 s of
+wall clock is enough for almost any diagnostic question** — does it arm, does a
+signal appear, is the sign right, does the log file get written, does the
+estimator diverge in the first seconds. Multi-minute runs buy nothing and block
+the session for minutes at a time; only reach for them when the question is
+genuinely about long-horizon behaviour (slow drift, integrator windup over
+minutes), and say so.
+
+Two consequences of always being killed:
+
+- **The container gets SIGKILLed, so nothing is flushed at exit.** Anything
+  relying on an atexit/`fclose`/close-on-shutdown path loses its tail. Log
+  writers meant to survive must flush periodically, not only on close.
+- Files land in the bind-mounted repo, so they survive the kill — check
+  `sim_logs/` for what actually got written rather than trusting stdout alone.
+
 ## VSCode integration (native Mac + Docker Desktop)
 
 VSCode runs natively on the Mac and dispatches builds to its own Docker Desktop
