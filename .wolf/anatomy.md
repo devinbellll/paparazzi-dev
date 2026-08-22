@@ -1159,3 +1159,13 @@
 ## HEOL rung-5 tooling (added 2026-08-22)
 
 - `heol_rung5_metrics.py` — Fixed-absolute-window SITL metrics for the HEOL guidance channels: per-phase position-error RMS x/y/z, peak error, percentage of samples on the ±0.3491 rad bank clamp, F_hat range. Prints a time-backstep count so a CSV corrupted by two concurrent sim containers is caught before it is read. (~700 tok)
+
+## Darko FINDI controller, stage 2 (added 2026-08-22)
+
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi_darko_law.h` — The PURE half of the Darko FINDI controller: AERO<->HOVER frame maps (including the rmat map), eq. (tsPD) attitude law, the moment increment, the SI->normalised actuator maps, the force tilt limiter. Depends only on pprz_algebra_float.h so a host harness can include it alone. Carries the frames/axis-correspondence documentation. (~2200 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi_darko.c` — The module. Applied wrench from the filtered actuator model, a_tilde, Om_lpf/Omdot_lpf in AERO, outer position loop + linear increment, flatness force transform, eq. (tsPD), angular increment, sequential allocation, and the actuators_pprz commit with the mirrored-elevon sign map. Owns the oneloop framework dispatch (guidance hooks latch only). Carries GUIDANCE_FINDI_DARKO_TRANSFORM_V_SCALE. (~6500 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi_darko.h` — Module interface, the per-tick chain, and the tunables exposed to the GCS. (~1500 tok)
+- `conf/modules/oneloop_findi_darko.xml` — Module wiring + settings panel. Links flatness_darko.c and flatness_quad.c (the latter only for the reused attitude error). (~900 tok)
+- `conf/airframes/ENAC/hybrid/darko_findi.xml` — DARKO_FINDI (ac_id 19). Airframe twin of darko.xml, identical outside the control stack so the baseline comparison is controlled. Holds the FINDI gains, the two simulator actuator calibrations, the TRANSFORM_V_SCALE diagnostic and the NPS noise switch. (~2800 tok)
+- `tests/oneloop_findi_darko_test.c` — 55 analytic property checks on the law and its composition with the spine: frames, rmat map, axis correspondence through the real allocator, tsPD, the increment identity, actuator maps, the elevon sign against the SITL plant's own coefficients, the hover chain end to end, the tilt limiter. (~4200 tok)
+- `tests/run_oneloop_findi_darko.sh` — Runner for the above; real pprz algebra, no stubs. (~300 tok)

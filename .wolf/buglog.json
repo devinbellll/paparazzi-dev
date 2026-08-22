@@ -4941,6 +4941,61 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-22T00:53:23.973688+00:00"
+    },
+    {
+      "id": "bug-290",
+      "timestamp": "2026-08-22T01:05:07.944703+00:00",
+      "error_message": "cc1: fatal error: tests/flatness_darko_test.c: No such file or directory (and three more, all of which exist)",
+      "file": "pprz_docker.sh (environment, not code)",
+      "root_cause": "pprz_docker.sh bind-mounts $WORKSPACE_DIR at /workspace. The sandbox set WORKSPACE_DIR to the vault root, not the repo root (Firmware/paparazzi_dev), so every in-container path was one level off.",
+      "fix": "export WORKSPACE_DIR=/Users/devinbellll/Workspace/ENAC-Workspace/Firmware/paparazzi_dev before pprz.sh / sim.sh / tests. Distinctive symptom: several source files reported missing at once, all present on disk.",
+      "tags": [
+        "environment",
+        "docker",
+        "workspace_dir",
+        "pprz_docker",
+        "build"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T01:05:07.944703+00:00"
+    },
+    {
+      "id": "bug-291",
+      "timestamp": "2026-08-22T01:05:07.944703+00:00",
+      "error_message": "axis: PITCH is the same axis in both frames  FAIL  <- got 0.004999999888241291, want 0.0050000000000000001",
+      "file": "tests/oneloop_findi_darko_test.c",
+      "root_cause": "ck_exact() compared a float value promoted to double against a double literal, so it tested float representation rather than the frame map it claimed to test.",
+      "fix": "Use ck_near(..., 1e-9) for any value that has been through a float. ck_exact is only valid for values copied, negated or unchanged.",
+      "tags": [
+        "tests",
+        "float",
+        "harness",
+        "frames",
+        "findi_darko"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T01:05:07.944703+00:00"
+    },
+    {
+      "id": "bug-292",
+      "timestamp": "2026-08-22T01:05:07.944703+00:00",
+      "error_message": "DARKO_FINDI diverged 178 m in SITL on the first flight; pitch drifted to +69 deg while zeta_e stayed ~0",
+      "file": "conf/airframes/ENAC/hybrid/darko_findi.xml + conf/simulator/jsbsim/aircraft/cyclone.xml",
+      "root_cause": "NOT a port bug. The airframe simulates JSBSim 'cyclone', which is not DarkO: its wing makes 0.74 N of lift at 5 m/s against the DarkO model's 8.96 N (12x). The flatness force transform is an open-loop aerodynamic inversion, so it hands most of the weight to a wing that is not there and commands 62 deg of tilt at 5 m/s; speed then grows -> more tilt -> positive feedback. zeta_e ~ 0 during the departure was the tell: the aircraft was TRACKING a bad command, not failing to track a good one. Reproduces with every NPS noise source zeroed, so it is structural.",
+      "fix": "Promoted GUIDANCE_FINDI_DARKO_TRANSFORM_V_SCALE (module default 1.0 = the published law); at 0 the transform reduces to pure thrust vectoring and the aircraft hovers to 0.098 m rms. Real fix is a JSBSim model matching flatness_darko.h's measured constants; until that exists no SITL result speaks to the aerodynamic half of the inversion.",
+      "tags": [
+        "findi_darko",
+        "jsbsim",
+        "plant_mismatch",
+        "flatness",
+        "sitl",
+        "divergence"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T01:05:07.944703+00:00"
     }
   ]
 }

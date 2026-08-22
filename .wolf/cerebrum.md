@@ -1126,3 +1126,101 @@
   a matching number. Flagged in the airframe comment as an open decision for the
   author — either the sim follows the firmware to wn=4 or the firmware returns
   to wn=2.
+
+## Key Learnings additions (2026-08-22 — Darko FINDI controller, stage 2)
+
+- **The NPS plant `darko.xml` simulates is NOT DarkO.** `NPS_JSBSIM_MODEL` is
+  `cyclone` — Ewoud Smeur's Cyclone. Measured out of the model files:
+  mass 1.089 kg vs DarkO's 0.492, hover-roll J 0.0179 vs 0.00606, hover-yaw J
+  0.0203 vs 0.007018, motor y-arm 0.2388 m vs `lTy` 0.155, and the wing makes
+  **0.74 N of lift at 5 m/s against the DarkO model's 8.96 N — 12x**. Any SITL
+  result for a model-based Darko controller has to state this. An INDI
+  increment absorbs the mass/inertia errors (they are loop-gain errors); it
+  does NOT absorb the wing, because the flatness force transform is an
+  open-loop aerodynamic inversion.
+- **The flatness force transform is speed-sensitive far beyond intuition.**
+  With a pure hover force demand it commands `theta_h = -24.9 deg` at 2.5 m/s
+  and `-61.7 deg` at 5 m/s. It reads `norm(v)`, so a vertical CLIMB triggers it
+  too — the runaway starts during takeoff, not at some later transition.
+- **Two body frames, and the axis correspondence inverts.**
+  `flatness_darko.*` is AERO (thrust +x, hover pitch +pi/2); the firmware is
+  HOVER (thrust -z, hover pitch 0). `v_hover = [v_aero_z, v_aero_y, -v_aero_x]`.
+  So eq. (37)'s "yaw onto differential thrust" is, in hover axes, **ROLL onto
+  differential thrust**; hover YAW is `-aero ROLL` and goes to differential
+  flap. Transposing this rotates roll into yaw: a plausible wrong answer, not a
+  crash.
+- **Rotor 1 is the LEFT motor.** Two independent routes agree: the spine's
+  `m_z = lTy (T1 - T2)` with aero-z == hover-roll, and `darko.xml`'s
+  flight-proven `G1_ROLL = {0, 0, -15, +15}` for `[ele_l, ele_r, RM, LM]`.
+- **Darko's elevons are mounted MIRRORED** ("min vers le haut" / "min vers le
+  bas"), so equal-sign pprz is equal-and-opposite physical deflection. The pprz
+  mapping carries the mirror (`+kf d1`, `-kf d2`); the law does not. One sign
+  choice makes both plant axes (pitch and yaw) agree — that is the check.
+- **Calibrate an SI->command map by SLOPE, not by value.** In an incremental
+  loop a value offset is absorbed (the increment integrates on the command);
+  a slope error IS the loop gain. `W_FULL_CMD = 1300 rad/s` and
+  `D_FULL_CMD = 0.638 rad` were set that way and the pitch moment then matched
+  the plant to 0.05 % (-0.017732 vs -0.017724 N*m).
+- The measured inner gains `k_xi = 25, k_om = 7` worked FIRST TRY on a plant
+  with 2.9x the modelled roll and yaw inertia, with no retuning. The
+  incremental structure absorbed it. Do not read that as the gains being
+  loose — the brief's sweep shows the usable band is narrow.
+- `--set` in `sim_anton.py` is applied **after the whole `--nav` sequence
+  finishes** (`nav_sequence()`), so it cannot configure anything for the flight
+  itself. A diagnostic switch must go in the airframe XML and be rebuilt.
+
+## Do-Not-Repeat additions (2026-08-22 — Darko FINDI)
+
+- **2026-08-22: `WORKSPACE_DIR` pointed at the vault root, not `paparazzi_dev/`.**
+  `pprz_docker.sh` bind-mounts `$WORKSPACE_DIR` at `/workspace`, so every script
+  failed with "No such file or directory" on files that were plainly there.
+  A session launched anywhere other than the repo root must
+  `export WORKSPACE_DIR=/…/Firmware/paparazzi_dev` first. Symptom is
+  distinctive: `cc1: fatal error: <file>: No such file or directory` for four
+  files at once, all of which exist.
+- **2026-08-22: two concurrent sims corrupt each other's CSVs.**
+  `sim_anton.py` hard-codes the NPS scope port (9871) and the IVY bus (2010),
+  and `sim.sh` uses `--network host`. A run of mine was silently written with
+  another aircraft's data and only caught because the other worker's tooling
+  renamed it `.CONTAMINATED`. Before flying, check
+  `docker ps --filter ancestor=paparazzi-build:latest` is empty; after flying,
+  confirm `<log>_debug.log` names the JSBSim model you expected.
+- **2026-08-22: do not diagnose a diverging model-based controller before
+  checking the plant it is inverting.** Half an hour went into reading the
+  JSBSim model up front and it paid for itself immediately — the first flight's
+  divergence was attributable within minutes because the 12x wing mismatch was
+  already a known number. The tell was `zeta_e ~ 0` while `theta` drifted to
+  69 deg: the aircraft was TRACKING a bad command, not failing to track a good
+  one. Attitude error near zero during a departure means look upstream of the
+  attitude loop.
+- **2026-08-22: `ck_exact()` in a host harness on a float computed value.**
+  `q_a.y` is a `float` promoted to `double`; comparing it `== 0.005` fails on
+  the seventh digit. Use `ck_near` for anything that has been through a `float`.
+
+## Decision Log additions (2026-08-22)
+
+- **Attitude law: eq. (tsPD), the single PD, NOT the canonical `.tex` cascade.**
+  Author's decision 2026-08-21. The measured gains belong to the single-PD
+  form. Recorded in `oneloop_findi_darko_law.h` with a "do not restore the
+  cascade" note.
+- **The pure half of the law lives in its own header**
+  (`oneloop_findi_darko_law.h`) rather than in the `.c`. The `.c` pulls
+  `state.h`, `autopilot.h` and `generated/airframe.h`, which a host harness
+  cannot supply; splitting the pure functions out is what makes 55 property
+  checks possible at all. Same reasoning that put the spine in
+  `flatness_darko.c`.
+- **`DARKO_FINDI` is a separate airframe, not a mode of `darko.xml`.** Same
+  pattern as `ANTON_FINDI` beside `ANTON`. Everything outside the control stack
+  is deliberately duplicated so the baseline comparison differs in the
+  controller and nothing else — do NOT "tidy" that duplication away.
+- **`GUIDANCE_FINDI_DARKO_TRANSFORM_V_SCALE` is a promoted diagnostic, module
+  default 1.0 (the published law).** `darko_findi.xml` sets it to 0 because
+  that is the configuration the reported hover was flown in, per the
+  restore-or-promote rule. It scales the velocity the FORCE TRANSFORM sees and
+  nothing else — the wrench and the allocator keep the true velocity, so the
+  incremental half is untouched. At 0 the controller is a hover-only thrust
+  vectorer and cannot transition.
+- **Added the named NPS noise switch to `darko.xml`** (`NPS_SENSORS_PARAMS` ->
+  `nps_sensors_params_anton_mfc.h`, `NPS_NOISE_SCALE = 1.`), byte-identical to
+  the stock defaults it replaces, purely so the baseline could be flown as a
+  no-noise/with-noise pair. No other change to the baseline airframe.
