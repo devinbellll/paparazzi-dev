@@ -4996,6 +4996,61 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-22T01:05:07.944703+00:00"
+    },
+    {
+      "id": "bug-293",
+      "timestamp": "2026-08-22T13:49:29.114507+00:00",
+      "error_message": "cc1: fatal error: tests/oneloop_fmfc_test.c: No such file or directory (and every other source path), while the container itself started fine",
+      "file": "tests/run_oneloop_fmfc.sh",
+      "root_cause": "pprz_docker.sh bind-mounts $WORKSPACE_DIR at /workspace. This session was launched from the vault root, so WORKSPACE_DIR pointed at the VAULT (.../ENAC-Workspace), not at paparazzi_dev. Every in-container path then resolved one level too high; the repo was actually at /workspace/Firmware/paparazzi_dev.",
+      "fix": "Pin WORKSPACE_DIR to the repo root inside the runner (export WORKSPACE_DIR=\"$SCRIPT_DIR\" before sourcing pprz_docker.sh). For pprz.sh / sim.sh invocations, prefix with WORKSPACE_DIR=\"$PWD\".",
+      "tags": [
+        "docker",
+        "pprz_docker.sh",
+        "WORKSPACE_DIR",
+        "bind-mount",
+        "tests",
+        "harness"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T13:49:29.114507+00:00"
+    },
+    {
+      "id": "bug-294",
+      "timestamp": "2026-08-22T13:49:29.114507+00:00",
+      "error_message": "B5 F_hat[0] == num[0] / the SHARED den -- FAIL, got 0, want 2.92 (estimator reported F_hat identically zero well past est_hold_time)",
+      "file": "tests/oneloop_fmfc_test.c",
+      "root_cause": "Harness bug, not a firmware bug. stub_sys_time is global and mfc_mimo_reset() latches start_time from it. A bracket constructed while the clock still held the PREVIOUS check group's value (~1.2 s) then ran at negative elapsed time, so `valid` never went true and F_hat stayed 0. Looked exactly like an est_hold_time defect.",
+      "fix": "Zero stub_sys_time inside make_fi()/make_m() and at the top of run_heol_2v(), so every check group is independent of the ones before it.",
+      "tags": [
+        "tests",
+        "harness",
+        "mfc_core_mimo",
+        "estimator",
+        "sys_time",
+        "stub"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T13:49:29.114507+00:00"
+    },
+    {
+      "id": "bug-295",
+      "timestamp": "2026-08-22T13:49:29.114507+00:00",
+      "error_message": "A4 command[2] == u*[2] + du[2] -- FAIL, got -7.5280003547668457, want -7.5280005037784576",
+      "file": "tests/oneloop_fmfc_test.c",
+      "root_cause": "The check widened both operands to double and added, while the module adds them as floats. One float rounding separated them, so an exact-equality assertion on a correct implementation failed.",
+      "fix": "Do the addition in float and widen afterwards: ck_exact(n, b.command[i], (float)(u_star[i] + b.du[i])). Same class of fix applied to B5, which needed a RELATIVE tolerance because the core divides num/den in float.",
+      "tags": [
+        "tests",
+        "float-precision",
+        "harness",
+        "assertion"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T13:49:29.114507+00:00"
     }
   ]
 }

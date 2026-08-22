@@ -1224,3 +1224,87 @@
   `nps_sensors_params_anton_mfc.h`, `NPS_NOISE_SCALE = 1.`), byte-identical to
   the stock defaults it replaces, purely so the baseline could be flown as a
   no-noise/with-noise pair. No other change to the baseline airframe.
+
+## Key Learnings additions (2026-08-22 — ANTON FMFC, brackets on the quad FINDI spine)
+
+- **`mfc_core_mimo`'s feedback has exactly three lanes (`kp*e`, `kd*e_dot`,
+  `ki*int e`) and an FMFC bracket's `f_b` fits none of them.** The linear
+  bracket's `a_c` has a third, acceleration-order term (`ka*e_a`); the angular
+  bracket's `f_b` is built from the RAW attitude error and RAW body rate while
+  the *same bracket's* estimator drive is the FILTERED attitude error. The
+  settled pattern: **the caller forms `f_b` in full and injects it through the
+  core's single derivative lane with `kd = 1`, `kp = ki = 0`,
+  `use_external_derivative = true`, `deriv_filter = 0`.** `kd = 1` is then a
+  structural pass-through, not a damping gain, and the estimator drive stays
+  independent of the feedback — which is what the spec describes. Do NOT read
+  that `kd = 1` as a tuning value.
+- **`heol_mimo` is the same structure but must not be widened.** `HEOL_MIMO_N`
+  is a compile-time 2 baked into its struct AND into the signatures of
+  `heol_mimo_set_alpha()` / `heol_mimo_run()`, and its only caller (the
+  horizontal guidance channel) is flying. A 3-vector consumer gets its own
+  wrapper (`oneloop_fmfc_law.h`, `oneloop_fmfc_darko_law.h`) that the flying
+  stack never links. `mfc_core_mimo` itself is already width-parametric and
+  stays untouched.
+- **Assert the bit-identity claim in the runner, not in prose.**
+  `tests/run_oneloop_fmfc.sh` runs `git diff --quiet cd0ba036f` over the six
+  shared `mfc_core*/heol_mimo*` files before it compiles anything. "The 2-vector
+  callers are untouched" is otherwise a claim that rots the first time someone
+  edits the core.
+- **`mfc_mimo_reset()` DOES clear `setpoint_trajec[]`.** The `mfc_siso_reset()`
+  hole fixed 2026-08-20 has no counterpart in the MIMO path — it clears the full
+  capacity of `setpoint_trajec`, `error`, `z`, `estimator_num` and
+  `estimator_den`. Verified directly (checks B6/B7); don't re-derive this.
+- **`WORKSPACE_DIR` is what `pprz_docker.sh` bind-mounts at `/workspace`.** A
+  session launched from the vault root inherits the VAULT path there, so every
+  in-container path resolves one level too high. Symptom:
+  `cc1: fatal error: <every source file>: No such file or directory`, with the
+  container itself starting fine. Fix: `WORKSPACE_DIR="$PWD" ./pprz.sh ...`, or
+  pin it inside the script.
+- **`tests/stubs/` also shadows `math/pprz_algebra_float.h`, not just the
+  clock.** Any harness needing the REAL pprz algebra (e.g. `float_mat_inv_4d`)
+  plus a driven clock must use `tests/stubs_clock/` instead — new, clock only.
+- **A host harness that drives `stub_sys_time` must ZERO it before constructing
+  each channel.** `mfc_mimo_reset()` latches `start_time` from the clock, so a
+  channel built while the clock still holds the previous group's value runs at
+  NEGATIVE elapsed time and its estimator never goes valid — it reports `F_hat`
+  identically 0 and looks like a hold-time bug.
+- **The two FMFC ports resolved `ka` differently, on purpose.** The Darko port
+  dropped it ("no slot in an MFC bracket"); the quad port carries it inside the
+  composed `f_b`, which the `kd = 1` lane makes exact. Both are consistent with
+  their own spec item; do not "unify" them without checking both canon items.
+
+## Decision Log additions (2026-08-22 — ANTON FMFC)
+
+- **`u_prev` = the MEASURED applied wrench minus the nominal, written into
+  `command_est` BEFORE `mfc_mimo_run()`.** Spec part 3.2 writes it that way
+  (`f_i_prev - f_i*`, `m_prev - m*`) and open question Q3 records that the
+  `Memory` on `u_prev` inside both reference HEOL blocks is commented *through*
+  — no unit delay. Both point the same way. The core reads `command_est` while
+  forming `alpha @ d2u` and rewrites it in its history shift, so a write before
+  the call is consumed that same tick. **Q3 is not author-confirmed**, so this
+  lives behind a named, defaulted switch (`use_applied_u_prev`, default ON)
+  rather than being silent; OFF falls back to the core's own delayed command.
+- **No airframe define for `est_use_presat_command`, and an `#error` if one
+  appears.** Set explicitly to `false` at the call site on both brackets. A
+  module-XML define shadowing the core default is what hid the HEOL divergence
+  defect for three days (`cfede3078`); the `#error` makes the shadowing
+  structurally impossible rather than merely discouraged.
+- **Correction rails are expressed as multiples of a physical quantity** (4 g of
+  linear correction, 200 rad/s^2 of angular) so the number means something, and
+  they clamp the CORRECTION, not the total — there is no `u*` window to shift
+  by, unlike `heol_mimo`'s CLAMP_TOTAL. They are safety nets, not tuning; the
+  SITL hover touched neither in 38434 samples.
+
+## Do-Not-Repeat additions (2026-08-22 — ANTON FMFC)
+
+- **Do not compare a float computation against a double-precision right-hand
+  side with `ck_exact`.** `command == u* + du` fails on rounding alone if the
+  harness widens before adding. Do the arithmetic in float, then widen.
+- **Do not re-derive the FMFC estimator windows.** They exist:
+  `FFilter_fi = 500`, `F_hold_time_fi = 0.5`, `FFilter_m = 20`,
+  `F_hold_time_m = 0.5`, from `flat_mfc_quad_params.m`. An older spec revision
+  said to derive them from golden traces because none existed; that was wrong.
+- **Do not quote a tracking figure from an untuned integration build.** The
+  gains are the FINDI GA values carried over as placeholders and the Simulink
+  reference is itself not fine-tuned, so a good number would be luck and a bad
+  one uninformative. Report arming, holding and boundedness; nothing else.
