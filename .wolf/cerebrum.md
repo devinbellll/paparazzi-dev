@@ -1048,3 +1048,81 @@
   2026-08-21 session armed and flew, every later run did not. Unexplained.
   Do not treat a SITL "it didn't take off" as a control-law result until arming
   is confirmed: check `/uav/MODE/arming` in the CSV first.
+
+## Key Learnings additions (2026-08-22 — HEOL rung-5 re-run)
+
+- **The HEOL horizontal loop is small-signal stable and large-signal unstable.**
+  It holds a stationary reference at 0 % bank-rail and 0.16/0.26 m RMS (0.02 m
+  with noise off). A ~1 m reference step drives the tilt command onto the
+  ±0.3491 rad clamp and it never comes off — 70–84 % of the flat-traj block
+  railed, peak error 24 m, and a ±2 m limit cycle that persists after the
+  autopilot deroutes back to plain Standby. Deroute does not reset it. So the
+  fault is not the guided setpoint path and not the trajectory; it is the
+  saturation behaviour of the loop itself.
+- **`F_hat` no longer runs away.** The 2026-08-19 signature was −143 by t = 15 s.
+  It is now bounded within ±24 m/s² and within ±2.2 m/s² in the late hold. The
+  `est_use_presat_command` fix held. A bounded estimator and a flying loop are
+  different claims — this one is bounded and does not fly.
+- **`Flat_Traj_Demo` is a ~1.5 m step-and-hold, not a trajectory.** After
+  `cef3454d3` the reference ramps to (1.00, 1.00) m in ~1.5 s and then sits
+  exactly constant for the remaining 38 s, with the flatness feedforward back at
+  zero by t ≈ 24 s. Any statement about "trajectory tracking" on this airframe
+  is really a statement about holding a 1 m offset point. Read `sp_x`/`sp_y`
+  before describing a run as tracking anything.
+- **`anton_heol.xml` had no NPS noise plumbing at all** until this session. It
+  now carries the same contract as `anton_mfc.xml`:
+  `NPS_SENSORS_PARAMS = nps_sensors_params_anton_mfc.h` plus
+  `NPS_NOISE_SCALE`. `NOISE_SCALE = 1.` was verified bit-identical to the stock
+  implicit configuration (two runs agreeing to three decimals), not assumed.
+- **NPS SITL on this airframe is deterministic** — the same build and the same
+  `--nav` reproduce to three decimals. That is what makes an A/B possible at
+  all, and it is also what makes a *contaminated* log obvious.
+
+## Do-Not-Repeat additions (2026-08-22)
+
+- **Do not A/B a parameter while the loop is saturated.** The deriv-filter A/B
+  looked like it favoured 0 (rail 84.2 % → 78.4 %) until the control run: the
+  same configuration with the engagement time shifted by one second moved the
+  rail figure 5.4 points, as much as any filter setting did. In a bang-bang
+  limit cycle RMS and rail percentage are chaos, not signal. **Run a
+  perturbation control — shift the nav timing by a second — before believing a
+  difference between two configurations.**
+- **Do not derive the analysis window from the run's own data.** Scoring each
+  run over "when its reference was moving" made a spurious 3× vertical
+  difference appear; different configurations ended their reference motion at
+  different times, so some windows swallowed the Standby altitude step and
+  others did not. Fixed absolute sim-time windows only.
+- **Kill leftover sim containers before every run.** `sim.sh` uses
+  `--network host`; two live sims share one IVY bus and one scope port and their
+  telemetry interleaves into a single CSV. `timeout` kills the `docker run`
+  client, not reliably the container. Always
+  `docker ps -q | xargs -r docker kill` before and after, and check time
+  monotonicity before reading a log — `tools/heol_rung5_metrics.py` prints a
+  backstep count for exactly this.
+- **`WORKSPACE_DIR` is the sandbox LAUNCH root, not the repo root.** If Claude
+  Code is launched above `paparazzi_dev` (e.g. at the vault root), every
+  `pprz.sh` / `sim.sh` dispatch fails with `stat ./pprz.sh: no such file or
+  directory` because `/workspace` is bound to the wrong directory. Prefix with
+  `WORKSPACE_DIR=<abs path to paparazzi_dev>`.
+- **A stale comment beside a live `#define` is the recurring defect in this
+  airframe.** `HXY_KP` drifted for weeks under a comment claiming sim parity;
+  `HXY/GZ_DERIV_FILTER` did the same for two days. `mfc_deriv_filter_step()` is
+  applied unconditionally — `use_external_derivative` picks *which* derivative
+  feeds the PD, not whether it is filtered — so there is no interlock behind the
+  "enable the pair, or neither" rule, only the comment. When a commit changes a
+  define, the comment above it is part of the change.
+
+## Decision Log additions (2026-08-22)
+
+- **Deriv filters reverted 20 → 0 on the pair rule, explicitly not on a
+  measurement.** The A/B was run and could not discriminate. Reverting restores
+  agreement between the file and its own documented rule and leaves
+  `cef3454d3`'s change recorded as unvalidated rather than as refuted. It should
+  be revisited only once the loop stops railing, and then together with
+  `*_USE_MEASURED_VEL` and a `kd` retune.
+- **`GZ_KP`/`GZ_KD` left at 16/12 (wn=4, ζ=1.5) despite the sim's 4/6.** The
+  vertical measures 0.005–0.009 m through the trajectory block and is the one
+  healthy channel; breaking it for parity would be trading a working channel for
+  a matching number. Flagged in the airframe comment as an open decision for the
+  author — either the sim follows the firmware to wn=4 or the firmware returns
+  to wn=2.

@@ -1155,3 +1155,7 @@
 - `flatness_darko.h` — Darko spine API + measured plant constants + the AERO/HOVER frame contract and the three footguns. (~3400 tok)
 - `flatness_darko_test.c` — 53 analytic property checks on the Darko spine (no golden traces; MATLAB unavailable). (~3600 tok)
 - `run_flatness_darko.sh` — Runner for the Darko property checks; real pprz algebra, links flatness_quad.c for the reused attitude error. (~300 tok)
+
+## HEOL rung-5 tooling (added 2026-08-22)
+
+- `heol_rung5_metrics.py` — Fixed-absolute-window SITL metrics for the HEOL guidance channels: per-phase position-error RMS x/y/z, peak error, percentage of samples on the ±0.3491 rad bank clamp, F_hat range. Prints a time-backstep count so a CSV corrupted by two concurrent sim containers is caught before it is read. (~700 tok)

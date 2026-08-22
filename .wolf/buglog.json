@@ -4867,6 +4867,80 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-21T12:00:00Z"
+    },
+    {
+      "id": "bug-286",
+      "timestamp": "2026-08-22T00:53:23.973688+00:00",
+      "error_message": "docker: exec: \"./pprz.sh\": stat ./pprz.sh: no such file or directory",
+      "file": "pprz_docker.sh (no code change \u2014 invocation)",
+      "root_cause": "pprz_run bind-mounts ${WORKSPACE_DIR:-<repo root>} to /workspace. WORKSPACE_DIR is set by the sbx sandbox to the LAUNCH root. When Claude Code is launched above the repo (e.g. at the vault root) WORKSPACE_DIR points at the vault, so /workspace is the vault and /workspace/pprz.sh does not exist. It is only correct when the sandbox happens to be rooted at the repo.",
+      "fix": "Prefix dispatches with the repo root: WORKSPACE_DIR=<abs path to paparazzi_dev> ./pprz.sh build ... and likewise for ./sim.sh.",
+      "tags": [
+        "docker",
+        "pprz.sh",
+        "sim.sh",
+        "WORKSPACE_DIR",
+        "sandbox",
+        "build"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T00:53:23.973688+00:00"
+    },
+    {
+      "id": "bug-287",
+      "timestamp": "2026-08-22T00:53:23.973688+00:00",
+      "error_message": "SITL CSV contained 3520 backwards time steps; metrics computed from it were meaningless",
+      "file": "sim_logs/mfc_sim_20260822_004035.csv (quarantined as .CONTAMINATED)",
+      "root_cause": "sim.sh runs the container with --network host, so every sim shares the sandbox netns, one IVY bus and one scope port. `timeout` kills the docker run CLIENT but the container can survive; a leftover sim then streams into the next run\u2019s CSV writer and the two runs interleave. A second worker running sims concurrently in this submodule makes this a live hazard.",
+      "fix": "Kill strays before and after every sim (docker ps -q | xargs -r docker kill) and verify time monotonicity before trusting a log. tools/heol_rung5_metrics.py now prints a backstep count and flags a contaminated file.",
+      "tags": [
+        "sim.sh",
+        "docker",
+        "nps",
+        "ivy",
+        "sim_logs",
+        "data-integrity"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T00:53:23.973688+00:00"
+    },
+    {
+      "id": "bug-288",
+      "timestamp": "2026-08-22T00:53:23.973688+00:00",
+      "error_message": "Vertical error appeared 3x worse with the derivative filter off \u2014 a measurement artefact, not a real effect",
+      "file": "analysis window (session tooling)",
+      "root_cause": "The scoring window was derived from each run\u2019s OWN reference motion. Different configurations end their reference motion at different times, so some runs\u2019 windows included the 3 m -> 2 m altitude step on the return to Standby and others did not. err_z RMS 0.027 m vs 0.008 m was that step drifting in and out of the window.",
+      "fix": "Score every run on FIXED absolute sim-time windows (12-21.5 / 22-62 / 63-76 / 76-end). On fixed windows the vertical is 0.0065-0.0090 m regardless of filter setting.",
+      "tags": [
+        "analysis",
+        "metrics",
+        "heol",
+        "sitl",
+        "false-positive"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T00:53:23.973688+00:00"
+    },
+    {
+      "id": "bug-289",
+      "timestamp": "2026-08-22T00:53:23.973688+00:00",
+      "error_message": "anton_heol.xml contradicted itself: HXY/GZ_DERIV_FILTER = 20 while the comment block above them said \"ZERO HERE\"",
+      "file": "conf/airframes/ENAC/quadrotor/anton_heol.xml",
+      "root_cause": "cef3454d3 set both deriv filters 0 -> 20 without touching *_USE_MEASURED_VEL and without updating the comment block that documents the pair rule. mfc_deriv_filter_step() is applied unconditionally (mfc_core.c:200-204, mfc_core_mimo.c:249-251), so the filter was live; use_external_derivative selects WHICH derivative feeds the PD, not whether it is filtered. There is no interlock, only the comment.",
+      "fix": "Reverted both to 0 on the pair rule (the A/B could not discriminate \u2014 the loop rails in every variant) and rewrote the comment block to state the unconditional application, the inconclusive A/B with its control run, and the retired 33.3/17.1 m figure.",
+      "tags": [
+        "heol",
+        "airframe",
+        "deriv-filter",
+        "stale-comment",
+        "define-shadowing"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-22T00:53:23.973688+00:00"
     }
   ]
 }
