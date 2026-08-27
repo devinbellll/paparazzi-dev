@@ -5156,7 +5156,7 @@
       "last_seen": "2026-08-27T18:20:00+00:00"
     },
     {
-      "id": "bug-300",
+      "id": "bug-301",
       "timestamp": "2026-08-27T19:15:00+00:00",
       "error_message": "ls: cannot access 'paparazzi/var/aircrafts/ANTON_FMFC/nps/obj/nps.elf': No such file or directory, immediately after './pprz.sh build ANTON_FMFC nps' exited 0 and printed '==> Done: /workspace/paparazzi/var/aircrafts/ANTON_FMFC/nps/obj/nps.elf'",
       "file": "pprz.sh",

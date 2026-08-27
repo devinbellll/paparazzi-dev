@@ -1409,3 +1409,27 @@
   [rad]. `est/F_*` lives on the far side of alpha, so `F_fi` is [m/s^2] and
   `F_m` is [rad/s^2]. `alloc/act/a_*` is the **modelled** actuator state (first
   order lag on `u`), not a measurement.
+
+## Key Learnings additions (2026-08-27 — the shared FLAT/ scope namespace)
+
+- **The flatness spine is shared, so its scope names are shared: `FLAT/`.**
+  `oneloop_findi.c` and `oneloop_fmfc.c` both register the SAME 45 names
+  (mode/*, lin/a_tilde, a_c, fi_prev, fi_c, flat/f, ang/zeta_e, dw_lpf, m_prev,
+  m_c, w_ref, dw_ref_y, dw_c_y, alloc/v,u,act). Only FMFC's 26 extra signals
+  (lin/fi_star_*, ang/m_star_*, the whole est/ tree) keep the `FMFC/` prefix.
+  Only one module links into a given aircraft, so shared names cannot collide
+  at runtime. One layout, 71 curves, no duplicates.
+- **Sharing a scope name does NOT mean identical composition, and two of the 45
+  are not.** `ang/dw_c_y`: FINDI is `k_rate(w_c - w) + dw_ref`, FMFC is
+  `k_rate(w_c - w)` (feedforward enters through `m* = I dw_ref`).
+  `lin/a_c_*`: FINDI is `a_ref + (kp e_p + kv e_v + ka e_a)` with
+  reference-minus-measurement errors, FMFC is `kp e_p + kv e_v + ka e_a` with
+  MEASUREMENT-MINUS-REFERENCE errors and no `a_ref` — it is the bracket's f_b
+  drive, so the two point OPPOSITE ways for the same error. Both are
+  deliberate. Do not harmonise either. Also milder: `mode/guidance` is 1 on
+  FMFC even with motors off, though its linear bracket only runs when
+  `motors_on`. `fi_prev` / `m_prev` ARE composed identically in both.
+- **The Darko modules deliberately stay on `FINDID/` / `FMFCD/`.** Their spine
+  is different (darko_wrench instead of a G1 multiply, sequential allocation
+  instead of a 4x4 inverse, AERO frame, two kinds of actuator), so a shared
+  `FLAT/` name would assert a commonality that does not hold.
