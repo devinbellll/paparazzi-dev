@@ -5154,6 +5154,27 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-08-27T18:20:00+00:00"
+    },
+    {
+      "id": "bug-300",
+      "timestamp": "2026-08-27T19:15:00+00:00",
+      "error_message": "ls: cannot access 'paparazzi/var/aircrafts/ANTON_FMFC/nps/obj/nps.elf': No such file or directory, immediately after './pprz.sh build ANTON_FMFC nps' exited 0 and printed '==> Done: /workspace/paparazzi/var/aircrafts/ANTON_FMFC/nps/obj/nps.elf'",
+      "file": "pprz.sh",
+      "root_cause": "pprz.sh prints a hardcoded '<AC>/<TARGET>/obj/<TARGET>.elf' done-line for every target. For the nps target that path is wrong twice over: the nps target has no obj/ subdirectory (objects sit directly under var/aircrafts/<AC>/nps/) and its link output is the executable 'simsitl', not 'nps.elf'. Only the ap target actually produces <TARGET>/obj/<TARGET>.elf. The done-line is an echo, not a check, so it prints a path that never existed and a fresh session concludes the build silently failed.",
+      "fix": "No code change made (pprz.sh is out of scope for this session). Rule: to check an nps build succeeded, test for var/aircrafts/<AIRCRAFT>/nps/simsitl, not for nps.elf. That is also the artifact bug-299 says 'db' wipes, and the one sim.sh runs.",
+      "tags": [
+        "pprz.sh",
+        "nps",
+        "simsitl",
+        "build",
+        "misleading-output",
+        "tooling"
+      ],
+      "related_bugs": [
+        "bug-299"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-27T19:15:00+00:00"
     }
   ]
 }

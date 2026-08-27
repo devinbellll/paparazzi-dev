@@ -1358,3 +1358,54 @@
   is the DOCUMENTED pre-merge state (untuned placeholder gains, tilt limiter
   railed, horizontal loop saturated open). The post-merge run reproduces the
   2026-08-22 numbers; it says nothing new about the controller.
+
+## Key Learnings additions (2026-08-27 — the flatness PlotJuggler layout)
+
+- **The nps target's artifact is `simsitl`, NOT `nps.elf`.** `pprz.sh` prints a
+  hardcoded `==> Done: var/aircrafts/<AC>/<TARGET>/obj/<TARGET>.elf` for every
+  target, but only `ap` actually produces that path. The nps target puts its
+  objects directly under `var/aircrafts/<AC>/nps/` (no `obj/` subdirectory) and
+  links to `var/aircrafts/<AC>/nps/simsitl`. Checking for `nps.elf` after a
+  successful nps build makes it look like the build silently failed. (bug-300;
+  it is the same artifact bug-299 says `pprz.sh db` wipes, and the one `sim.sh`
+  runs.)
+
+- **PlotJuggler layouts in this repo obey ONE UNIT PER PLOT, and that rule is
+  why `plotjuggler_heol.xml` and `plotjuggler_flatness.xml` exist as separate
+  files at all.** Two units on one y-axis squash the smaller-magnitude curve
+  into a band and make the larger one look like an excursion. Watch for arrays
+  that mix units internally: `findi_v` / `fmfc_v` is `[Mx, My, Mz, Fz]`, three
+  in [N*m] and one in [N], so it has to split across two plots even though it
+  is one C array. Same trap on the FMFC estimator tree, where the force bracket
+  and the moment bracket disagree on units for all four of `F`, `du`, `eps`
+  and `den`.
+
+- **One layout can cover two mutually exclusive controllers by carrying both
+  prefixes on every plot.** Only one of `oneloop_findi` / `oneloop_fmfc` links
+  into a given aircraft, so the other prefix's series do not exist in the feed
+  at all (confirmed: each SITL capture carries only its own prefix's columns,
+  45 FINDI / 71 FMFC). The empty half is informative rather than broken:
+  `fi_star`, `m_star` and `est/*` have no FINDI counterpart because INDI is an
+  increment with no nominal split and no estimator.
+
+- **A layout can be name-verified without opening it.** Set-compare the
+  `<curve name=...>` values against the header row of the run's
+  `sim_logs/mfc_sim_<TS>.csv` in both directions: curves absent from the
+  capture, and registered series left unplotted. That catches the actual
+  failure mode (a typo'd series name) which is otherwise invisible until
+  someone opens the file on the Mac.
+
+- **PlotJuggler is not installable in this sandbox** — no apt candidate, no pip
+  package. So no layout written here has ever been opened, and any claim about
+  its load behaviour (e.g. whether absent curves are ignored or complained
+  about) is inference from the existing layouts, not observation. Say so rather
+  than implying otherwise.
+
+- **`oneloop_fmfc` scope-var semantics that are not guessable from the names:**
+  `mode/flat_status` is `enum FlatnessQuadStatus` where **0 is the good value**
+  (1 FREE_FALL, 2 GIMBAL_LOCK, 3 BRANCH_DEGENERATE), the opposite sense to the
+  three booleans registered beside it. `est/eps_fi_*` is the raw **position**
+  error `e_p` in [m], not a force residual; `est/eps_m_*` is `-H(z) zeta_e` in
+  [rad]. `est/F_*` lives on the far side of alpha, so `F_fi` is [m/s^2] and
+  `F_m` is [rad/s^2]. `alloc/act/a_*` is the **modelled** actuator state (first
+  order lag on `u`), not a measurement.

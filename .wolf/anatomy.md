@@ -78,6 +78,7 @@
 - `Knowledge/09 - FlightGear 3D Visualization.md` — Setup guide, all gotchas, and verification steps for FG viz with NPS. (~800 tok)
 - `mfc_ivy_probe.py` — Temporary probe: tap the Ivy bus for STAB_MFC + GUIDANCE_MFC, print decoded (~535 tok)
 - `pj_json_relay.py` — apply_field_aliases, normalize_obj, repair_json_text, flush_word (~4644 tok)
+- `plotjuggler_flatness.xml` — ONE PlotJuggler layout for both flatness oneloop controllers: every plot carries the FINDI/ and FMFC/ series for the same quantity, so the unused prefix stays empty. SITL only (NPS scope, no telemetry). 9 tabs, 30 plots, all 116 registered series, one unit per plot. Its long header is the deliverable: flat_status is an enum with 0 good, alloc/v mixes N*m and N, the angular instrumentation is partial (w_ref x/y, dw_ref/dw_c y only), the two modules' linear error senses are opposite, FINDI's dw_c contains dw_ref and FMFC's does not, and the fi_c = fi_star + du_fi bracket identity is the FMFC estimator sign check. (~8326 tok)
 - `plotjuggler_heol.xml` (~5233 tok)
 - `plotjuggler_indi.xml` (~4317 tok)
 - `plotjuggler_mfc.xml` (~6856 tok)
@@ -291,6 +292,7 @@
 - `2026-08-19-heol-plotjuggler-and-divergence-check.md` — 2026-08-19 — HEOL PlotJuggler layout, post-fix SITL check, and the horizontal divergence root cause (~2039 tok)
 - `2026-08-20-darko-port-build-sitl.md` — 2026-08-20 — DarkO airframe port: build + SITL takeoff (~1481 tok)
 - `2026-08-27-fmfc-merge-to-mfc-development.md` — 2026-08-27 — merging both FMFC branches into `mfc-development` (outer 26a7f9a / submodule 03b32ddbc, plus the XML-comment fix): the three conflict resolutions and why, the 78 + 109 + flatness suites, four clean builds, both fleet parses, both SITL smoke runs, and what was NOT verified. (~1900 tok)
+- `2026-08-27-plotjuggler-flatness-layout.md` — 2026-08-27 — `plotjuggler_flatness.xml`: one layout for FINDI and FMFC. Tab/plot structure and the two deviations from the proposal (estimators on two tabs, alloc/v split), the source facts the header carries (flat_status enum sense, eps_fi is a position error, F_* units, dw_c differing between the modules), the two SITL name checks, and the fact that PlotJuggler could not be run here. (~1500 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 

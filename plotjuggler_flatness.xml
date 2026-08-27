@@ -1,0 +1,610 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  Flatness oneloop PlotJuggler layout: ANTON_FINDI (oneloop_findi.c) and
+  ANTON_FMFC (oneloop_fmfc.c), in ONE file.
+
+  THIS LAYOUT IS SITL ONLY. READ THIS BEFORE ANYTHING ELSE.
+  ========================================================
+  Every series below comes from an NPS_SCOPE_VAR registration inside
+  oneloop_findi.c / oneloop_fmfc.c. `nps_scope_var.h` gates the real macro on
+  USE_NPS, which only the sim / nps / hitl targets define, so on an `ap` build
+  those registrations compile to nothing. Neither module registers a periodic
+  telemetry message either. There is therefore NO real flight log that draws
+  this layout, and there is no partial fallback: on a flight log every tab here
+  is blank. That is the difference from plotjuggler_mfc.xml and
+  plotjuggler_indi.xml, which draw the shared pprzlink messages and work on
+  both feeds.
+
+  Transport is the same as the other layouts: one UDP Server on port 9870,
+  protocol JSON, timestamp field "timestamp". `pj_json_relay.py` rewrites the
+  aircraft root key to the fixed root "uav", so a firmware registration of
+  "FMFC/lin/a_c_x" arrives as the series /uav/FMFC/lin/a_c_x. The slashes in
+  the registration string are what build the tree; PlotJuggler does the
+  splitting, the relay does not.
+
+  WHY ONE FILE FOR TWO CONTROLLERS, AND WHY HALF OF IT IS EMPTY
+  =============================================================
+  Only one of the two modules links into a given aircraft, so only one prefix
+  ever carries data in a given session. Every plot below therefore holds BOTH
+  the FINDI/ and the FMFC/ series for the same quantity, and the other
+  controller's curves stay flat empty. Curve order inside a plot is always the
+  FINDI block first, then the FMFC block, in the same signal order.
+
+  A curve whose series is absent from the datasource is expected to be skipped,
+  the plot rendering with whatever it does have. plotjuggler_heol.xml is
+  already in that situation, since its HEOL_NOMINAL/* and HEOL_ALPHA/* curves
+  are SITL only while the rest of that layout is read off flight logs too. It
+  was NOT verified for this file on a load where roughly half the curves are
+  absent, because PlotJuggler cannot run in the sandbox this file was written
+  in. If it turns out to complain on load rather than ignore, the fallback is
+  two files sharing this header, split on the FINDI / FMFC line.
+
+  On an ANTON_FINDI run these are empty BY DESIGN, not because the layout is
+  broken:
+
+    lin/fi_star_*         the nominal force from the flat trajectory
+    ang/m_star_*          the nominal moment from the flat trajectory
+    the whole est/* tree  both ultra-local estimators
+
+  That emptiness IS the structural difference between the two controllers, and
+  it is the thing worth looking at. FINDI rejects the lumped disturbance
+  incrementally, on top of the wrench the actuators are currently applying:
+
+    f_i^c = f_i^prev + m (a_c minus a_tilde)
+    m_c   = m^prev  + I (dw_c minus dw_lpf)
+
+  There is no nominal split and no F estimator anywhere in it, so there is
+  nothing for those series to hold. FMFC keeps the entire FINDI spine and
+  replaces ONLY those two increments with 3-channel HEOL/MFC brackets, which
+  put the nominal OUTSIDE the correction and estimate the rest:
+
+    f_i^c = f_i* + m(-F_fi - a_c)
+    m_c   = m*  + I(-F_m  + dw_c)
+
+  So an empty estimator tab on ANTON_FINDI is the expected reading. An empty
+  estimator tab on ANTON_FMFC is a broken run.
+
+  INDEX AND SIGN CONVENTIONS A READER GETS WRONG OTHERWISE
+  ========================================================
+
+  mode/flat_status IS AN ENUM, NOT A FLAG, AND ZERO IS THE GOOD VALUE.
+      The other three mode series are booleans where 1 is healthy
+      (guidance = the linear half ran; nom_valid = the flat table gave a
+      nominal; alloc_ok = the allocator inverse is usable). flat_status is
+      enum FlatnessQuadStatus from flatness_quad.h and reads the other way:
+          0 = OK
+          1 = FREE_FALL          |f_i^c|/m below tolerance
+          2 = GIMBAL_LOCK        |cos theta| near zero with the branch OFF
+          3 = BRANCH_DEGENERATE  previous body y parallel to the thrust axis
+      On a degraded call the commanded attitude is the PREVIOUS call's, held,
+      while `flat/f` is still the freshly computed collective. So a nonzero
+      flat_status means the attitude command went stale without going flat.
+
+  THE ANGULAR INSTRUMENTATION IS DELIBERATELY PARTIAL. Do not add series for
+      the missing axes: they are not registered, and there is nothing to plot.
+          ang/w_ref_    x and y only
+          ang/dw_ref_   y only  (pitch)
+          ang/dw_c_     y only  (pitch)
+      There is no dw_c_x, no dw_c_z, no w_ref_z.
+
+  dw_c MEANS TWO DIFFERENT THINGS ON THE TWO PREFIXES, on the one plot that
+      carries dw_ref_y and dw_c_y together. FINDI forms
+      dw_c = k_rate (w_c minus w) + dw_ref, so its dw_c ALREADY CONTAINS the
+      feedforward. FMFC forms dw_c = k_rate (w_c minus w) with no dw_ref term
+      at all; there the feedforward enters through m* = I dw_ref and nowhere
+      else. Adding dw_ref back into the FMFC command would double count it. So
+      the two prefixes' dw_c_y curves are not the same signal and should not be
+      overlaid mentally as if they were.
+
+  THE LINEAR ERROR SENSE IS OPPOSITE BETWEEN THE TWO MODULES, on purpose.
+      FINDI's cascade uses reference minus measurement. FMFC's linear loop uses
+      MEASUREMENT MINUS REFERENCE, the MFC convention. Both are wired that way
+      deliberately and flipping either inverts its feedback. This is visible on
+      the accel tab: for the same position error the two a_c curves point
+      opposite ways, and neither is a bug.
+
+  alloc/v IS [Mx, My, Mz, Fz], WHICH IS TWO UNITS IN ONE ARRAY. v_0 to v_2 are
+      moments [N*m]; v_3 is the collective force [N]. That is why the
+      Allocation tab splits them across two plots rather than drawing one
+      "pseudo control" plot, which would squash the moments into a band the way
+      the MFC layout squashes position against thrust.
+
+  alloc/u AND alloc/act SHARE A UNIT but are not the same thing. Both are pprz
+      counts bounded to MAX_PPRZ. u_* is the command the allocator produced
+      this tick; a_* is the modelled actuator STATE, the first-order actuator
+      lag applied to u_*, and it is what the applied wrench f_i^prev / m^prev
+      is computed from. They get separate plots so the lag between them reads
+      as a lag rather than as noise.
+
+  flat/f IS NEGATIVE IN HOVER. It is the collective body z force in the NED
+      convention where down is positive, so more thrust is more negative. Same
+      for fi_c_z, fi_star_z and fi_prev_z.
+
+  THE ESTIMATOR SERIES ARE NOT FORCES AND NOT MOMENTS.
+      F_fi_0 to F_fi_2 is the force bracket's ultra-local state in [m/s^2], and
+      F_m_0 to F_m_2 is the moment bracket's in [rad/s^2], because
+      alpha_fi = (1/m) I and alpha_m = J^-1: F lives on the far side of alpha,
+      not on the command side. Multiplying by alpha inverse is what makes du.
+      du_fi_0 to du_fi_2 is [N] and du_m_0 to du_m_2 is [N*m]: the correction
+      ALONE, post clamp, with the nominal not yet added.
+      eps_* is the estimator DRIVE, and it is not a residual of the quantity
+      the bracket commands. eps_fi_0 to eps_fi_2 is the POSITION error e_p in
+      [m] (measurement minus reference). eps_m_0 to eps_m_2 is the NEGATED,
+      low-pass filtered attitude error, that is -H(z) zeta_e, in [rad].
+      den_fi and den_m are each bracket's shared scalar estimator denominator,
+      one per bracket with a per-element numerator over it. They carry no
+      physical unit, which is why they get their own plot.
+      Index 0,1,2 on the force bracket is NED x,y,z. Index 0,1,2 on the moment
+      bracket is BODY roll, pitch, yaw.
+      This is also why the estimator lives on two tabs and not one: the four
+      quantities are eight different units once the two brackets are counted
+      separately, and one unit per plot is the rule this layout exists to obey.
+
+  HOW TO TELL A BROKEN RUN FROM A TRACKING ONE
+  ============================================
+  Read the tabs in order. The first three checks are cheap and each one, if it
+  fails, makes everything after it meaningless.
+
+  1. mode/alloc_ok. If it drops to 0, STOP READING THE REST OF THE RUN. The
+     allocator inverse failed and every command downstream of it is undefined.
+     This is why the mode tab is first.
+  2. mode/flat_status. Nonzero means the attitude command is a held stale one
+     (see the enum above). Anything you conclude from the attitude error tab
+     during that interval is about an old setpoint.
+  3. Allocation, u_* and a_*. If u_* is sitting on its rails and switching
+     between them, that loop is bang-banging rather than tracking, exactly the
+     reading the HEOL layout's thrust and torque tabs call for. Check this
+     before reading any tracking quality off the accel or force tabs.
+
+  4. THE FORCE TAB IS THE FMFC HEALTH CHECK, and it is the reason that tab
+     carries fi_star and du at all. The bracket identity is
+
+         fi_c = fi_star + du_fi        with  du_fi = m(-F_fi - a_c)
+
+     so at a settled hover, where a_c is near zero, du_fi is essentially
+     -m F_fi. Knowledge/Sessions/2026-08-22-oneloop-fmfc-integration.md
+     records this closing in flight on the z channel of the integration run:
+
+         f_i*             = -m g       = -7.8480 N
+         F_fi_2 settled                =  1.4865 m/s^2
+         -m * F_fi_2                   = -1.1892 N  vs  du_fi_2 = -1.1899 N
+         f_i* + du_fi_2                = -9.0379 N  vs  f       = -9.0381 N
+
+     The correction is nonzero there for a known reason: that airframe's
+     MASS = 0.8 kg is a "TODO: measure" placeholder taken from the JSBSim
+     model, so the plant is about 15 percent heavier than the nominal the loop
+     inverts, and the estimator absorbs the whole mismatch as a steady
+     1.49 m/s^2 while hover holds. The note's own words for why this matters:
+     "had the estimator been mis-signed, this is the term that would have run
+     away instead of settling." So the reading is not "is F_fi_2 small" but
+     "does F_fi_2 SETTLE, and does fi_star + du_fi land on fi_c". A settled,
+     bounded estimate with the identity closing is the sign the estimator is
+     oriented correctly. A monotone runaway on F_fi_* or du_* pinned at a rail
+     is the sign it is not, and no amount of gain tuning fixes a sign.
+
+  5. Only then, tracking: a_tilde against a_c on the accel tab, zeta_e on the
+     attitude error tab, dw_lpf against dw_c_y on the angular tab.
+
+  A CAVEAT ON READING NUMBERS OFF ANTON_FMFC AT ALL: that module is integration
+  only. Its gains are the FINDI GA-tuned values with the brackets bolted on and
+  never retuned, so a good tracking figure from it would be luck. Use this
+  layout on FMFC to check STRUCTURE, which is what every check above is.
+
+  PROVENANCE OF THE SERIES NAMES
+  ==============================
+  Every name below was taken from the NPS_SCOPE_VAR / NPS_SCOPE_VARN blocks in
+  sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi.c (45 registrations)
+  and oneloop_fmfc.c (71 registrations), then confirmed against two SITL
+  captures on 2026-08-27, one per aircraft, by reading the column names out of
+  sim_logs/. NPS_SCOPE_VARN(prefix, base, type, count) expands to
+  prefix0 through prefix<count minus 1>, so "FMFC/est/F_fi_" at count 3 gives
+  F_fi_0, F_fi_1, F_fi_2. If you add a registration to either module, add its
+  curve here to the plot that already holds its unit rather than opening a new
+  plot for it.
+-->
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <Tab tab_name="Mode and health" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.250000;0.250000;0.250000;0.250000" orientation="-" count="4">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/mode/guidance" />
+         <curve color="#d62728" name="/uav/FMFC/mode/guidance" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/mode/nom_valid" />
+         <curve color="#d62728" name="/uav/FMFC/mode/nom_valid" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/mode/alloc_ok" />
+         <curve color="#d62728" name="/uav/FMFC/mode/alloc_ok" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/mode/flat_status" />
+         <curve color="#d62728" name="/uav/FMFC/mode/flat_status" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Linear: accel [m/s^2]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.333333;0.333333;0.333333" orientation="-" count="3">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/lin/a_tilde_x" />
+         <curve color="#d62728" name="/uav/FINDI/lin/a_c_x" />
+         <curve color="#1ac938" name="/uav/FMFC/lin/a_tilde_x" />
+         <curve color="#ff7f0e" name="/uav/FMFC/lin/a_c_x" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/lin/a_tilde_y" />
+         <curve color="#d62728" name="/uav/FINDI/lin/a_c_y" />
+         <curve color="#1ac938" name="/uav/FMFC/lin/a_tilde_y" />
+         <curve color="#ff7f0e" name="/uav/FMFC/lin/a_c_y" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/lin/a_tilde_z" />
+         <curve color="#d62728" name="/uav/FINDI/lin/a_c_z" />
+         <curve color="#1ac938" name="/uav/FMFC/lin/a_tilde_z" />
+         <curve color="#ff7f0e" name="/uav/FMFC/lin/a_c_z" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Linear: force [N]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.250000;0.250000;0.250000;0.250000" orientation="-" count="4">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/lin/fi_prev_x" />
+         <curve color="#d62728" name="/uav/FINDI/lin/fi_c_x" />
+         <curve color="#1ac938" name="/uav/FMFC/lin/fi_prev_x" />
+         <curve color="#ff7f0e" name="/uav/FMFC/lin/fi_star_x" />
+         <curve color="#f14cc1" name="/uav/FMFC/lin/fi_c_x" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/lin/fi_prev_y" />
+         <curve color="#d62728" name="/uav/FINDI/lin/fi_c_y" />
+         <curve color="#1ac938" name="/uav/FMFC/lin/fi_prev_y" />
+         <curve color="#ff7f0e" name="/uav/FMFC/lin/fi_star_y" />
+         <curve color="#f14cc1" name="/uav/FMFC/lin/fi_c_y" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/lin/fi_prev_z" />
+         <curve color="#d62728" name="/uav/FINDI/lin/fi_c_z" />
+         <curve color="#1ac938" name="/uav/FMFC/lin/fi_prev_z" />
+         <curve color="#ff7f0e" name="/uav/FMFC/lin/fi_star_z" />
+         <curve color="#f14cc1" name="/uav/FMFC/lin/fi_c_z" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/flat/f" />
+         <curve color="#d62728" name="/uav/FMFC/flat/f" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Attitude error [rad]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/ang/zeta_e_x" />
+         <curve color="#d62728" name="/uav/FINDI/ang/zeta_e_y" />
+         <curve color="#1ac938" name="/uav/FINDI/ang/zeta_e_z" />
+         <curve color="#ff7f0e" name="/uav/FMFC/ang/zeta_e_x" />
+         <curve color="#f14cc1" name="/uav/FMFC/ang/zeta_e_y" />
+         <curve color="#9467bd" name="/uav/FMFC/ang/zeta_e_z" />
+        </plot>
+       </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Angular: rate and accel" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.333333;0.333333;0.333333" orientation="-" count="3">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/ang/w_ref_x" />
+         <curve color="#d62728" name="/uav/FINDI/ang/w_ref_y" />
+         <curve color="#1ac938" name="/uav/FMFC/ang/w_ref_x" />
+         <curve color="#ff7f0e" name="/uav/FMFC/ang/w_ref_y" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/ang/dw_lpf_x" />
+         <curve color="#d62728" name="/uav/FINDI/ang/dw_lpf_y" />
+         <curve color="#1ac938" name="/uav/FINDI/ang/dw_lpf_z" />
+         <curve color="#ff7f0e" name="/uav/FMFC/ang/dw_lpf_x" />
+         <curve color="#f14cc1" name="/uav/FMFC/ang/dw_lpf_y" />
+         <curve color="#9467bd" name="/uav/FMFC/ang/dw_lpf_z" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/ang/dw_ref_y" />
+         <curve color="#d62728" name="/uav/FINDI/ang/dw_c_y" />
+         <curve color="#1ac938" name="/uav/FMFC/ang/dw_ref_y" />
+         <curve color="#ff7f0e" name="/uav/FMFC/ang/dw_c_y" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Moments [N*m]" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.333333;0.333333;0.333333" orientation="-" count="3">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/ang/m_prev_x" />
+         <curve color="#d62728" name="/uav/FINDI/ang/m_c_x" />
+         <curve color="#1ac938" name="/uav/FMFC/ang/m_prev_x" />
+         <curve color="#ff7f0e" name="/uav/FMFC/ang/m_star_x" />
+         <curve color="#f14cc1" name="/uav/FMFC/ang/m_c_x" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/ang/m_prev_y" />
+         <curve color="#d62728" name="/uav/FINDI/ang/m_c_y" />
+         <curve color="#1ac938" name="/uav/FMFC/ang/m_prev_y" />
+         <curve color="#ff7f0e" name="/uav/FMFC/ang/m_star_y" />
+         <curve color="#f14cc1" name="/uav/FMFC/ang/m_c_y" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/ang/m_prev_z" />
+         <curve color="#d62728" name="/uav/FINDI/ang/m_c_z" />
+         <curve color="#1ac938" name="/uav/FMFC/ang/m_prev_z" />
+         <curve color="#ff7f0e" name="/uav/FMFC/ang/m_star_z" />
+         <curve color="#f14cc1" name="/uav/FMFC/ang/m_c_z" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Estimator: force bracket (FMFC)" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.250000;0.250000;0.250000;0.250000" orientation="-" count="4">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FMFC/est/F_fi_0" />
+         <curve color="#d62728" name="/uav/FMFC/est/F_fi_1" />
+         <curve color="#1ac938" name="/uav/FMFC/est/F_fi_2" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FMFC/est/du_fi_0" />
+         <curve color="#d62728" name="/uav/FMFC/est/du_fi_1" />
+         <curve color="#1ac938" name="/uav/FMFC/est/du_fi_2" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FMFC/est/eps_fi_0" />
+         <curve color="#d62728" name="/uav/FMFC/est/eps_fi_1" />
+         <curve color="#1ac938" name="/uav/FMFC/est/eps_fi_2" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FMFC/est/den_fi" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Estimator: moment bracket (FMFC)" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.250000;0.250000;0.250000;0.250000" orientation="-" count="4">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FMFC/est/F_m_0" />
+         <curve color="#d62728" name="/uav/FMFC/est/F_m_1" />
+         <curve color="#1ac938" name="/uav/FMFC/est/F_m_2" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FMFC/est/du_m_0" />
+         <curve color="#d62728" name="/uav/FMFC/est/du_m_1" />
+         <curve color="#1ac938" name="/uav/FMFC/est/du_m_2" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FMFC/est/eps_m_0" />
+         <curve color="#d62728" name="/uav/FMFC/est/eps_m_1" />
+         <curve color="#1ac938" name="/uav/FMFC/est/eps_m_2" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FMFC/est/den_m" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Allocation" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.250000;0.250000;0.250000;0.250000" orientation="-" count="4">
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/alloc/v/v_0" />
+         <curve color="#d62728" name="/uav/FINDI/alloc/v/v_1" />
+         <curve color="#1ac938" name="/uav/FINDI/alloc/v/v_2" />
+         <curve color="#ff7f0e" name="/uav/FMFC/alloc/v/v_0" />
+         <curve color="#f14cc1" name="/uav/FMFC/alloc/v/v_1" />
+         <curve color="#9467bd" name="/uav/FMFC/alloc/v/v_2" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/alloc/v/v_3" />
+         <curve color="#d62728" name="/uav/FMFC/alloc/v/v_3" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/alloc/u/u_0" />
+         <curve color="#d62728" name="/uav/FINDI/alloc/u/u_1" />
+         <curve color="#1ac938" name="/uav/FINDI/alloc/u/u_2" />
+         <curve color="#ff7f0e" name="/uav/FINDI/alloc/u/u_3" />
+         <curve color="#f14cc1" name="/uav/FMFC/alloc/u/u_0" />
+         <curve color="#9467bd" name="/uav/FMFC/alloc/u/u_1" />
+         <curve color="#17becf" name="/uav/FMFC/alloc/u/u_2" />
+         <curve color="#bcbd22" name="/uav/FMFC/alloc/u/u_3" />
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot line_width="1.0" flip_x="false" flip_y="false" mode="TimeSeries">
+         <range right="40.000000" bottom="-10.000000" top="2.000000" left="10.000000" />
+         <limitY />
+         <curve color="#1f77b4" name="/uav/FINDI/alloc/act/a_0" />
+         <curve color="#d62728" name="/uav/FINDI/alloc/act/a_1" />
+         <curve color="#1ac938" name="/uav/FINDI/alloc/act/a_2" />
+         <curve color="#ff7f0e" name="/uav/FINDI/alloc/act/a_3" />
+         <curve color="#f14cc1" name="/uav/FMFC/alloc/act/a_0" />
+         <curve color="#9467bd" name="/uav/FMFC/alloc/act/a_1" />
+         <curve color="#17becf" name="/uav/FMFC/alloc/act/a_2" />
+         <curve color="#bcbd22" name="/uav/FMFC/alloc/act/a_3" />
+        </plot>
+       </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="0" />
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <parameters time_axis="" delimiter="0" />
+  </plugin>
+  <plugin ID="DataLoad MCAP" />
+  <plugin ID="DataLoad Parquet">
+   <default dateFromat="yyyy-MM-dd hh:mm:ss" parseDateTime="0" radioIndexChecked="0" prevTimestamp="" />
+  </plugin>
+  <plugin ID="DataLoad ULog" />
+  <plugin ID="Foxglove ROS2 Bridge">
+   <foxglove_client address="127.0.0.1" clamp_large_arrays="0" port="8765" max_array_size="500" use_timestamp="0">
+    <topics />
+   </foxglove_client>
+  </plugin>
+  <plugin ID="MQTT Subscriber (Mosquitto)" />
+  <plugin ID="PlotJuggler ROS2 Bridge">
+   <websocket_client address="127.0.0.1" clamp_large_arrays="0" port="9090" max_array_size="500" use_timestamp="0">
+    <topics />
+   </websocket_client>
+  </plugin>
+  <plugin ID="UDP Server" />
+  <plugin ID="WebSocket Server" />
+  <plugin ID="ZMQ Subscriber" />
+  <plugin ID="Fast Fourier Transform" />
+  <plugin ID="Quaternion to RPY" />
+  <plugin ID="Reactive Script Editor">
+   <library code="--[[ Helper function to create a series from arrays&#10;&#10; new_series: a series previously created with ScatterXY.new(name)&#10; prefix:     prefix of the timeseries, before the index of the array&#10; suffix_X:   suffix to complete the name of the series containing the X value. If [nil], use the index of the array.&#10; suffix_Y:   suffix to complete the name of the series containing the Y value&#10; timestamp:   usually the tracker_time variable&#10;              &#10; Example:&#10; &#10; Assuming we have multiple series in the form:&#10; &#10;   /trajectory/node.{X}/position/x&#10;   /trajectory/node.{X}/position/y&#10;   &#10; where {N} is the index of the array (integer). We can create a reactive series from the array with:&#10; &#10;   new_series = ScatterXY.new(&quot;my_trajectory&quot;) &#10;   CreateSeriesFromArray( new_series, &quot;/trajectory/node&quot;, &quot;position/x&quot;, &quot;position/y&quot;, tracker_time );&#10;--]]&#10;&#10;function CreateSeriesFromArray( new_series, prefix, suffix_X, suffix_Y, timestamp )&#10;  &#10;  --- clear previous values&#10;  new_series:clear()&#10;  &#10;  --- Append points to new_series&#10;  index = 0&#10;  while(true) do&#10;&#10;    x = index;&#10;    -- if not nil, get the X coordinate from a series&#10;    if suffix_X ~= nil then &#10;      series_x = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_X) )&#10;      if series_x == nil then break end&#10;      x = series_x:atTime(timestamp)&#09; &#10;    end&#10;    &#10;    series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_Y) )&#10;    if series_y == nil then break end &#10;    y = series_y:atTime(timestamp)&#10;    &#10;    new_series:push_back(x,y)&#10;    index = index+1&#10;  end&#10;end&#10;&#10;--[[ Similar to the built-in function GetSeriesNames(), but select only the names with a give prefix. --]]&#10;&#10;function GetSeriesNamesByPrefix(prefix)&#10;  -- GetSeriesNames(9 is a built-in function&#10;  all_names = GetSeriesNames()&#10;  filtered_names = {}&#10;  for i, name in ipairs(all_names)  do&#10;    -- check the prefix&#10;    if name:find(prefix, 1, #prefix) then&#10;      table.insert(filtered_names, name);&#10;    end&#10;  end&#10;  return filtered_names&#10;end&#10;&#10;--[[ Modify an existing series, applying offsets to all their X and Y values&#10;&#10; series: an existing timeseries, obtained with TimeseriesView.find(name)&#10; delta_x: offset to apply to each x value&#10; delta_y: offset to apply to each y value &#10;  &#10;--]]&#10;&#10;function ApplyOffsetInPlace(series, delta_x, delta_y)&#10;  -- use C++ indices, not Lua indices&#10;  for index=0, series:size()-1 do&#10;    x,y = series:at(index)&#10;    series:set(index, x + delta_x, y + delta_y)&#10;  end&#10;end&#10;" />
+   <scripts />
+  </plugin>
+  <plugin ID="CSV Exporter" />
+ </Plugins>
+ <previouslyLoaded_Datafiles />
+ <customMathEquations />
+ <snippets />
+ <colorMaps />
+</root>
