@@ -290,6 +290,7 @@
 - `2026-08-17-anton-mfc-sitl-tuning.md` — ANTON_MFC SITL rung 2: reference-filter/loop bandwidth mismatch (65% overshoot), wn 2–6 stability ceiling, both noise pairs, NPS noise switch + include-order bug (~4393 tok)
 - `2026-08-19-heol-plotjuggler-and-divergence-check.md` — 2026-08-19 — HEOL PlotJuggler layout, post-fix SITL check, and the horizontal divergence root cause (~2039 tok)
 - `2026-08-20-darko-port-build-sitl.md` — 2026-08-20 — DarkO airframe port: build + SITL takeoff (~1481 tok)
+- `2026-08-27-fmfc-merge-to-mfc-development.md` — 2026-08-27 — merging both FMFC branches into `mfc-development` (outer 26a7f9a / submodule 03b32ddbc, plus the XML-comment fix): the three conflict resolutions and why, the 78 + 109 + flatness suites, four clean builds, both fleet parses, both SITL smoke runs, and what was NOT verified. (~1900 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 

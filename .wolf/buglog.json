@@ -5093,6 +5093,67 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-08-22T13:59:49.547657+00:00"
+    },
+    {
+      "id": "bug-298",
+      "timestamp": "2026-08-27T18:35:00+00:00",
+      "error_message": "cc1: fatal error: tests/oneloop_fmfc_darko_test.c: No such file or directory (and every other source path) when running ./tests/run_oneloop_fmfc_darko.sh",
+      "file": "tests/run_oneloop_fmfc_darko.sh",
+      "root_cause": "Same root cause as bug-293, in the sibling runner. pprz_docker.sh bind-mounts $WORKSPACE_DIR at /workspace. run_oneloop_fmfc.sh pins WORKSPACE_DIR=\"$SCRIPT_DIR\" before sourcing pprz_docker.sh; run_oneloop_fmfc_darko.sh does NOT, so it inherits whatever the session exports. A session launched from the vault root (or from a worktree) has WORKSPACE_DIR pointing somewhere else and every in-container path resolves wrong, while the container itself starts fine.",
+      "fix": "Worked around for this session by invoking it as WORKSPACE_DIR=\"$PWD\" ./tests/run_oneloop_fmfc_darko.sh; the suite then runs and all 109 checks pass. The runner itself was NOT edited: this merge session was scoped to conflict resolution plus XML comment punctuation. The durable fix is the two lines run_oneloop_fmfc.sh already carries: SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/..\" && pwd)\"; export WORKSPACE_DIR=\"$SCRIPT_DIR\" before sourcing pprz_docker.sh.",
+      "tags": [
+        "workspace-dir",
+        "pprz_docker",
+        "tests",
+        "darko",
+        "fmfc",
+        "container",
+        "paths"
+      ],
+      "related_bugs": [
+        "bug-293"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-08-27T18:35:00+00:00"
+    },
+    {
+      "id": "bug-299",
+      "timestamp": "2026-08-27T18:41:00+00:00",
+      "error_message": "After ./pprz.sh db <AIRCRAFT>, the previously built nps simsitl binary was gone and ./sim.sh --no-build had nothing to run",
+      "file": "pprz.sh",
+      "root_cause": "'db' generates compile_commands.json with compiledb from a CLEAN VERBOSE build ('CLEANING <AIRCRAFT>' in its own output). The clean wipes var/aircrafts/<AIRCRAFT> for that aircraft, including the nps target's simsitl, not only the ap target it is generating the DB for.",
+      "fix": "No code change. Ordering rule: run 'db' BEFORE the builds you intend to keep, or rebuild the nps target after it. This session rebuilt both nps targets after the two db runs and then ran SITL.",
+      "tags": [
+        "pprz.sh",
+        "db",
+        "compile_commands",
+        "clean",
+        "nps",
+        "sim",
+        "tooling"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-27T18:41:00+00:00"
+    },
+    {
+      "id": "bug-300",
+      "timestamp": "2026-08-27T18:20:00+00:00",
+      "error_message": "fatal: not a git repository: sw/ext/TRICAL/../../../.git/modules/sw/ext/TRICAL  -- git status/diff broken inside a git worktree of the paparazzi submodule",
+      "file": "paparazzi/sw/ext/*/.git (worktree checkout only)",
+      "root_cause": "paparazzi/ is an OLD-STYLE embedded repo (paparazzi/.git is a real directory), so its own nested submodules store a RELATIVE 'gitdir: ../../../.git/modules/...' pointer. In a linked worktree created with 'git worktree add', paparazzi/.git is a FILE, so that relative path no longer resolves and every git command that walks submodules aborts.",
+      "fix": "Rewrote each nested sw/ext/*/.git pointer in the worktree to the ABSOLUTE path of the main tree's .git/modules/<name>. sw/ext content is identical across all three branches and is never edited, so sharing the module gitdirs is safe. Separately, inside the build container the rewritten absolute host path does not exist, so a git call in the build prints 'fatal: not a git repository' -- cosmetic, the builds and codegen complete and exit 0.",
+      "tags": [
+        "git",
+        "worktree",
+        "submodule",
+        "gitdir",
+        "paparazzi",
+        "tooling"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-27T18:20:00+00:00"
     }
   ]
 }

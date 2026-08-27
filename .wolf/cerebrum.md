@@ -1308,3 +1308,53 @@
   gains are the FINDI GA values carried over as placeholders and the Simulink
   reference is itself not fine-tuned, so a good number would be luck and a bad
   one uninformative. Report arming, holding and boundedness; nothing else.
+
+## Key Learnings additions (2026-08-27 — merging the two FMFC branches)
+
+- **The two FMFC changesets are genuinely disjoint.** Every controller source,
+  module XML and airframe XML belongs to exactly one branch; `mfc_core*`,
+  `heol_mimo*` and the FINDI spines are touched by neither. The only real
+  overlap is `conf/userconf/ENAC/conf_mfc.xml`, where both append an
+  `<aircraft>` element before `</conf>` — keep both, no field collides
+  (ANTON_FMFC 223 vs DARKO_FMFC 29, different `gui_color`).
+- **`.wolf/anatomy.md` on the quad branch is a strict superset of the darko
+  one.** It already carries the Darko FMFC section exactly once and adds a
+  10-line ANTON FMFC section. There is no duplicate to drop — an older task
+  note that said otherwise was wrong. Verified by diff against the merge base,
+  not assumed.
+- **`.wolf/buglog.json` merges as two pure appends.** Both branches extend an
+  identical 292-entry base with non-colliding ids. Splice the two added blocks
+  textually and keep id order; do NOT reserialize the whole file with
+  `json.dumps`, and do NOT clean the 9 duplicate ids that predate both branches
+  (`bug-051/052/123/124/204/205/272/273/274`) — that buries the merge in noise.
+- **`paparazzi/` is an old-style embedded repo, not a real submodule.**
+  `paparazzi/.git` is a real directory and there is no `.git/modules/paparazzi`
+  in the outer repo, so `git submodule update --init` in an outer worktree tries
+  to CLONE from a stale `submodule.paparazzi.url` (which still points at a path
+  with a space in it) and fails. Make a `git worktree` of `paparazzi` itself
+  instead, at the outer worktree's `paparazzi/` path.
+- **`./pprz.sh db` does a CLEAN build.** It wipes `var/aircrafts/<AIRCRAFT>`
+  including the nps `simsitl`, not just the `ap` target it generates the DB for.
+  Run `db` before the builds you want to keep, or rebuild `nps` after it.
+- **The four-build warning picture on this tree**: the only compiler warning is
+  `'nav_hold_alt' defined but not used` out of ANTON's generated
+  `flight_plan.h` (a property of `flat_traj_demo.xml`, not of FMFC), and the
+  only make warnings are `Clock skew detected` from sub-100 ms mtime
+  granularity on the bind mount during the OCaml ground-segment bootstrap. No
+  FMFC source file produces a warning on any target.
+
+## Do-Not-Repeat additions (2026-08-27 — FMFC merge)
+
+- **Do not weaken `tests/run_oneloop_fmfc.sh`'s `git diff --quiet cd0ba036f`
+  guard over the six shared `mfc_core*` / `heol_mimo*` files.** The merge does
+  not touch them, so the assertion survives untouched and is what makes the
+  2-vector bit-identity claim meaningful. It passed post-merge.
+- **Do not run `tests/run_oneloop_fmfc_darko.sh` without pinning
+  `WORKSPACE_DIR`.** Unlike its sibling it does not pin it itself, so it
+  inherits the session's value and every in-container source path resolves
+  wrong (bug-298, same root cause as bug-293).
+- **Do not read DARKO_FMFC's SITL horizontal wander as a merge regression.**
+  ~±11 m lateral excursion at `Standby` with the vertical channel holding ~7 m
+  is the DOCUMENTED pre-merge state (untuned placeholder gains, tilt limiter
+  railed, horizontal loop saturated open). The post-merge run reproduces the
+  2026-08-22 numbers; it says nothing new about the controller.
