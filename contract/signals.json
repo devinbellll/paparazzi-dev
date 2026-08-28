@@ -1,0 +1,119 @@
+{
+  "_comment": [
+    "SIGNAL ROLE CONTRACT. Vendored into every repo that produces runs.",
+    "",
+    "JSON rather than YAML on purpose: this file is machine-checked from two",
+    "runtimes, and both read JSON with zero dependencies (Python stdlib json,",
+    "MATLAB jsondecode). The firmware repo is deliberately stdlib-only and has",
+    "no pyyaml; MATLAB has no dependable YAML reader. A contract that needs a",
+    "parser nobody has is a contract nobody checks.",
+    "",
+    "Metrics and plot recipes address signals by ROLE, never by logged name.",
+    "This file is the role vocabulary and its per-source bindings.",
+    "",
+    "If your copy disagrees with another repo's copy, that is drift. Run the",
+    "conformance check rather than picking a side."
+  ],
+  "version": 3,
+  "updated": "2026-08-16",
+  "roles": {
+    "ref_cmd": "the setpoint the error is formed against",
+    "ref": "trajectory-level reference upstream of the tracked setpoint; context on a plot",
+    "y": "measured output",
+    "err": "tracking error; LOGGED not derived on the firmware sources, which makes it a free cross-check",
+    "fk": "estimated lumped dynamics / feedforward term",
+    "u": "per-axis control contribution",
+    "u_total": "the command that actually reaches the plant; NOT the same physical quantity across sources"
+  },
+  "sources": {
+    "sitl": {
+      "column_format": "/uav/<BRANCH>/<field>",
+      "time_column": "time",
+      "branches": {
+        "MFC_STAB": {
+          "message": "STAB_MFC",
+          "axes": [
+            "phi",
+            "theta",
+            "psi"
+          ],
+          "roles": {
+            "ref_cmd": "sp_traj_<axis>",
+            "y": "me_<axis>",
+            "err": "err_<axis>",
+            "fk": "fk_<axis>",
+            "u": "cmd_<axis>",
+            "u_total": [
+              "u0",
+              "u1",
+              "u2",
+              "u3"
+            ]
+          },
+          "unbound": [
+            "sp_<axis>"
+          ]
+        },
+        "MFC_GUIDANCE": {
+          "message": "GUIDANCE_MFC",
+          "axes": [
+            "x",
+            "y",
+            "z"
+          ],
+          "roles": {
+            "ref_cmd": "sp_<axis>",
+            "y": "me_<axis>",
+            "err": "err_<axis>",
+            "fk": "fk_<axis>",
+            "u": "cmd_<axis>",
+            "ref": "sp_traj_<axis>"
+          },
+          "unbound": []
+        }
+      }
+    },
+    "flight": {
+      "same_as": "sitl",
+      "time_column": "Time",
+      "_note": "Same firmware, same telemetry messages. Verified 2026-08-16: 40 columns across MFC_STAB and MFC_GUIDANCE present in both a current SITL capture and the fr_0003 flight export, none in only one. Kept as its own entry so a future divergence has somewhere to be recorded."
+    },
+    "simulink": {
+      "_note": "Roles are declared per scenario in +qsim/+scenarios/<name>.m as spec.signals.<role>. Only the vertical channel is established.",
+      "branches": {
+        "vertical": {
+          "scenario": "mfc_z",
+          "axes": [
+            "z"
+          ],
+          "roles": {
+            "ref_cmd": "z_d_filt",
+            "ref": "sp_traj_z",
+            "y": "me_z",
+            "err": "err_z",
+            "fk": "fk_z",
+            "u": "cmd_z",
+            "u_total": "u_total_z"
+          }
+        }
+      },
+      "attitude": null
+    }
+  },
+  "notes": {
+    "ref_cmd_is_sp_traj": "VERIFIED 2026-08-16 against flight fr_0003, and it contradicts what the names suggest. The firmware forms its error against sp_traj_<axis>, not sp_<axis>: me - sp_traj reproduces the logged err EXACTLY (max difference 0.0000 across phi/theta/psi, 794 samples), while me - sp is out by up to 194% of the logged range on psi. An earlier version of this file had these the other way round on the strength of the names alone. Caught by the derived-vs-logged error check, which is the argument for keeping that check in every recipe with a logged error available.",
+    "sp_is_unbound": "sp_<axis> exists in the telemetry and is NOT bound to a role. It tracks close to sp_traj but is not what the loop scores against, and what it actually is has not been established. Listed under `unbound` so the conformance check knows its absence from `roles` is deliberate rather than an oversight.",
+    "same_name_different_role": "sp_traj appears on BOTH the Simulink and firmware sides and means something different on each: `ref` (upstream context) in Simulink, `ref_cmd` (the scored reference) in firmware. The role indirection makes this safe -- a recipe asks for ref_cmd and gets the right signal per source. But it means a cross-source comparison must NEVER be built by matching column names, however identical they look. Match roles.",
+    "simulink_firmware_name_overlap": "Five vertical-channel signals share names between Simulink mfc_z and firmware MFC_GUIDANCE: me_z, cmd_z, err_z, sp_traj_z, fk_z. Unsurprising if the firmware was ported from the model. A convenience for humans reading logs, not a mapping -- see same_name_different_role.",
+    "u_total_semantic_mismatch": "NOT a naming difference. Simulink u_total_z is total commanded force on the z axis; firmware MFC_STAB/u0..u3 are per-actuator allocated commands. Different physical quantities. A plot overlaying them would look reasonable and mean nothing.",
+    "psi_is_unwrapped": "On fr_0003 psi ranges to about -25 rad, so yaw is accumulated rather than wrapped to +/-pi. Any metric averaging or taking a max over yaw needs to know, and a comparison against a wrapped source would be meaningless.",
+    "acc2att_is_a_simulink_block": "The MFC_ACC2ATT branch is a 1:1 instrumentation of the accel_to_angle MATLAB Function block in models/controllers/mfc_quad.slx -- seven of its ten fields are that function's LOCAL variables (u1, vhatx, vhaty, cosphid, vhaty_cd, phi_d, theta_d), which have no output ports, so Simulink cannot log them without editing the block. Deliberately not bound. If ever picked up: the block takes roll from the x component and pitch from y, with the axis arrangement folded into R_psi = [sin psi, cos psi; -cos psi, sin psi]. That is not the conventional pairing -- verify against the firmware C rather than trusting shared field names.",
+    "branches_use_different_references": "VERIFIED 2026-08-16 and NOT guessable from the names. MFC_STAB forms its error against sp_traj_<axis>; MFC_GUIDANCE forms its against sp_<axis>. The two branches look structurally identical and are not. Evidence: on a SITL run, guidance me - sp reproduces the logged err to 1e-5 while me - sp_traj is out by 10.97. The FLIGHT log cannot settle this -- it was flown manually, so guidance was not driving and sp equals sp_traj there exactly. Two sources were needed to see it, which is the argument for running `mfcdata verify` against every source rather than the convenient one."
+  },
+  "unknown": {
+    "units": "Not established for any source. Firmware attitude fields are believed to be radians, unchecked against the message definitions.",
+    "frames": "Not established. Models work in NED with z positive DOWN; recipes reverse the axis rather than negating data.",
+    "signs": "NOT ESTABLISHED and the highest-risk unknown. The relay's alias step carries scale factors AND a frame negation. Matching field names between sources is NOT evidence that sign conventions agree.",
+    "sample_rates": "Vary by source and run. Recorded per-run in the ingest sidecar, never assumed here. Some committed flight exports are low-rate ground-station exports wearing the filename a full-rate conversion would produce."
+  }
+}

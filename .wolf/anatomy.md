@@ -1195,3 +1195,13 @@
 - `tests/oneloop_fmfc_test.c` — 78 analytic property checks in six groups: bracket algebra and the HEOL delayed-command invariant, core configuration incl. the shared scalar denominator and the reset path, the 2-vector heol_mimo bit-identity regression, the two conventions checked by observable consequence, alpha constant/diagonal/correctly-inverted, and float_mat_inv_4d's return convention. (~5000 tok)
 - `tests/run_oneloop_fmfc.sh` — Runner. Asserts `git diff --quiet cd0ba036f` over the six shared mfc_core/heol_mimo files BEFORE compiling, pins WORKSPACE_DIR to the repo root, and uses tests/stubs_clock (not tests/stubs) so the real pprz algebra is linked. (~500 tok)
 - `tests/stubs_clock/mcu_periph/sys_time.h` — Host-harness stub for the CLOCK ONLY. Exists because tests/stubs also shadows math/pprz_algebra_float.h, which these checks need for real. (~150 tok)
+
+## tools/mfcdata/ (added 2026-08-16)
+- `contract.py` — loads contract/signals.json (the vendored role contract), resolves role -> column names. ~120 lines.
+- `check.py` — schema conformance: contract vs messages.xml + BRANCH_MAP. Catches renames/removals/unbound additions. ~120 lines.
+- `verify.py` — SEMANTIC check against data: derived `y - ref_cmd` vs the logged `err_*`. Catches wrong-but-valid bindings, which check.py structurally cannot. ~110 lines.
+- `sd.py` — SD .data -> contract CSV + sidecar. Wraps sdlog2scope, then applies field aliases (scale + ENU->NED) and writes provenance. ~160 lines.
+- `sim.py` — SITL capture -> contract CSV + sidecar. Wraps scope2csv for .jsonl; passes .csv through. ~90 lines.
+- `sidecar.py` — writes `<stem>.meta.json`. Facts only; an unestablished key is absent, never defaulted. ~70 lines.
+- `__main__.py` — CLI: `python3 -m tools.mfcdata check|verify|sd|sim`. ~100 lines.
+- `contract/signals.json` (repo root) — vendored copy of the shared role contract. Canonical copy lives in the vault; `check_drift.py` at vault level compares copies.

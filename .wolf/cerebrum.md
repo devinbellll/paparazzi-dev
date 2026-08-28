@@ -1433,3 +1433,45 @@
   is different (darko_wrench instead of a G1 multiply, sequential allocation
   instead of a 4x4 inverse, AERO frame, two kinds of actuator), so a shared
   `FLAT/` name would assert a commonality that does not hold.
+
+## Key Learnings (2026-08-16 — mfcdata and the role contract; restored 2026-08-28)
+
+- MFC_STAB and MFC_GUIDANCE FORM THEIR ERRORS AGAINST DIFFERENT SETPOINTS.
+  Stabilization scores against `sp_traj_<axis>`; guidance scores against
+  `sp_<axis>`. The two branches look structurally identical -- same six field
+  prefixes, same layout -- and are not. Verified against the logged `err_*`,
+  which the firmware emits alongside the signals it is computed from: guidance
+  `me - sp` matches to 1e-5 while `me - sp_traj` is out by 10.97.
+- A MANUAL FLIGHT CANNOT SETTLE A GUIDANCE BINDING. On fr_0003 guidance was not
+  driving, so `sp` equals `sp_traj` exactly and both bindings "verify". It took
+  a SITL run to disambiguate. Verify a binding against every source, not the
+  convenient one.
+- NAME-EXISTENCE CHECKING CANNOT CATCH A WRONG-BUT-VALID BINDING. Pointing a
+  role at a real-but-wrong field passes every schema check and renders a
+  perfectly plausible, entirely wrong plot. The logged `err_*` is the only
+  independent evidence available offline -- spend it. `mfcdata verify` exists
+  for exactly this and caught two binding errors on its first run.
+- sdlog2scope does NOT apply apply_field_aliases even though it imports
+  BRANCH_MAP. The alias carries fixed-point scales AND an ENU->NED negation on
+  the vertical axis, so skipping it leaves position in raw int32 counts and
+  altitude inverted. mfcdata.sd applies it after conversion (9 columns).
+- The committed *_pj.csv flight exports are ~4 Hz ground-station exports wearing
+  the filename a full-rate conversion produces. Converting fr_0003 from .data
+  directly gives 88548 samples at 440 Hz vs the committed 794 at 4 Hz.
+- The .log header names the aircraft as <airframe NAME="..."> -- uppercase
+  attribute, and there is no <aircraft> element. ac_id is not in the header at
+  all; it is the second whitespace token of every .data record.
+
+## Do-Not-Repeat (2026-08-28)
+
+- `git log -- <path>` ONLY SEARCHES THE CURRENT BRANCH. tools/mfcdata looked
+  "never tracked" and lost-to-bytecode for twelve days on that basis; the source
+  was intact the whole time on the unmerged local branch `mfcdata-ingest`
+  (cf38361). Before concluding anything is untracked, run `git log --all --
+  <path>`, `git log --all --oneline | grep`, and `git reflog --all | grep`. A
+  branch is not history you can see from where you are standing.
+- WORK ON A TOPIC BRANCH ISN'T SAFE UNTIL IT IS MERGED OR PUSHED. `mfcdata-ingest`
+  was local-only, never merged and never on origin; the sole surviving trace in
+  the working tree was `__pycache__/*.pyc`. Merge the branch or push it the same
+  day, and do not let a task note record "done and committed" without recording
+  where it landed.
