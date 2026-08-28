@@ -140,6 +140,30 @@ modules and check's five other code objects still match exactly.
   record. A task note saying "done and committed" is not a backup.
 - Decide whether the `Time`/`time` split gets unified before the Data/
   consolidation work, or stays deferred to time-alignment.
-- `mfcdata check` has still never actually run against a `messages.xml` — the
-  ground segment has not been built in this tree. It skips honestly now, which
-  is the point of the fix, but the conformance check remains unexercised here.
+## Postscript: merged, and `check` finally ran
+
+Fast-forwarded onto `mfc-development` (exactly the two commits; nothing on
+mfc-development that wasn't already on the branch). The main checkout has
+`paparazzi/var/messages.xml` — build output, which is why the worktree did not —
+so `mfcdata check` ran against real upstream truth for the first time in this
+recovery, and passes clean:
+
+```
+contract  v3 (2026-08-16)
+messages  paparazzi/var/messages.xml
+OK      MFC_STAB     <- STAB_MFC      (19 fields bound)
+OK      MFC_GUIDANCE <- GUIDANCE_MFC  (18 fields bound)
+0 error(s), 0 warning(s)
+```
+
+So both halves of the two-check design are now exercised on this branch: `check`
+against messages.xml + BRANCH_MAP, `verify` against the logged `err_*` on both a
+flight and a SITL source. The contract has not drifted from the firmware in the
+twelve days it spent stranded.
+
+Worth noting the stale `tools/mfcdata/__pycache__` from the incident is still
+present and is *not* shadowing anything — Python's source-based invalidation
+compares the recorded mtime/size against the restored `.py`, recompiles, and
+`__file__` confirms the `.py` files are what load. It is gitignored and
+regenerable; left in place rather than deleted, since it is the only physical
+trace of the incident.

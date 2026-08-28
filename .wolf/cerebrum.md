@@ -1475,3 +1475,11 @@
   the working tree was `__pycache__/*.pyc`. Merge the branch or push it the same
   day, and do not let a task note record "done and committed" without recording
   where it landed.
+- The role contract (v3, 2026-08-16) still conforms to the firmware after the
+  twelve days it spent stranded on an unmerged branch: `mfcdata check` against
+  `paparazzi/var/messages.xml` reports 0 errors / 0 warnings, MFC_STAB <-
+  STAB_MFC (19 fields) and MFC_GUIDANCE <- GUIDANCE_MFC (18 fields).
+- `paparazzi/var/messages.xml` is BUILD OUTPUT and exists only in the main
+  checkout, not in a fresh worktree. `mfcdata check` therefore SKIPs in a
+  worktree and only does real work where the ground segment has been built --
+  run it from the main checkout.
