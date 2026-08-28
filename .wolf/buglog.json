@@ -5175,6 +5175,60 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-08-27T19:15:00+00:00"
+    },
+    {
+      "id": "bug-302",
+      "timestamp": "2026-08-28T12:30:00.000Z",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-28T12:30:00.000Z",
+      "error_message": "tools/mfcdata source missing -- only __pycache__/*.pyc survived; 'git log -- tools/mfcdata' returns nothing so the package looked never-tracked and unrecoverable",
+      "file": "tools/mfcdata/*.py",
+      "root_cause": "Two independent causes stacked. (1) `git log -- <path>` searches only the CURRENT branch; the package was committed 2026-08-16 as cf38361 on the local-only branch `mfcdata-ingest`, never merged into mfc-development and never pushed to origin. (2) .gitignore carries `**/__pycache__/`, so once the .py files were gone the directory's only remaining content was ignored and `git status` never reported tools/mfcdata as untracked at all -- the loss was invisible from both directions.",
+      "fix": "Recovered by cherry-picking cf38361 onto the working branch (commit 8072059), NOT by decompiling. Proved the recovered source is the exact source behind the surviving bytecode: compiling all 8 modules under Python 3.14.4 reproduces every one of the 43 nested code objects exactly (opcodes, consts, names, varnames, freevars, flags, argcounts). Confirmed behaviourally: converting fr_0003's .data with source vs bytecode gives byte-identical 165 MB CSVs (md5 618e43e6f8a86cd433baeccb938d2a47) and meta.json differing only in converted_at. Diagnostic rule: always run `git log --all -- <path>` and `git reflog --all` before calling anything untracked.",
+      "tags": [
+        "git",
+        "data-loss",
+        "recovery",
+        "bytecode",
+        "mfcdata",
+        "branch-hygiene",
+        "gitignore"
+      ]
+    },
+    {
+      "id": "bug-303",
+      "timestamp": "2026-08-28T12:30:00.000Z",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-28T12:30:00.000Z",
+      "error_message": "contract/signals.json absent -- `python3 -m mfcdata check` and `verify` could not run on this branch at all",
+      "file": "contract/signals.json",
+      "root_cause": "The vendored role contract landed in the same unmerged commit cf38361 as the package, so it was missing from mfc-development independently of the lost .py files. contract.contract_path() walks up looking for contract/signals.json and raises FileNotFoundError when absent, making both checking subcommands non-functional regardless of whose source is present.",
+      "fix": "Restored alongside the package in commit 8072059. `verify` now passes all six axes on both sources: flight max |derived - logged| 1e-06, sitl 5e-06 on attitude and 1e-03 on guidance, against TOL=0.01.",
+      "tags": [
+        "mfcdata",
+        "contract",
+        "missing-file",
+        "recovery"
+      ]
+    },
+    {
+      "id": "bug-304",
+      "timestamp": "2026-08-28T12:30:00.000Z",
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-28T12:30:00.000Z",
+      "error_message": "`python3 -m mfcdata check` prints nothing and exits 0 when messages.xml is absent",
+      "file": "tools/mfcdata/check.py",
+      "root_cause": "check.run()'s no-messages.xml branch returns (0, report) BEFORE the `if verbose:` print block at the end of the function, and __main__ discards the report (`n, _ = check.run(...)`). The SKIP text was composed and never shown. messages.xml is build output, so a fresh clone always takes this path -- the common case was a silent exit 0, indistinguishable from a clean check.",
+      "fix": "Print the SKIP line on that path when verbose. Scoped deliberately: only check.run's code object changes; the other 7 modules and check's 5 other code objects stay byte-identical to the surviving 2026-08-16 bytecode.",
+      "tags": [
+        "mfcdata",
+        "cli",
+        "silent-failure",
+        "logging"
+      ]
     }
   ]
 }

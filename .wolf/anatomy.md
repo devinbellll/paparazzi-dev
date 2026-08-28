@@ -1205,3 +1205,4 @@
 - `sidecar.py` — writes `<stem>.meta.json`. Facts only; an unestablished key is absent, never defaulted. ~70 lines.
 - `__main__.py` — CLI: `python3 -m tools.mfcdata check|verify|sd|sim`. ~100 lines.
 - `contract/signals.json` (repo root) — vendored copy of the shared role contract. Canonical copy lives in the vault; `check_drift.py` at vault level compares copies.
+- `Knowledge/Sessions/2026-08-28-mfcdata-recovery.md` — Session: mfcdata recovered from the unmerged local branch `mfcdata-ingest` (cf38361), not decompiled; bytecode-identity proof (43 code objects) + byte-identical CSV re-conversion; contract/signals.json was missing too; check's silent-SKIP fix; branch-hygiene exposure audit. (~1600 tok)

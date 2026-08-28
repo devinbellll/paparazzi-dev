@@ -76,9 +76,15 @@ def run(repo_root=None, spec=None, verbose=True):
     messages_path = find_messages(repo_root)
     if messages_path is None:
         # Not an error: messages.xml is build output and a fresh clone has
-        # none. Saying so beats failing a check nobody can satisfy yet.
-        return 0, ["SKIP  no messages.xml found -- build the ground segment "
-                   "first, then this check has something to verify against."]
+        # none. Saying so beats failing a check nobody can satisfy yet -- but
+        # only if it is actually said. This path returned before the verbose
+        # block below, so the CLI exited 0 in total silence and a skipped
+        # check was indistinguishable from a clean one.
+        report = ["SKIP  no messages.xml found -- build the ground segment "
+                  "first, then this check has something to verify against."]
+        if verbose:
+            print(report[0])
+        return 0, report
 
     fields = message_fields(messages_path)
     bmap = branch_map()
