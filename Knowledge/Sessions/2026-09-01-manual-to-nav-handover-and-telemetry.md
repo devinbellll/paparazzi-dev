@@ -81,7 +81,31 @@ ANTON_FMFC nps OK.
   (datalink RC), aircraft stays at the origin. Needs the full GCS+RC, or
   `--rc_script N`.
 
+## 4. A_ZH (ATTITUDE_Z_HOLD) drops on FMFC  (bug-313)
+
+Same class as the NAV drop: `A_ZH` → `GUIDANCE_V_MODE_HOVER` →
+`guidance_v_guided_run` ZHOLD → **`guidance_v_run_pos()`**, which the FMFC oneloop
+stubbed to zero thrust. `guidance_h` is `MODE_NONE` in A_ZH so `guidance_driving`
+is never true → the else branch flew the RC-throttle path with `thrust = 0` →
+zero collective → drop. The FMFC stack only produced vertical force inside the
+fully-coupled position+altitude branch.
+
+**Fix (option 2, `oneloop_fmfc.c`, commit 3be8e70d6):** a `vert_only` branch in
+`oneloop_fmfc_run()`, armed by a new `fmfc_vert_fresh` counter that the
+`guidance_v` hooks set (mirror of how the `guidance_h` hooks arm
+`fmfc_guidance_fresh`). It runs the linear bracket's **z channel** against
+`guidance_v`'s `z_ref/zd_ref/zdd_ref` — same measurement-minus-reference sense and
+`u* = m(zdd_ref − g)` nominal as the coupled branch — with the two horizontal
+channels driven at zero so the shared MIMO estimator stays continuous into a
+later NAV handover. Attitude from the RC sticks; collective `/= cos φ cos θ`
+(measured) for tilt compensation. Not gated on `fmfc_linear_enabled`. Reuses the
+`fmfc_kx/zeta_x/ka` gains — vertical-specific tuning can be added later. Builds
+ANTON_FMFC nps + ap clean. **Needs a flight-test.**
+
 ## Next
 
-- Decide on the velocity-projected capture point for `Hold Here` and flight-test.
+- Flight-test A_ZH on FMFC; add `FMFC_VHOLD_*` gains if the reused horizontal
+  gains don't damp the vertical axis well.
+- Flight-test the `Hold Here` velocity-projected capture point; tune
+  `HOLD_HERE_STOP_ACCEL`.
 - Consider an upstream `nav_set_altitude_now()` helper instead of poking `nav.*`.

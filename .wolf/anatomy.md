@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-09-01T11:07:46.293Z
-> Files: 878 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-09-01T11:44:49.025Z
+> Files: 879 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -339,7 +339,7 @@
 - `2026-08-27-plotjuggler-flatness-layout.md` — 2026-08-27 — `plotjuggler_flatness.xml`: one layout for FINDI and FMFC. Tab/plot structure and the two deviations from the proposal (estimators on two tabs, alloc/v split), the source facts the header carries (flat_status enum sense, eps_fi is a position error, F_* units, dw_c differing between the modules), the two SITL name checks, and the fact that PlotJuggler could not be run here. (~1500 tok)
 - `2026-08-30-flat-traj-multi-table-registry.md` — 2026-08-30 — Phase B: the flat-traj multi-table registry and selector. Where the four generated tables live and why (tracked in-repo, not build-tree), why selection is latched at start() and not read per tick, the exact flight-plan block names that are simultaneously GCS buttons and `--nav` strings, the measured .rodata (218148 -> 1128804 B; four tables = 1102720 B, ~5x less than the C text implies), the four SITL selection checks, and five out-of-scope observations including that ANTON_MFC does not TRACK either loop. (~2400 tok)
 - `2026-08-30-vertical-reference-in-capture.md` — 2026-08-30 — adding `SP/guidance/v_ref_z` so the tracking_6dof `sp` role can take all three axes from one stage of the guidance chain. Why the scope side needed wiring (the SP/guidance branch had no vertical reference; a separate `guidance_v/z_ref` var carried it under another name), the trap that the SITL CSV comes from nps_scope_state.c and NOT logger_mfc_csv.c (Hoops_111_MFC is the only aircraft that builds the logger), and the measurement: 104.5 vs 15.5 changes/s, with the 104 Hz figure explained as a Q23.8 LSB ceiling rather than a rate limit. (~1600 tok)
-- `2026-09-01-manual-to-nav-handover-and-telemetry.md` — 2026-09-01 — manual→NAV handover drop, unused-var warning, GCS "IMU UNKNOWN" (~1138 tok)
+- `2026-09-01-manual-to-nav-handover-and-telemetry.md` — 2026-09-01 — manual→NAV handover drop, unused-var warning, GCS "IMU UNKNOWN" (~1497 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -1108,6 +1108,7 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
 
+- `oneloop_fmfc.c` — Declares float (~11661 tok)
 - `oneloop_mfc.c` (~17341 tok)
 - `oneloop_mfc.h` — Declares float (~1114 tok)
 

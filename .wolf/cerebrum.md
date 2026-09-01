@@ -1678,3 +1678,22 @@
   flight-plan `<header>`/`pre_call` change even though it regenerates
   `flight_plan.h` -- the make dependency/mtime check misses it. Force it:
   `find var/aircrafts/<AC>/<tgt> -name navigation.o -delete` then rebuild.
+
+## Key Learnings additions (2026-09-01 — session 3, FMFC A_ZH)
+
+- **The FMFC oneloop (`oneloop_fmfc.c`) had NO standalone vertical control** until
+  bug-313. `guidance_v_run_pos/_speed/_accel` were zero stubs; vertical force was
+  only produced inside the `guidance_driving` (coupled position+altitude) branch,
+  which needs BOTH `fmfc_gh` and `fmfc_gh`-armed `fmfc_guidance_fresh`. So any
+  mode that runs guidance_v alone (`AP_MODE_ATTITUDE_Z_HOLD` -> HOVER -> ZHOLD ->
+  `guidance_v_run_pos`) got zero collective and dropped.
+- **Fix pattern (bug-313):** a `fmfc_vert_fresh` counter armed by the guidance_v
+  hooks (mirror of `fmfc_guidance_fresh`/guidance_h), and a `vert_only` branch in
+  `oneloop_fmfc_run` between the coupled branch and the plain attitude-only else.
+  It runs the SAME `fmfc_fi` MIMO bracket, z-channel only (x/y errors + nominal
+  zeroed), so estimator state is continuous if the pilot hands A_ZH -> NAV.
+  Attitude from `att_sp` (RC), collective `/= cos(phi)cos(theta)` for tilt comp.
+- **A_ZH / HOVER vertical path:** `GUIDANCE_V_MODE_HOVER` -> `guidance_v_guided_run()`
+  -> `GUIDANCE_V_GUIDED_MODE_ZHOLD` -> `guidance_v_run_pos(gv)`. `guidance_v_guided_enter()`
+  (called on the mode change) seeds `guidance_v.z_ref` to the current altitude, so
+  the first vert_only tick has ~zero z error (no thrust step).
