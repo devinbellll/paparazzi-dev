@@ -1483,3 +1483,198 @@
   checkout, not in a fresh worktree. `mfcdata check` therefore SKIPs in a
   worktree and only does real work where the ground segment has been built --
   run it from the main checkout.
+
+## Key Learnings additions (2026-08-30 — flat-traj multi-table registry)
+
+- **Generated flat-trajectory headers are multi-table-safe by design.** Each
+  `flat_traj_<name>_data.h` from `functions/flat_traj_to_c.m` namespaces every macro by
+  trajectory (`FLAT_TRAJ_<NAME>_{DURATION_MS,DT_MS,NB_SAMPLES,ORDER}`) and wraps
+  `struct FlatTrajSample` in `#ifndef FLATTRAJSAMPLE_DEFINED`, so several can be
+  `#include`d in one translation unit. Never hand-edit one; regenerate in Generic_Quad.
+  NOTE the OLD `flat_traj_demo_data.h` (2026-08-20 vintage) has NO `FLATTRAJSAMPLE_DEFINED`
+  guard, so it must be included FIRST or not at all.
+- **C text size is a ~5x overestimate of .rodata.** The four tables are 5.6 MB of C text
+  but 1,102,720 B of `.rodata` (128 B/sample x 8615 samples). Always measure with
+  `size -A <binary>` / `nm --print-size`, never from the text size.
+- **`.rodata` on ANTON_MFC nps: 218,148 B -> 1,128,804 B** after compiling four tables in
+  (baseline already contained one 192,128 B table). Tawaki 1.0 is STM32F767, 2 MB flash
+  (`STM32F76xxI.ld` flash0 len = 2M), so the four tables alone would be ~53% of flash — a
+  build-flag subset is not needed for SITL and is not obviously needed for `ap` either,
+  but the `ap` target was NOT built or measured this session.
+- **`<settings>` must come BEFORE `<dep>` in a module XML.** `conf/modules/module.dtd`
+  fixes the order `(doc, settings_file*, settings*, dep?, header?, init*, ...)`; putting it
+  after `<dep>` fails codegen with `DTD prove error: Unexpected tag : 'SETTINGS'`.
+- **A module's `<settings>` only reach the aircraft if its module XML is listed in that
+  aircraft's `settings_modules=` in the conf.** Adding a `<dl_setting>` to a module XML is
+  invisible until then — and adding the module XML to an aircraft that does NOT compile the
+  module would produce an undefined symbol, so patch only the aircraft that load it.
+- **Flight-plan `<block name=…>` IS the whole selection surface.** It is simultaneously the
+  GCS strip button and the string `sim_anton.py --nav` takes. One block per trajectory
+  satisfies "selectable from the CLI" and "selectable as a button" with one mechanism; a
+  parallel `--traj` flag would be a second path that can disagree.
+- **`sim_anton.py` applies `--set` only AFTER the whole `--nav` sequence finishes**, so a
+  setting cannot be sequenced BEFORE a block entry from the CLI. Any selection that must be
+  latched at block entry has to come from the block itself.
+- **`WORKSPACE_DIR` must point at the paparazzi_dev repo root for `pprz.sh`/`sim.sh`.**
+  `pprz_docker.sh` bind-mounts `$WORKSPACE_DIR` at `/workspace`. A Claude Code session
+  launched from the vault root inherits `WORKSPACE_DIR=/…/ENAC-Workspace`, which mounts the
+  whole vault and makes `./pprz.sh` unfindable inside the container
+  (`stat ./pprz.sh: no such file or directory`).
+
+## Decision Log additions (2026-08-30)
+
+- **Tables live tracked in-repo under `sw/airborne/modules/nav/`, not generated into the
+  build tree.** Rationale: (1) the existing `flat_traj_demo_data.h` is already git-tracked
+  there, so this is the repo's established handling; (2) the generator itself stamps
+  `@file "modules/nav/flat_traj_<name>_data.h"` into each header's banner and takes a
+  `ModulePath` argument for exactly that; (3) the generator lives in a DIFFERENT repo
+  (Generic_Quad) and needs MATLAB, so a build-tree route would make `paparazzi_dev`
+  un-buildable on its own; (4) checked-in tables make a firmware commit reproduce a specific
+  flown reference, which is the point of the cross-source comparison. Cost: ~5.6 MB of C
+  text in git.
+- **Selection is latched at `nav_flat_traj_start()`, not read per tick.** Playback indexes
+  elapsed time against the active table's own `dt_ms` and `nb_samples`; swapping under a
+  running clock would step the setpoint. `nav_flat_traj_sel` is the pending index,
+  `flat_traj_active` the playing one.
+- **`flat_traj_demo_data.h` is kept on disk but no longer `#include`d.** Superseded by
+  `flat_traj_minsnap_data.h` (same manoeuvre, regenerated 2026-08-30 with `HeadingCoeffs`).
+  Not deleted, so nothing silently loses a reference; deleting it is a separate call.
+
+## Key Learnings additions (2026-08-30 — vertical reference in the capture)
+
+- **The SITL CSV comes from `nps_scope_state.c`, NOT `logger_mfc_csv.c`.** `sim_anton.py`
+  defaults to the in-process NPS scope emitter; `logger_mfc_csv` is the ON-BOARD logger and
+  is loaded by `hoops_111_mfc.xml` ONLY. A column added to the logger alone will never
+  appear in `sim_logs/*.csv`. Both sides must carry a row for a role binding to hold across
+  sources, and compile-checking the logger means building Hoops_111_MFC, not ANTON_MFC.
+- **`nps_scope_state.c`'s `SP/guidance/` branch had `h_ref_n`/`h_ref_e` but NO vertical
+  reference.** There was a separate, pre-existing `guidance_v/z_ref` scope var
+  (`guidance_v.c:66/74/250`, `#ifdef SITL`) carrying the same value under a different
+  branch. `SP/guidance/v_ref_z` is now the sibling of the horizontal pair and is
+  bit-identical to it (max |diff| = 0 over a whole capture).
+- **`nps_scope_state_periodic()` is a 1000 Hz `<periodic>`, so it samples at
+  PERIODIC_FREQUENCY** (measured 500.4 Hz in-window on ANTON_MFC). Anything mirrored there
+  is loop-rate by construction.
+- **`guidance_v.z_ref` is Q23.8, so a "distinct values per second" rate metric SATURATES on
+  the LSB, not on the loop rate.** On a 1 m climb over 2.45 s the arithmetic ceiling is
+  256 LSB / 2.45 s = 104.1 values/s; the measurement was 104.5. Reading that as "only
+  104 Hz, not 500 Hz" would be wrong. Compare distinct-level COUNT (39 for the nav-rate
+  setpoint vs 256 for the reference) rather than assuming the change rate is the update
+  rate. Same LSB (see Knowledge 17) that the fixed-point ratchet lived in.
+
+
+## Key Learnings additions (2026-08-30 — contract 6-DOF binding)
+
+- **The role contract's `/uav/<branch>/` prefix is built from the BRANCH, in BOTH runtimes.** `contract.column()` (tools/mfcdata/contract.py) and `i_columns()` (MATLAB qsim/+qsim/contract.m) each hardcode it. Consequence: every role in a branch inherits ONE first path segment, so a branch cannot reach TRUTH, SP, EST and WLS_U at once. As of contract v4 a binding that already starts with `/` is FULLY QUALIFIED and used verbatim — that is the only way to express a composite branch. **Any change to one resolver must land in the other in the same commit.**
+- **`column_format` in signals.json is read by NO code (grep: zero hits).** It is documentation and is now labelled NON-NORMATIVE. It previously described a format the code did not implement and cost a session to a false lead. Do not treat it as configuration.
+- **`mfcdata check` only walks branches carrying a `message` key** (`contract.firmware_branches`), and `mfcdata verify` skips a branch that binds no `err`. A composite scope-state branch must therefore omit `message` — otherwise `check` fails it against messages.xml, where it does not exist.
+- **Firmware allocator output is airframe-dependent and in PPRZ units.** `/uav/WLS_U/u/u_` is registered by `oneloop_mfc.c` (ANTON_MFC); `/uav/FLAT/alloc/u/u_` by `oneloop_findi.c` and `oneloop_fmfc.c` (ANTON_FINDI, ANTON_FMFC). Range observed 0..4082, NOT the normalised [0,1] of Simulink's `alloc_u` — so `qsim.metrics.tracking_6dof`'s `u_sat_frac = mean(u<0 | u>1)` returns ~1.0 and is meaningless on firmware data.
+
+## Decision Log additions
+
+- [2026-08-30] **One SITL 6-DOF branch PER AIRFRAME, and `u` IS bound.** Options were a shared branch (impossible — the allocator path differs per airframe) or leaving `u` unbound. Chose branch-per-airframe (`SITL_6DOF_ANTON_MFC`, siblings when captures exist) with `u` bound, because the role is semantically exact (both Simulink `alloc_u` and firmware `WLS_U/u/u_` are the PRE-CLAMP allocator output) and `recipes/tracking_6dof.m` asks for `u` before falling back to `u_total`. The cost is that `u_sat_frac` is invalid in pprz units; that is handled as documentation — the contract note names `u_sat_frac` explicitly as MUST-NOT-REPORT for this branch — rather than by mis-binding to `u_total`, which would have made the control plot silently post-clamp.
+
+## Key Learnings additions (2026-08-30 — FINDI/FMFC SITL capture campaign)
+
+- **Both `ANTON_FINDI` and `ANTON_FMFC` build clean for `nps`** with
+  `CONF="conf/userconf/ENAC/conf_mfc.xml" ./pprz.sh build <AC> nps`. `pprz.sh`
+  defaults `CONF` to `conf_enac.xml`, which does NOT list them — set `CONF`
+  explicitly or the build cannot find the aircraft. `sim.sh` already defaults to
+  `conf_mfc.xml`, so only the direct `pprz.sh` path needs it.
+- **`/uav/FLAT/mode/flat_status` is identically 0** on every capture taken so far,
+  so it is NOT usable as a "trajectory is running" marker. To find the manoeuvre
+  window, take the LAST contiguous run of motion in `/uav/SP/guidance/h_ref_n` +
+  `h_ref_e` (threshold ~5e-4 per sample, split runs on gaps > 0.5 s). Takeoff is
+  purely vertical, so a horizontal-reference criterion isolates the trajectory
+  cleanly — but a naive `mov[0]..mov[-1]` span does not: a single-sample 4 mm
+  blip on `h_ref_e` right after takeoff otherwise stretches the window to 18 s.
+- **Timing of a `--nav "Start Engine,Takeoff,+15,<block>"` run is reproducible:**
+  sim time starts ~4.5 s, takeoff completes ~15 s, the trajectory block fires at
+  t≈22.6–23.1 s and the flat trajectories are 1.8–3.9 s long. `timeout 55` covers
+  the manoeuvre plus ~30 s of post-trajectory hold.
+- **`/uav/FLAT/alloc/u/u_*` carries a -9600 pre-arm sentinel** for the first ~2 s
+  of every capture (3.8 % of samples); in flight the same signals sit at
+  ~1570–2400 pprz units. Any u magnitude taken over a whole file is poisoned —
+  window on the manoeuvre first. Recorded in the contract note
+  `u_is_airframe_dependent_and_in_pprz_units`.
+- **Tracking result (measured, 2026-08-30):** `Flat minsnap` tracks on both
+  airframes (peak Euclidean error 0.173 m FINDI / 0.157 m FMFC). `Flat circle4`
+  undershoots badly on BOTH (truth spans ~1.7–2.5 m against a 3.0 m reference,
+  peak ~1.4–1.5 m) — so the circle failure is a trajectory/guidance property, not
+  a controller difference. `Flat loop_roll` DIVERGES on ANTON_FINDI (5.45 m
+  lateral / 7.14 m vertical excursion, peak 6.38 m, TRUTH/phi to -2.11 rad,
+  recovers ~7 s later) while ANTON_FMFC bounds the same manoeuvre at 1.24 m. The
+  earlier ANTON_MFC finding that "the loops do not track" does NOT transfer
+  wholesale: it holds for FINDI, only partly for FMFC.
+
+## Do-Not-Repeat additions (2026-08-30)
+
+- Do not compute a SITL tracking metric over the whole capture. The file contains
+  arming, takeoff, the manoeuvre and a long post-trajectory hold; the hold alone
+  drifts 0.35–0.48 m and will dominate a whole-file rms. Use the sidecar's
+  `t0_offset_s` and the manoeuvre duration.
+- Do not `cp` files on this mount (reported by an earlier session as silently
+  producing all-NUL files). Write with Python and verify by md5 + JSON parse.
+  Done that way for all three `contract/signals.json` copies this session.
+
+## Key Learnings additions (2026-09-01 — manual->NAV handover + GCS telemetry)
+
+- **`nav.nav_altitude` (what guidance_v flies) is updated from `nav.fp_altitude`
+  (what `<stay alt=..>` / `NavVerticalAltitudeMode` set) through a 0.2 m
+  hysteresis in `navigation.c:nav_set_altitude()`**, guarded by a persistent
+  function-`static float last_alt`. Any block that wants the flown altitude to
+  TRACK a moving target (e.g. "Hold Here" dragging the hold height with a
+  hand-flown aircraft) must write `nav.nav_altitude` **directly** in its
+  pre_call — the macro path silently no-ops for sub-0.2 m/tick changes and the
+  stale value (often SECURITY_HEIGHT from before takeoff) is what NAV then dives
+  to. (bug-307)
+- **The GCS/server only gets a `nav_ref` from `INS_REF`** (or `NAVIGATION_REF` /
+  `NAVIGATION_REF_LLA`). `parse_messages_v1.ml` drops every `ROTORCRAFT_FP` with
+  "No nav_ref yet" until then, so the aircraft never appears on the map/PFD and
+  looks like "IMU/EKF not registered". Any hand-rolled telemetry mode needs
+  `INS_REF` (+ `GPS_INT` for the fix, + `ROTORCRAFT_FP` for the pose) or the GCS
+  is dead on that mode. (bug-309)
+- **A flight-plan `<header>` `static` var warns `-Wunused-variable` in every
+  module TU** (flight_plan.h is included everywhere; only the `static inline
+  auto_nav()` uses it). Tag it `UNUSED` (from `sw/include/std.h`). (bug-308)
+
+## Key Learnings additions (2026-09-01 — session 2, corrected)
+
+- **GCS "IMU UNKNOWN" (4th strip icon) = missing `STATE_FILTER_STATUS`**, not
+  missing INS_REF. `parse_messages_v1.ml` maps its `state_filter_mode`
+  (UNKNOWN|INIT|ALIGN|OK|GPS_LOST|IMU_LOST|...) to that icon; default 0 = UNKNOWN.
+  `ins_ekf2.cpp` registers it on DefaultPeriodic (`send_filter_status`). Add it to
+  any hand-rolled telemetry mode. INS_REF is a *separate* need (nav_ref / map
+  placement). (bug-311, supersedes bug-309)
+- **Bare airborne manual->NAV ALWAYS drops the aircraft in Paparazzi rotorcraft**
+  and always has: `AP_MODE_NAV` runs the *current flight-plan block*, which after
+  a hand launch is `Holding point` / `Start Engine` = `<attitude throttle="0">`.
+  There is no generic fix -- a position-hold block (`Hold Here`, `Standby`) must
+  be the active block *before* the switch. This is not something the flat-traj
+  work regressed. (bug-312)
+- **`guidance_h_nav_enter()` seeds `guidance_h.ref.speed` with the current NED
+  velocity** (`reset_guidance_reference_from_current_position`). Handing over to
+  NAV while translating => the reference model coasts forward from that entry
+  velocity (bounded by `GUIDANCE_H_REF_MAX_ACCEL`) and overshoots the hold point
+  by ~v^2/(2 a_max) before settling. A no-jump moving handover needs a
+  velocity-projected capture point as the setpoint, not the instantaneous
+  position. (bug-312)
+- **ANTON_FMFC (and FMFC/oneloop airframes) will not arm / take off in headless
+  NPS with `--norc`** -- `radio_control type="datalink"` + arming needs an RC
+  frame. `./sim.sh ... --nav "...Takeoff..."` fires the blocks but the aircraft
+  stays at the origin, motors never spin. Use `--rc_script N` (auto-takeoff 8 s)
+  or test in the full GCS+RC. The manual->NAV handover specifically cannot be
+  reproduced headless.
+
+## Do-Not-Repeat additions (2026-09-01)
+
+- [2026-09-01] A flight-plan `pre_call=` (and autopilot `cond=`) attribute CANNOT
+  contain `&`. `&amp;` is NOT decoded by the generator -- it reaches the generated
+  C literally as `&amp;` (`'amp' undeclared`). So no `&var` address-of in a
+  pre_call. Use by-value APIs: `waypoint_set_xy_i(wp, x_bfp, y_bfp)` not
+  `waypoint_set_enu_i(wp, &struct)`. (Same class as the known `&&` vs `&amp;&amp;`
+  cond= gotcha.)
+- [2026-09-01] `pprz.sh build` does NOT reliably recompile `navigation.o` after a
+  flight-plan `<header>`/`pre_call` change even though it regenerates
+  `flight_plan.h` -- the make dependency/mtime check misses it. Force it:
+  `find var/aircrafts/<AC>/<tgt> -name navigation.o -delete` then rebuild.

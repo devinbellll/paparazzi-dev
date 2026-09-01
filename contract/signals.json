@@ -14,8 +14,8 @@
     "If your copy disagrees with another repo's copy, that is drift. Run the",
     "conformance check rather than picking a side."
   ],
-  "version": 3,
-  "updated": "2026-08-16",
+  "version": 5,
+  "updated": "2026-08-30",
   "roles": {
     "ref_cmd": "the setpoint the error is formed against",
     "ref": "trajectory-level reference upstream of the tracked setpoint; context on a plot",
@@ -23,11 +23,15 @@
     "err": "tracking error; LOGGED not derived on the firmware sources, which makes it a free cross-check",
     "fk": "estimated lumped dynamics / feedforward term",
     "u": "per-axis control contribution",
-    "u_total": "the command that actually reaches the plant; NOT the same physical quantity across sources"
+    "u_total": "the command that actually reaches the plant; NOT the same physical quantity across sources",
+    "pos": "true vehicle position, Nx3 [x y z] NED; vector-valued, not three scalar roles",
+    "pos_meas": "ESTIMATED vehicle position, Nx3 [x y z] NED -- what the controller actually saw",
+    "sp": "commanded position, Nx3 [x y z] NED; the reference `pos` is scored against",
+    "euler": "measured attitude, Nx3 [phi theta psi] ZYX [rad]"
   },
   "sources": {
     "sitl": {
-      "column_format": "/uav/<BRANCH>/<field>",
+      "column_format": "NON-NORMATIVE -- NO CODE READS THIS KEY. Both resolvers hardcode the rule: a field name is prefixed with /uav/<BRANCH>/ UNLESS it already begins with '/', in which case it is a FULLY QUALIFIED column name and is used verbatim. See contract.column() in tools/mfcdata/contract.py and i_columns() in qsim/+qsim/contract.m -- the two must stay identical. Kept as documentation only; an earlier version of this string described a format the code did not implement and misled a reader into believing the prefix was configurable here.",
       "time_column": "time",
       "branches": {
         "MFC_STAB": {
@@ -70,6 +74,135 @@
             "ref": "sp_traj_<axis>"
           },
           "unbound": []
+        },
+        "SITL_6DOF_ANTON_MFC": {
+          "_note": "SITL 6-DOF trajectory tracking, ANTON_MFC ONLY. Not a telemetry message and deliberately carries no `message` key -- it is a COMPOSITE of the NPS scope state (nps_scope.c), which spans four unrelated first path segments: TRUTH (simulator fdm), SP (guidance references), EST (state estimate) and WLS_U (allocator). One branch cannot prefix four segments, so every binding here is FULLY QUALIFIED. `mfcdata check` skips it (no message); `mfcdata verify` reports 'nothing to verify against' (no err role logged for these signals).",
+          "source_capture": "sim_logs/mfc_sim_20260830_182223.csv",
+          "axes": [
+            "x",
+            "y",
+            "z"
+          ],
+          "roles": {
+            "pos": [
+              "/uav/TRUTH/x",
+              "/uav/TRUTH/y",
+              "/uav/TRUTH/z"
+            ],
+            "y": [
+              "/uav/TRUTH/x",
+              "/uav/TRUTH/y",
+              "/uav/TRUTH/z"
+            ],
+            "sp": [
+              "/uav/SP/guidance/h_ref_n",
+              "/uav/SP/guidance/h_ref_e",
+              "/uav/SP/guidance/v_ref_z"
+            ],
+            "pos_meas": [
+              "/uav/EST/x",
+              "/uav/EST/y",
+              "/uav/EST/z"
+            ],
+            "euler": [
+              "/uav/EST/phi",
+              "/uav/EST/theta",
+              "/uav/EST/psi"
+            ],
+            "u": [
+              "/uav/WLS_U/u/u_0",
+              "/uav/WLS_U/u/u_1",
+              "/uav/WLS_U/u/u_2",
+              "/uav/WLS_U/u/u_3"
+            ]
+          },
+          "unbound": []
+        },
+        "SITL_6DOF_ANTON_FINDI": {
+          "_note": "SITL 6-DOF trajectory tracking, ANTON_FINDI ONLY. Structural twin of SITL_6DOF_ANTON_MFC: not a telemetry message and deliberately carries no `message` key -- it is a COMPOSITE of the NPS scope state (nps_scope.c), which spans unrelated first path segments: TRUTH (simulator fdm), SP (guidance references), EST (state estimate) and FLAT (the oneloop allocator). One branch cannot prefix several segments, so every binding here is FULLY QUALIFIED. `mfcdata check` skips it (no message); `mfcdata verify` reports 'nothing to verify against' (no err role logged for these signals). The ONLY difference from the ANTON_MFC branch is `u`: this airframe's allocator registers under /uav/FLAT/alloc/u/u_ (oneloop_findi.c / oneloop_fmfc.c), not /uav/WLS_U/u/u_ -- see note u_is_airframe_dependent_and_in_pprz_units.",
+          "source_capture": "sim_logs/mfc_sim_20260830_200043.csv",
+          "axes": [
+            "x",
+            "y",
+            "z"
+          ],
+          "roles": {
+            "pos": [
+              "/uav/TRUTH/x",
+              "/uav/TRUTH/y",
+              "/uav/TRUTH/z"
+            ],
+            "y": [
+              "/uav/TRUTH/x",
+              "/uav/TRUTH/y",
+              "/uav/TRUTH/z"
+            ],
+            "sp": [
+              "/uav/SP/guidance/h_ref_n",
+              "/uav/SP/guidance/h_ref_e",
+              "/uav/SP/guidance/v_ref_z"
+            ],
+            "pos_meas": [
+              "/uav/EST/x",
+              "/uav/EST/y",
+              "/uav/EST/z"
+            ],
+            "euler": [
+              "/uav/EST/phi",
+              "/uav/EST/theta",
+              "/uav/EST/psi"
+            ],
+            "u": [
+              "/uav/FLAT/alloc/u/u_0",
+              "/uav/FLAT/alloc/u/u_1",
+              "/uav/FLAT/alloc/u/u_2",
+              "/uav/FLAT/alloc/u/u_3"
+            ]
+          },
+          "unbound": []
+        },
+        "SITL_6DOF_ANTON_FMFC": {
+          "_note": "SITL 6-DOF trajectory tracking, ANTON_FMFC ONLY. Structural twin of SITL_6DOF_ANTON_MFC: not a telemetry message and deliberately carries no `message` key -- it is a COMPOSITE of the NPS scope state (nps_scope.c), which spans unrelated first path segments: TRUTH (simulator fdm), SP (guidance references), EST (state estimate) and FLAT (the oneloop allocator). One branch cannot prefix several segments, so every binding here is FULLY QUALIFIED. `mfcdata check` skips it (no message); `mfcdata verify` reports 'nothing to verify against' (no err role logged for these signals). The ONLY difference from the ANTON_MFC branch is `u`: this airframe's allocator registers under /uav/FLAT/alloc/u/u_ (oneloop_findi.c / oneloop_fmfc.c), not /uav/WLS_U/u/u_ -- see note u_is_airframe_dependent_and_in_pprz_units.",
+          "source_capture": "sim_logs/mfc_sim_20260830_200624.csv",
+          "axes": [
+            "x",
+            "y",
+            "z"
+          ],
+          "roles": {
+            "pos": [
+              "/uav/TRUTH/x",
+              "/uav/TRUTH/y",
+              "/uav/TRUTH/z"
+            ],
+            "y": [
+              "/uav/TRUTH/x",
+              "/uav/TRUTH/y",
+              "/uav/TRUTH/z"
+            ],
+            "sp": [
+              "/uav/SP/guidance/h_ref_n",
+              "/uav/SP/guidance/h_ref_e",
+              "/uav/SP/guidance/v_ref_z"
+            ],
+            "pos_meas": [
+              "/uav/EST/x",
+              "/uav/EST/y",
+              "/uav/EST/z"
+            ],
+            "euler": [
+              "/uav/EST/phi",
+              "/uav/EST/theta",
+              "/uav/EST/psi"
+            ],
+            "u": [
+              "/uav/FLAT/alloc/u/u_0",
+              "/uav/FLAT/alloc/u/u_1",
+              "/uav/FLAT/alloc/u/u_2",
+              "/uav/FLAT/alloc/u/u_3"
+            ]
+          },
+          "unbound": []
         }
       }
     },
@@ -108,7 +241,11 @@
     "u_total_semantic_mismatch": "NOT a naming difference. Simulink u_total_z is total commanded force on the z axis; firmware MFC_STAB/u0..u3 are per-actuator allocated commands. Different physical quantities. A plot overlaying them would look reasonable and mean nothing.",
     "psi_is_unwrapped": "On fr_0003 psi ranges to about -25 rad, so yaw is accumulated rather than wrapped to +/-pi. Any metric averaging or taking a max over yaw needs to know, and a comparison against a wrapped source would be meaningless.",
     "acc2att_is_a_simulink_block": "The MFC_ACC2ATT branch is a 1:1 instrumentation of the accel_to_angle MATLAB Function block in models/controllers/mfc_quad.slx -- seven of its ten fields are that function's LOCAL variables (u1, vhatx, vhaty, cosphid, vhaty_cd, phi_d, theta_d), which have no output ports, so Simulink cannot log them without editing the block. Deliberately not bound. If ever picked up: the block takes roll from the x component and pitch from y, with the axis arrangement folded into R_psi = [sin psi, cos psi; -cos psi, sin psi]. That is not the conventional pairing -- verify against the firmware C rather than trusting shared field names.",
-    "branches_use_different_references": "VERIFIED 2026-08-16 and NOT guessable from the names. MFC_STAB forms its error against sp_traj_<axis>; MFC_GUIDANCE forms its against sp_<axis>. The two branches look structurally identical and are not. Evidence: on a SITL run, guidance me - sp reproduces the logged err to 1e-5 while me - sp_traj is out by 10.97. The FLIGHT log cannot settle this -- it was flown manually, so guidance was not driving and sp equals sp_traj there exactly. Two sources were needed to see it, which is the argument for running `mfcdata verify` against every source rather than the convenient one."
+    "branches_use_different_references": "VERIFIED 2026-08-16 and NOT guessable from the names. MFC_STAB forms its error against sp_traj_<axis>; MFC_GUIDANCE forms its against sp_<axis>. The two branches look structurally identical and are not. Evidence: on a SITL run, guidance me - sp reproduces the logged err to 1e-5 while me - sp_traj is out by 10.97. The FLIGHT log cannot settle this -- it was flown manually, so guidance was not driving and sp equals sp_traj there exactly. Two sources were needed to see it, which is the argument for running `mfcdata verify` against every source rather than the convenient one.",
+    "sitl_6dof_is_fully_qualified": "The SITL_6DOF_* branches are the reason the '/'-prefix escape hatch exists in both resolvers. Before it, the branch name WAS the first path segment, so all of a branch's roles had to live under one -- impossible here. Behaviour for every pre-existing binding is unchanged: none of the 22 bindings in contract v3 began with '/', so the escape hatch was a strict addition, not a change.",
+    "sitl_6dof_frames_verified": "NED throughout, z DOWN, no negation anywhere in this branch. TRUTH/* is fdm.ltpprz_pos (struct NedCoor_d); EST/* and SP/guidance/* are NED. The ENU->NED negation in pj_json_relay's FIELD_ALIAS applies to ROTORCRAFT_FP, and the only ENU source in the scope is SP/nav/*, which this branch does not bind. Empirically a climb drives sp and TRUTH z both more negative.",
+    "sitl_6dof_sp_carries_a_hover_pedestal": "SP/guidance/* is an ABSOLUTE NED reference carrying whatever hover altitude offset the run started from, whereas Simulink's pos_ref_log is absolute from zero. Any cross-source error comparison must subtract each leg's OWN first-in-window reference sample before the two error norms mean the same thing. The size of that offset is PER RUN and must be read off the file, not assumed: on mfc_sim_20260830_182223.csv it happens to be zero (sp and TRUTH both start at 0,0,0 and the commanded step is to (1, 1, -3) NED), so this capture does NOT exhibit the -2.008 m pedestal reported for an earlier one.",
+    "u_is_airframe_dependent_and_in_pprz_units": "READ THIS BEFORE USING u FROM ANY FIRMWARE BRANCH. (1) AIRFRAME-DEPENDENT: the allocator output is registered under /uav/WLS_U/u/u_ by oneloop_mfc.c (ANTON_MFC) but under /uav/FLAT/alloc/u/u_ by oneloop_findi.c and oneloop_fmfc.c (ANTON_FINDI, ANTON_FMFC). It CANNOT be one shared binding, which is why these branches are named per airframe. All three branches now exist: SITL_6DOF_ANTON_MFC binds /uav/WLS_U/u/u_, SITL_6DOF_ANTON_FINDI and SITL_6DOF_ANTON_FMFC bind /uav/FLAT/alloc/u/u_, each verified against a real capture header (2026-08-30). (2) UNITS: firmware u is in PPRZ ACTUATOR UNITS (0 .. MAX_PPRZ; observed 0 .. 4082 on the 20260830 capture), NOT the normalised [0,1] of Simulink's alloc_u. u_rms, max_abs_u and du_rms from qsim.metrics.tracking_6dof are therefore NOT physically comparable to a Simulink run's -- they are a within-firmware magnitude only. (3) u_sat_frac IS INVALID ON ALL THREE SITL_6DOF BRANCHES AND MUST NOT BE REPORTED: the metric is mean(u < 0 | u > 1), which assumes the normalised range, so on pprz units it returns approximately 1.0 for any flying run. This is the role-level hazard u_total_semantic_mismatch already warns about, made explicit here because the number it produces looks like a plausible saturation fraction and is not one. (4) PRE-ARM SENTINEL ON THE FLAT/alloc BRANCHES: before the motors are armed, /uav/FLAT/alloc/u/u_* sits at -9600 (observed on the 2026-08-30 ANTON_FINDI and ANTON_FMFC captures, first ~2 s of every file, 3.8% of samples). In flight the same signals are ~1570..2400 pprz units. Any u magnitude taken over a WHOLE capture is poisoned by that sentinel -- window on the manoeuvre (the sidecar's t0_offset_s) before computing u_rms or max_abs_u."
   },
   "unknown": {
     "units": "Not established for any source. Firmware attitude fields are believed to be radians, unchecked against the message definitions.",

@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-08-20T21:45:05.709Z
-> Files: 834 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-09-01T11:07:46.293Z
+> Files: 878 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -187,6 +187,49 @@
 - `settings.json` (~286 tok)
 - `tasks.json` (~1286 tok)
 
+## ANTON FMFC controller (HEOL/MFC brackets on the quad FINDI spine, added 2026-08-22)
+
+- `conf/airframes/ENAC/quadrotor/anton_fmfc.xml` — ANTON_FMFC (ac_id 223). Airframe twin of anton_findi.xml, identical outside the control stack. Holds the UNTUNED placeholder gains (dated), the estimator windows/holds from flat_mfc_quad_params.m, the correction rails and the 50 Hz shared filter cutoff. (~3000 tok)
+- `conf/modules/oneloop_fmfc.xml` — Module wiring + settings panel. Links flatness_quad.c, mfc_core.c and mfc_core_mimo.c. Deliberately has NO est_use_presat_command setting. (~1100 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc_law.h` — The PURE half of the quad FMFC controller: the 3-channel HEOL/MFC bracket on mfc_core_mimo (u = u* + du, du = alpha^-1(-F_hat - f_b), f_f grounded, estimator tapping the correction alone), the constant-diagonal alpha helper, and the u_prev-from-applied-wrench switch. The caller's f_b enters through the core's derivative lane with kd = 1 (kp = ki = 0): a structural pass-through, NOT a damping gain. Carries the "why not heol_mimo" and Q3 notes. (~2600 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc.c` — The module. The whole oneloop_findi spine (applied reactions, flatness transform, attitude error, tilt limiter, pinv allocation, guidance-latch dispatch) with ONLY the two increments replaced by brackets. Owns both bracket configurations, the H(z) on the estimator's attitude-error drive, and the disarmed/attitude-only reset gating. #errors if an EST_PRESAT define appears. (~5200 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc.h` — Module interface, the per-tick chain, and the two conventions that must not be harmonised with the FINDI code (measurement-minus-reference errors; no dw_ref inside dw_c). (~1600 tok)
+- `tests/oneloop_fmfc_test.c` — 78 analytic property checks in six groups: bracket algebra and the HEOL delayed-command invariant, core configuration incl. the shared scalar denominator and the reset path, the 2-vector heol_mimo bit-identity regression, the two conventions checked by observable consequence, alpha constant/diagonal/correctly-inverted, and float_mat_inv_4d's return convention. (~5000 tok)
+- `tests/run_oneloop_fmfc.sh` — Runner. Asserts `git diff --quiet cd0ba036f` over the six shared mfc_core/heol_mimo files BEFORE compiling, pins WORKSPACE_DIR to the repo root, and uses tests/stubs_clock (not tests/stubs) so the real pprz algebra is linked. (~500 tok)
+- `tests/stubs_clock/mcu_periph/sys_time.h` — Host-harness stub for the CLOCK ONLY. Exists because tests/stubs also shadows math/pprz_algebra_float.h, which these checks need for real. (~150 tok)
+
+## Darko FINDI controller, stage 2 (added 2026-08-22)
+
+- `conf/airframes/ENAC/hybrid/darko_findi.xml` — DARKO_FINDI (ac_id 19). Airframe twin of darko.xml, identical outside the control stack so the baseline comparison is controlled. Holds the FINDI gains, the two simulator actuator calibrations, the TRANSFORM_V_SCALE diagnostic and the NPS noise switch. (~2800 tok)
+- `conf/modules/oneloop_findi_darko.xml` — Module wiring + settings panel. Links flatness_darko.c and flatness_quad.c (the latter only for the reused attitude error). (~900 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi_darko_law.h` — The PURE half of the Darko FINDI controller: AERO<->HOVER frame maps (including the rmat map), eq. (tsPD) attitude law, the moment increment, the SI->normalised actuator maps, the force tilt limiter. Depends only on pprz_algebra_float.h so a host harness can include it alone. Carries the frames/axis-correspondence documentation. (~2200 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi_darko.c` — The module. Applied wrench from the filtered actuator model, a_tilde, Om_lpf/Omdot_lpf in AERO, outer position loop + linear increment, flatness force transform, eq. (tsPD), angular increment, sequential allocation, and the actuators_pprz commit with the mirrored-elevon sign map. Owns the oneloop framework dispatch (guidance hooks latch only). Carries GUIDANCE_FINDI_DARKO_TRANSFORM_V_SCALE. (~6500 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi_darko.h` — Module interface, the per-tick chain, and the tunables exposed to the GCS. (~1500 tok)
+- `tests/oneloop_findi_darko_test.c` — 55 analytic property checks on the law and its composition with the spine: frames, rmat map, axis correspondence through the real allocator, tsPD, the increment identity, actuator maps, the elevon sign against the SITL plant's own coefficients, the hover chain end to end, the tilt limiter. (~4200 tok)
+- `tests/run_oneloop_findi_darko.sh` — Runner for the above; real pprz algebra, no stubs. (~300 tok)
+
+## Darko FMFC controller (HEOL/MFC brackets on the FINDI spine, added 2026-08-22)
+
+- `conf/airframes/ENAC/hybrid/darko_fmfc.xml` — DARKO_FMFC (ac_id 29). Airframe twin of darko_findi.xml, identical outside the control stack. Holds the placeholder gains, the estimator windows/hold times, the command tap, the bracket output bounds and TRANSFORM_V_SCALE = 0. (~3600 tok)
+- `conf/modules/oneloop_fmfc_darko.xml` — Module wiring + settings panel. Links flatness_darko.c, flatness_quad.c, mfc_core.c and mfc_core_mimo.c. (~1100 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc_darko_law.h` — The PURE half of the Darko FMFC controller: the 3-channel HEOL/MFC bracket on mfc_core_mimo (u = u* + du, epsilon = MEASURE - REFERENCE, clamp on the TOTAL, estimator tapping the correction alone), the two constant diagonal alphas (alpha_fi = I/m, alpha_m = inv(J)), and the two nominal flat inputs (f* = m(a_ref - g e_z), m* = J Omdot_ref). Includes oneloop_findi_darko_law.h and reuses its frame maps, actuator maps and tilt limiter verbatim. Carries the "where eq. (tsPD) actually lives" and "what happened to ka" notes. (~3500 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc_darko.c` — The module. Same spine as oneloop_findi_darko.c (applied wrench, a_tilde, Om_lpf/Omdot_lpf in AERO, force transform, attitude error, sequential allocation, mirrored-elevon commit, oneloop dispatch) with the two increments replaced by the brackets. Sets est_use_presat_command EXPLICITLY on both. Carries GUIDANCE_FMFC_DARKO_TRANSFORM_V_SCALE and the placeholder-gain warnings. (~8500 tok)
+- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc_darko.h` — Module interface, the per-tick chain, the integration-not-evaluation caveat, and the tunables exposed to the GCS. (~1800 tok)
+- `tests/oneloop_fmfc_darko_test.c` — 109 analytic property checks: the HEOL bracket invariant, the presat tap (discriminated with a clamp that bites), both alphas through the core's own setter, f*/m* reproducing the reference in the nominal plant, THE tsPD identity against findi_darko_tspd(), the clamp on the total, the estimator windows and the shared-scalar-denominator asymmetry, the 2-vector callers staying bit-identical, the hover chain, and the AERO-frame residual through the real allocator. (~7000 tok)
+- `tests/run_oneloop_fmfc_darko.sh` — Runner for the above. Uses tests/stubs_darko/ (clock only) so the REAL pprz algebra is linked. (~400 tok)
+- `tests/stubs_darko/mcu_periph/sys_time.h` — Clock stub only. Separate from tests/stubs/ because that one also shadows math/pprz_algebra_float.h, which the Darko spine needs for real. (~200 tok)
+
+## Darko flatness spine (added 2026-08-20)
+
+- `flatness_darko_test.c` — 53 analytic property checks on the Darko spine (no golden traces; MATLAB unavailable). (~3600 tok)
+- `flatness_darko.c` — Darko tailsitter flatness spine: force transform (eqs 17/21/22/23), applied wrench, sequential allocation (eqs 37/38/6/40/39). Stage 1, no controller. (~5200 tok)
+- `flatness_darko.h` — Darko spine API + measured plant constants + the AERO/HOVER frame contract and the three footguns. (~3400 tok)
+- `run_flatness_darko.sh` — Runner for the Darko property checks; real pprz algebra, links flatness_quad.c for the reused attitude error. (~300 tok)
+
+## HEOL rung-5 tooling (added 2026-08-22)
+
+- `heol_rung5_metrics.py` — Fixed-absolute-window SITL metrics for the HEOL guidance channels: per-phase position-error RMS x/y/z, peak error, percentage of samples on the ±0.3491 rad bank clamp, F_hat range. Prints a time-backstep count so a CSV corrupted by two concurrent sim containers is caught before it is read. (~700 tok)
+
 ## Knowledge/
 
 - `00 - Index.md` — Paparazzi Control System — Knowledge Base (~459 tok)
@@ -291,9 +334,12 @@
 - `2026-08-17-anton-mfc-sitl-tuning.md` — ANTON_MFC SITL rung 2: reference-filter/loop bandwidth mismatch (65% overshoot), wn 2–6 stability ceiling, both noise pairs, NPS noise switch + include-order bug (~4393 tok)
 - `2026-08-19-heol-plotjuggler-and-divergence-check.md` — 2026-08-19 — HEOL PlotJuggler layout, post-fix SITL check, and the horizontal divergence root cause (~2039 tok)
 - `2026-08-20-darko-port-build-sitl.md` — 2026-08-20 — DarkO airframe port: build + SITL takeoff (~1481 tok)
+- `2026-08-27-flat-shared-scope-namespace.md` — 2026-08-27 — collapsing the duplicated FINDI/ and FMFC/ scope trees into a shared FLAT/ namespace (45 shared + 26 FMFC-only = 71), the layout rewrite from 116 to 71 curves, the two same-named/different-composition pairs (dw_c and, newly found, a_c), why the Darko modules stay on FINDID/FMFCD, six builds, both SITL captures and the bidirectional curve check. (~1900 tok)
 - `2026-08-27-fmfc-merge-to-mfc-development.md` — 2026-08-27 — merging both FMFC branches into `mfc-development` (outer 26a7f9a / submodule 03b32ddbc, plus the XML-comment fix): the three conflict resolutions and why, the 78 + 109 + flatness suites, four clean builds, both fleet parses, both SITL smoke runs, and what was NOT verified. (~1900 tok)
 - `2026-08-27-plotjuggler-flatness-layout.md` — 2026-08-27 — `plotjuggler_flatness.xml`: one layout for FINDI and FMFC. Tab/plot structure and the two deviations from the proposal (estimators on two tabs, alloc/v split), the source facts the header carries (flat_status enum sense, eps_fi is a position error, F_* units, dw_c differing between the modules), the two SITL name checks, and the fact that PlotJuggler could not be run here. (~1500 tok)
-- `2026-08-27-flat-shared-scope-namespace.md` — 2026-08-27 — collapsing the duplicated FINDI/ and FMFC/ scope trees into a shared FLAT/ namespace (45 shared + 26 FMFC-only = 71), the layout rewrite from 116 to 71 curves, the two same-named/different-composition pairs (dw_c and, newly found, a_c), why the Darko modules stay on FINDID/FMFCD, six builds, both SITL captures and the bidirectional curve check. (~1900 tok)
+- `2026-08-30-flat-traj-multi-table-registry.md` — 2026-08-30 — Phase B: the flat-traj multi-table registry and selector. Where the four generated tables live and why (tracked in-repo, not build-tree), why selection is latched at start() and not read per tick, the exact flight-plan block names that are simultaneously GCS buttons and `--nav` strings, the measured .rodata (218148 -> 1128804 B; four tables = 1102720 B, ~5x less than the C text implies), the four SITL selection checks, and five out-of-scope observations including that ANTON_MFC does not TRACK either loop. (~2400 tok)
+- `2026-08-30-vertical-reference-in-capture.md` — 2026-08-30 — adding `SP/guidance/v_ref_z` so the tracking_6dof `sp` role can take all three axes from one stage of the guidance chain. Why the scope side needed wiring (the SP/guidance branch had no vertical reference; a separate `guidance_v/z_ref` var carried it under another name), the trap that the SITL CSV comes from nps_scope_state.c and NOT logger_mfc_csv.c (Hoops_111_MFC is the only aircraft that builds the logger), and the measurement: 104.5 vs 15.5 changes/s, with the 104 Hz figure explained as a Q23.8 LSB ceiling rather than a rate limit. (~1600 tok)
+- `2026-09-01-manual-to-nav-handover-and-telemetry.md` — 2026-09-01 — manual→NAV handover drop, unused-var warning, GCS "IMU UNKNOWN" (~1138 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
 
@@ -721,8 +767,8 @@
 - `krooz_sd_okto_mkk.xml` (~2586 tok)
 - `krooz_sd_quad_pwm.xml` (~2304 tok)
 - `lisa_asctec.xml` (~2088 tok)
-- `logger_sd.xml` (~300 tok)
 - `logger_mfc_csv.xml` — module XML for the on-board MFC wide-CSV logger: deps (logger_utils), 500 Hz periodic, GCS settings (run/decim/drops/nan), and SDLOG_NUM_FILES=3 on the ap target (~700 tok)
+- `logger_sd.xml` (~300 tok)
 - `quad_cc3d.xml` (~2039 tok)
 - `quad_cjmcu.xml` (~2293 tok)
 - `quad_flip32.xml` (~2219 tok)
@@ -997,7 +1043,7 @@
 ## paparazzi/conf/flight_plans/ENAC/
 
 - `anton_mfc_nav.xml` (~610 tok)
-- `flat_traj_demo.xml` (~1199 tok)
+- `flat_traj_demo.xml` (~3768 tok)
 
 ## paparazzi/conf/modules/
 
@@ -1024,11 +1070,12 @@
 ## paparazzi/conf/telemetry/
 
 - `default_rotorcraft.xml` (~2791 tok)
-- `mfc_flight_test.xml` (~3251 tok)
+- `mfc_flight_test.xml` (~3410 tok)
 
 ## paparazzi/conf/userconf/ENAC/
 
-- `conf_mfc.xml` (~1091 tok)
+- `conf_mfc.xml` (~1463 tok)
+- `control_panel_mfc.xml` (~1934 tok)
 
 ## paparazzi/sw/airborne/
 
@@ -1079,30 +1126,26 @@
 - `stabilization_mfc.c` (~13268 tok)
 - `stabilization_mfc.h` — PPRZ command to each actuator (~728 tok)
 
-## paparazzi/sw/airborne/modules/loggers/
-
-- `logger_mfc_csv.c` — On-board wide-CSV logger for the MFC stack. 141 columns
-  named with the canonical `/uav/BRANCH/field` PlotJuggler keys, generated from
-  one X-macro list so header and row cannot drift. Own fixed-point float
-  formatter (NaN/Inf -> 0 + counter) and a chunked writer that stays under
-  SDLOG_MAX_MESSAGE_LEN. Runs on ChibiOS (own sdLog file) and on nps (plain
-  file, periodic fflush). (~3900 tok)
-- `logger_mfc_csv.h` — decimation / run / rows / drops / nan externs + the three
-  entry points (~450 tok)
-
 ## paparazzi/sw/airborne/modules/ctrl/
 
 - `eff_scheduling_rotwing_V2.c` — Declares into (~4590 tok)
 
+## paparazzi/sw/airborne/modules/loggers/
+
+
 ## paparazzi/sw/airborne/modules/nav/
 
-- `flat_traj_demo_data.h` — ifndef FLAT_TRAJ_DEMO_DATA_H (~142098 tok)
-- `nav_flat_traj.c` — Declares struct (~1454 tok)
-- `nav_flat_traj.h` (~1038 tok)
+- `flat_traj_circle4_data.h` — GENERATED circle table, 4 m/s R 1.5 m, 3857 ms @ 1 ms, 3858 samples, 493824 B .rodata. Registry id FLAT_TRAJ_CIRCLE4. The one trajectory that matches a qsim run one-for-one. (~347000 tok)
+- `flat_traj_demo_data.h` — GENERATED table, 3000 ms @ 2 ms. SUPERSEDED 2026-08-30 by flat_traj_minsnap_data.h and no longer #included by nav_flat_traj.c; kept on disk, not deleted. (~142098 tok)
+- `flat_traj_loop_roll_data.h` — GENERATED inverted roll loop, 4.5 m/s R 1 m, 1797 ms @ 1 ms, 1798 samples, 230144 B .rodata, phi peak 179.8 deg. Registry id FLAT_TRAJ_LOOP_ROLL. Whether the autopilot can fly it is OPEN. (~146000 tok)
+- `flat_traj_loop_upright_data.h` — GENERATED upright loop, 2.5 m/s R 1 m, 2914 ms @ 2 ms, 1458 samples, 186624 B .rodata, phi peak 49.3 deg. Registry id FLAT_TRAJ_LOOP_UPRIGHT. (~118000 tok)
+- `flat_traj_minsnap_data.h` — GENERATED min-snap table, 3000 ms @ 2 ms, 1501 samples, 192128 B .rodata. Registry id FLAT_TRAJ_MINSNAP (default). (~142000 tok)
+- `nav_flat_traj.c` — Multi-table registry (flat_traj_registry[]) + selector + the unchanged playback path. Four tables compiled in, one selected at a time; selection latched at nav_flat_traj_start(). (~2600 tok)
+- `nav_flat_traj.h` — API + enum FlatTrajId + nav_flat_traj_sel. (~1500 tok)
 
 ## paparazzi/sw/airborne/modules/nps_scope/
 
-- `nps_scope_state.c` — include "nps_scope_state.h" (~2440 tok)
+- `nps_scope_state.c` — NPS scope state mirror (est/, sensors/, SP/nav, SP/guidance, SP/stab, mode/). 1000 Hz periodic so it samples at PERIODIC_FREQUENCY. SP/guidance now carries the vertical reference `v_ref_z` alongside `h_ref_n`/`h_ref_e` (added 2026-08-30). (~2470 tok)
 - `nps_scope_state.h` — prototype for `nps_scope_state_periodic()`. (~176 tok)
 
 ## paparazzi/sw/airborne/modules/rotwing_drone/
@@ -1153,56 +1196,8 @@
 - `scope2csv.py` — scope2csv.py — write NPS scope packets to the wide `/uav/...` CSV schema. (~2209 tok)
 - `sdlog2scope.py` — sdlog2scope.py — convert a raw Paparazzi flight log (.log + .data) into the (~2626 tok)
 
-## Darko flatness spine (added 2026-08-20)
-
-- `flatness_darko.c` — Darko tailsitter flatness spine: force transform (eqs 17/21/22/23), applied wrench, sequential allocation (eqs 37/38/6/40/39). Stage 1, no controller. (~5200 tok)
-- `flatness_darko.h` — Darko spine API + measured plant constants + the AERO/HOVER frame contract and the three footguns. (~3400 tok)
-- `flatness_darko_test.c` — 53 analytic property checks on the Darko spine (no golden traces; MATLAB unavailable). (~3600 tok)
-- `run_flatness_darko.sh` — Runner for the Darko property checks; real pprz algebra, links flatness_quad.c for the reused attitude error. (~300 tok)
-
-## HEOL rung-5 tooling (added 2026-08-22)
-
-- `heol_rung5_metrics.py` — Fixed-absolute-window SITL metrics for the HEOL guidance channels: per-phase position-error RMS x/y/z, peak error, percentage of samples on the ±0.3491 rad bank clamp, F_hat range. Prints a time-backstep count so a CSV corrupted by two concurrent sim containers is caught before it is read. (~700 tok)
-
-## Darko FINDI controller, stage 2 (added 2026-08-22)
-
-- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi_darko_law.h` — The PURE half of the Darko FINDI controller: AERO<->HOVER frame maps (including the rmat map), eq. (tsPD) attitude law, the moment increment, the SI->normalised actuator maps, the force tilt limiter. Depends only on pprz_algebra_float.h so a host harness can include it alone. Carries the frames/axis-correspondence documentation. (~2200 tok)
-- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi_darko.c` — The module. Applied wrench from the filtered actuator model, a_tilde, Om_lpf/Omdot_lpf in AERO, outer position loop + linear increment, flatness force transform, eq. (tsPD), angular increment, sequential allocation, and the actuators_pprz commit with the mirrored-elevon sign map. Owns the oneloop framework dispatch (guidance hooks latch only). Carries GUIDANCE_FINDI_DARKO_TRANSFORM_V_SCALE. (~6500 tok)
-- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_findi_darko.h` — Module interface, the per-tick chain, and the tunables exposed to the GCS. (~1500 tok)
-- `conf/modules/oneloop_findi_darko.xml` — Module wiring + settings panel. Links flatness_darko.c and flatness_quad.c (the latter only for the reused attitude error). (~900 tok)
-- `conf/airframes/ENAC/hybrid/darko_findi.xml` — DARKO_FINDI (ac_id 19). Airframe twin of darko.xml, identical outside the control stack so the baseline comparison is controlled. Holds the FINDI gains, the two simulator actuator calibrations, the TRANSFORM_V_SCALE diagnostic and the NPS noise switch. (~2800 tok)
-- `tests/oneloop_findi_darko_test.c` — 55 analytic property checks on the law and its composition with the spine: frames, rmat map, axis correspondence through the real allocator, tsPD, the increment identity, actuator maps, the elevon sign against the SITL plant's own coefficients, the hover chain end to end, the tilt limiter. (~4200 tok)
-- `tests/run_oneloop_findi_darko.sh` — Runner for the above; real pprz algebra, no stubs. (~300 tok)
-
-## Darko FMFC controller (HEOL/MFC brackets on the FINDI spine, added 2026-08-22)
-
-- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc_darko_law.h` — The PURE half of the Darko FMFC controller: the 3-channel HEOL/MFC bracket on mfc_core_mimo (u = u* + du, epsilon = MEASURE - REFERENCE, clamp on the TOTAL, estimator tapping the correction alone), the two constant diagonal alphas (alpha_fi = I/m, alpha_m = inv(J)), and the two nominal flat inputs (f* = m(a_ref - g e_z), m* = J Omdot_ref). Includes oneloop_findi_darko_law.h and reuses its frame maps, actuator maps and tilt limiter verbatim. Carries the "where eq. (tsPD) actually lives" and "what happened to ka" notes. (~3500 tok)
-- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc_darko.c` — The module. Same spine as oneloop_findi_darko.c (applied wrench, a_tilde, Om_lpf/Omdot_lpf in AERO, force transform, attitude error, sequential allocation, mirrored-elevon commit, oneloop dispatch) with the two increments replaced by the brackets. Sets est_use_presat_command EXPLICITLY on both. Carries GUIDANCE_FMFC_DARKO_TRANSFORM_V_SCALE and the placeholder-gain warnings. (~8500 tok)
-- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc_darko.h` — Module interface, the per-tick chain, the integration-not-evaluation caveat, and the tunables exposed to the GCS. (~1800 tok)
-- `conf/modules/oneloop_fmfc_darko.xml` — Module wiring + settings panel. Links flatness_darko.c, flatness_quad.c, mfc_core.c and mfc_core_mimo.c. (~1100 tok)
-- `conf/airframes/ENAC/hybrid/darko_fmfc.xml` — DARKO_FMFC (ac_id 29). Airframe twin of darko_findi.xml, identical outside the control stack. Holds the placeholder gains, the estimator windows/hold times, the command tap, the bracket output bounds and TRANSFORM_V_SCALE = 0. (~3600 tok)
-- `tests/oneloop_fmfc_darko_test.c` — 109 analytic property checks: the HEOL bracket invariant, the presat tap (discriminated with a clamp that bites), both alphas through the core's own setter, f*/m* reproducing the reference in the nominal plant, THE tsPD identity against findi_darko_tspd(), the clamp on the total, the estimator windows and the shared-scalar-denominator asymmetry, the 2-vector callers staying bit-identical, the hover chain, and the AERO-frame residual through the real allocator. (~7000 tok)
-- `tests/run_oneloop_fmfc_darko.sh` — Runner for the above. Uses tests/stubs_darko/ (clock only) so the REAL pprz algebra is linked. (~400 tok)
-- `tests/stubs_darko/mcu_periph/sys_time.h` — Clock stub only. Separate from tests/stubs/ because that one also shadows math/pprz_algebra_float.h, which the Darko spine needs for real. (~200 tok)
-
-## ANTON FMFC controller (HEOL/MFC brackets on the quad FINDI spine, added 2026-08-22)
-
-- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc_law.h` — The PURE half of the quad FMFC controller: the 3-channel HEOL/MFC bracket on mfc_core_mimo (u = u* + du, du = alpha^-1(-F_hat - f_b), f_f grounded, estimator tapping the correction alone), the constant-diagonal alpha helper, and the u_prev-from-applied-wrench switch. The caller's f_b enters through the core's derivative lane with kd = 1 (kp = ki = 0): a structural pass-through, NOT a damping gain. Carries the "why not heol_mimo" and Q3 notes. (~2600 tok)
-- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc.c` — The module. The whole oneloop_findi spine (applied reactions, flatness transform, attitude error, tilt limiter, pinv allocation, guidance-latch dispatch) with ONLY the two increments replaced by brackets. Owns both bracket configurations, the H(z) on the estimator's attitude-error drive, and the disarmed/attitude-only reset gating. #errors if an EST_PRESAT define appears. (~5200 tok)
-- `sw/airborne/firmwares/rotorcraft/oneloop/oneloop_fmfc.h` — Module interface, the per-tick chain, and the two conventions that must not be harmonised with the FINDI code (measurement-minus-reference errors; no dw_ref inside dw_c). (~1600 tok)
-- `conf/modules/oneloop_fmfc.xml` — Module wiring + settings panel. Links flatness_quad.c, mfc_core.c and mfc_core_mimo.c. Deliberately has NO est_use_presat_command setting. (~1100 tok)
-- `conf/airframes/ENAC/quadrotor/anton_fmfc.xml` — ANTON_FMFC (ac_id 223). Airframe twin of anton_findi.xml, identical outside the control stack. Holds the UNTUNED placeholder gains (dated), the estimator windows/holds from flat_mfc_quad_params.m, the correction rails and the 50 Hz shared filter cutoff. (~3000 tok)
-- `tests/oneloop_fmfc_test.c` — 78 analytic property checks in six groups: bracket algebra and the HEOL delayed-command invariant, core configuration incl. the shared scalar denominator and the reset path, the 2-vector heol_mimo bit-identity regression, the two conventions checked by observable consequence, alpha constant/diagonal/correctly-inverted, and float_mat_inv_4d's return convention. (~5000 tok)
-- `tests/run_oneloop_fmfc.sh` — Runner. Asserts `git diff --quiet cd0ba036f` over the six shared mfc_core/heol_mimo files BEFORE compiling, pins WORKSPACE_DIR to the repo root, and uses tests/stubs_clock (not tests/stubs) so the real pprz algebra is linked. (~500 tok)
-- `tests/stubs_clock/mcu_periph/sys_time.h` — Host-harness stub for the CLOCK ONLY. Exists because tests/stubs also shadows math/pprz_algebra_float.h, which these checks need for real. (~150 tok)
-
 ## tools/mfcdata/ (added 2026-08-16)
-- `contract.py` — loads contract/signals.json (the vendored role contract), resolves role -> column names. ~120 lines.
-- `check.py` — schema conformance: contract vs messages.xml + BRANCH_MAP. Catches renames/removals/unbound additions. ~120 lines.
-- `verify.py` — SEMANTIC check against data: derived `y - ref_cmd` vs the logged `err_*`. Catches wrong-but-valid bindings, which check.py structurally cannot. ~110 lines.
-- `sd.py` — SD .data -> contract CSV + sidecar. Wraps sdlog2scope, then applies field aliases (scale + ENU->NED) and writes provenance. ~160 lines.
-- `sim.py` — SITL capture -> contract CSV + sidecar. Wraps scope2csv for .jsonl; passes .csv through. ~90 lines.
-- `sidecar.py` — writes `<stem>.meta.json`. Facts only; an unestablished key is absent, never defaulted. ~70 lines.
-- `__main__.py` — CLI: `python3 -m tools.mfcdata check|verify|sd|sim`. ~100 lines.
-- `contract/signals.json` (repo root) — vendored copy of the shared role contract. Canonical copy lives in the vault; `check_drift.py` at vault level compares copies.
+
+- `2026-08-30-contract-fully-qualified-bindings.md` — 2026-08-30 — contract v3->v4. Why the `/uav/<branch>/` prefix made a 6-DOF SITL binding inexpressible in BOTH runtimes, the `/`-prefix escape hatch added to `contract.py` and `contract.m` together, the behaviour-preservation count (22 bindings, none `/`-prefixed), the composite `SITL_6DOF_ANTON_MFC` branch (no `message` key on purpose), and the `u` decision: bound, but pprz units, so `u_sat_frac` is invalid. Records that `column_format` has zero readers. (~1200 tok)
 - `Knowledge/Sessions/2026-08-28-mfcdata-recovery.md` — Session: mfcdata recovered from the unmerged local branch `mfcdata-ingest` (cf38361), not decompiled; bytecode-identity proof (43 code objects) + byte-identical CSV re-conversion; contract/signals.json was missing too; check's silent-SKIP fix; branch-hygiene exposure audit. (~1600 tok)
+- `Knowledge/Sessions/2026-08-30-findi-fmfc-sitl-captures.md` — 2026-08-30 — the SITL leg of the quad controller comparison: ANTON_FINDI + ANTON_FMFC nps builds (needs CONF=conf_mfc.xml on the pprz.sh path), all four flat trajectories on both airframes with measured spans and errors (minsnap tracks; circle4 undershoots ~45% on BOTH so it is a trajectory property; loop_roll diverges to 6.4 m on FINDI but stays at 1.24 m on FMFC), contract v4->v5 with the two new branches, and the -9600 pre-arm sentinel on /uav/FLAT/alloc/u. (~1400 tok)

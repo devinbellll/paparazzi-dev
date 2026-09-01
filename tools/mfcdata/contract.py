@@ -81,6 +81,18 @@ def columns(spec, source_name, branch):
 
 
 def column(branch, field):
+    """Qualify one field name into a full column path.
+
+    A binding that ALREADY STARTS WITH "/" is a fully qualified column name
+    and is returned verbatim. The "/uav/<branch>/" prefix below is built from
+    the BRANCH, so every role in a branch would otherwise share one first
+    path segment -- and a 6-DOF binding has to reach TRUTH, SP and EST at
+    once. No branch name can express that, so such a branch spells its
+    columns out in full. Must stay identical to the same escape hatch in
+    qsim/+qsim/contract.m.
+    """
+    if field.startswith("/"):
+        return field
     return "/{}/{}/{}".format(COLUMN_ROOT, branch, field)
 
 
