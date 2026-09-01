@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-09-01T11:44:49.025Z
-> Files: 879 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-09-01T18:12:28.511Z
+> Files: 887 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -34,7 +34,8 @@
 
 ## ../../../../../../home/agent/.claude/projects/-Users-devinbellll-Workspace-ENAC-Workspace-Firmware-paparazzi-dev/memory/
 
-- `MEMORY.md` (~340 tok)
+- `hoops-111-control-variants.md` (~410 tok)
+- `MEMORY.md` (~441 tok)
 - `mfc-data-management-plan.md` (~429 tok)
 - `mfc-flight-test-enablement.md` (~542 tok)
 - `mfc-si-units-refactor.md` — Declares tags (~520 tok)
@@ -230,6 +231,12 @@
 
 - `heol_rung5_metrics.py` — Fixed-absolute-window SITL metrics for the HEOL guidance channels: per-phase position-error RMS x/y/z, peak error, percentage of samples on the ±0.3491 rad bank clamp, F_hat range. Prints a time-backstep count so a CSV corrupted by two concurrent sim containers is caught before it is read. (~700 tok)
 
+## Hoops_111 FMFC / FINDI / HEOL variants (added 2026-09-01)
+
+- `conf/airframes/ENAC/quadrotor/hoops_111_findi.xml` — HOOPS_111_FINDI (conf_mfc ac_id 179). hoops_111_mfc.xml hardware profile (TawakiV2, DShot 4-in-1, OptiTrack GPS, simple_x_quad_ccw NPS plant, actuators_pprz[] command_laws) + anton_findi.xml control stack: `<module name="oneloop_findi"/>`, STABILIZATION_FINDI + GUIDANCE_FINDI sections. G1/ACT_FREQ kept at Hoops values (match the plant); the ANTON `COMMANDS` define dropped (oneloop writes actuators_pprz[] unconditionally, the cmd[] map is #ifdef-guarded). No logger_mfc_csv (it hard-includes stabilization_mfc.h). Builds clean ap+nps. (~2900 tok)
+- `conf/airframes/ENAC/quadrotor/hoops_111_fmfc.xml` — HOOPS_111_FMFC (ac_id 178). Same recipe, anton_fmfc.xml stack: `<module name="oneloop_fmfc"/>`, STABILIZATION_FMFC + GUIDANCE_FMFC. UNTUNED placeholder gains. Builds clean ap+nps. (~3100 tok)
+- `conf/airframes/ENAC/quadrotor/hoops_111_heol.xml` — HOOPS_111_HEOL (ac_id 180). Same recipe, anton_heol.xml split stack: `<module name="stabilization" type="heol">` (WLS_N_U/V_MAX 4) + `<module name="guidance" type="heol"/>`, STABILIZATION_HEOL + GUIDANCE_HEOL. G2 kept at Hoops {80,-80,...}; GZ_MAX_THRUST uses the Hoops 0.7 thrust row. Builds clean ap+nps. (~3600 tok)
+
 ## Knowledge/
 
 - `00 - Index.md` — Paparazzi Control System — Knowledge Base (~459 tok)
@@ -339,6 +346,7 @@
 - `2026-08-27-plotjuggler-flatness-layout.md` — 2026-08-27 — `plotjuggler_flatness.xml`: one layout for FINDI and FMFC. Tab/plot structure and the two deviations from the proposal (estimators on two tabs, alloc/v split), the source facts the header carries (flat_status enum sense, eps_fi is a position error, F_* units, dw_c differing between the modules), the two SITL name checks, and the fact that PlotJuggler could not be run here. (~1500 tok)
 - `2026-08-30-flat-traj-multi-table-registry.md` — 2026-08-30 — Phase B: the flat-traj multi-table registry and selector. Where the four generated tables live and why (tracked in-repo, not build-tree), why selection is latched at start() and not read per tick, the exact flight-plan block names that are simultaneously GCS buttons and `--nav` strings, the measured .rodata (218148 -> 1128804 B; four tables = 1102720 B, ~5x less than the C text implies), the four SITL selection checks, and five out-of-scope observations including that ANTON_MFC does not TRACK either loop. (~2400 tok)
 - `2026-08-30-vertical-reference-in-capture.md` — 2026-08-30 — adding `SP/guidance/v_ref_z` so the tracking_6dof `sp` role can take all three axes from one stage of the guidance chain. Why the scope side needed wiring (the SP/guidance branch had no vertical reference; a separate `guidance_v/z_ref` var carried it under another name), the trap that the SITL CSV comes from nps_scope_state.c and NOT logger_mfc_csv.c (Hoops_111_MFC is the only aircraft that builds the logger), and the measurement: 104.5 vs 15.5 changes/s, with the 104 Hz figure explained as a Q23.8 LSB ceiling rather than a rate limit. (~1600 tok)
+- `2026-09-01-hoops-fmfc-findi-heol-variants.md` — Hoops_111_FMFC / Hoops_111_FINDI / Hoops_111_HEOL (~1086 tok)
 - `2026-09-01-manual-to-nav-handover-and-telemetry.md` — 2026-09-01 — manual→NAV handover drop, unused-var warning, GCS "IMU UNKNOWN" (~1497 tok)
 
 ## containerized build/sim dispatch (2026-06-17)
@@ -1027,6 +1035,9 @@
 - `cobraV2.xml` (~2527 tok)
 - `crow_indoor.xml` (~2351 tok)
 - `goose.xml` (~2697 tok)
+- `hoops_111_findi.xml` (~2923 tok)
+- `hoops_111_fmfc.xml` (~3120 tok)
+- `hoops_111_heol.xml` (~3551 tok)
 - `hoops_111_indoor.xml` (~2156 tok)
 - `hoops_111_mfc.xml` (~4844 tok)
 - `maya_outdoor.xml` (~2343 tok)
@@ -1074,8 +1085,8 @@
 
 ## paparazzi/conf/userconf/ENAC/
 
-- `conf_mfc.xml` (~1463 tok)
-- `control_panel_mfc.xml` (~1934 tok)
+- `conf_mfc.xml` (~1975 tok)
+- `control_panel_mfc.xml` (~3816 tok)
 
 ## paparazzi/sw/airborne/
 

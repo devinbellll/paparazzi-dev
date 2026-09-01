@@ -5455,6 +5455,24 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-01T15:30:00.000Z"
+    },
+    {
+      "id": "bug-314",
+      "timestamp": "2026-09-01T20:12:44.768629",
+      "error_message": "User: 'I don't see these in conf_mfc...' \u2014 the three Hoops_111_FMFC/FINDI/HEOL <aircraft> entries added to conf/userconf/ENAC/conf_mfc.xml were absent on disk on the next turn",
+      "file": "paparazzi/conf/userconf/ENAC/conf_mfc.xml",
+      "root_cause": "conf_mfc.xml was overwritten on disk by an external process (Mac-host file sync or the paparazzi GCS/launcher rewriting the fleet XML) after the Edit, reverting it to the pre-edit state. The paparazzi/ tree is untracked by git so there was no diff signal. control_panel_mfc.xml and the airframe XMLs survived; only conf_mfc.xml reverted.",
+      "fix": "Re-applied the three <aircraft> entries (ac_id 178/179/180). If a host-side editor or the GCS has conf_mfc.xml open it may clobber again \u2014 close/save it on the Mac side before rebuilding.",
+      "tags": [
+        "conf_mfc",
+        "file-revert",
+        "host-sync",
+        "paparazzi",
+        "airframe-registration"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-01T20:12:44.768629"
     }
   ]
 }

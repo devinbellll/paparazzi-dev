@@ -1697,3 +1697,42 @@
   -> `GUIDANCE_V_GUIDED_MODE_ZHOLD` -> `guidance_v_run_pos(gv)`. `guidance_v_guided_enter()`
   (called on the mode change) seeds `guidance_v.z_ref` to the current altitude, so
   the first vert_only tick has ~zero z error (no thrust step).
+
+## Key Learnings additions (2026-09-01 — session 4, Hoops_111 FMFC/FINDI/HEOL variants)
+
+- **Recipe for a Hoops_111_<X> control variant:** clone `hoops_111_mfc.xml` for the
+  hardware profile (TawakiV2 board, DShot 4-in-1 servos no 3/1/2/4, ACCEL_CALIB/
+  GYRO_CALIB/MAG_CALIB arrays, `gps optitrack` + `ins ext_pose` on ap / `ins ekf2`
+  + `air_data` + `gps ublox` on nps, MODEL 0.8/0.0068/0.0068/0.0136, BAT 3S,
+  SIMULATOR simple_x_quad_ccw, `actuators_pprz[]` command_laws with ROLL/PITCH/
+  YAW/THRUST axes), then splice in the control stack from the matching `anton_<X>.xml`
+  (module line(s) + STABILIZATION_<X> + GUIDANCE_<X> sections).
+- **Keep G1/G2/ACT_FREQ at the Hoops_111_MFC values** ({±14,±0.9,-0.7}, G2 ±80,
+  ACT_FREQ 15) inside the spliced sections — they are matched to the
+  simple_x_quad_ccw plant, not to `anton` (±40/±5/-1.5, 30.5, ±150). Everything
+  else (control gains, estimator windows, filters) carries over from ANTON verbatim
+  — the Hoops MODEL mass/inertia happen to equal ANTON's, so `alpha = 2./MODEL_INERTIA_XX`
+  etc. transfer unchanged.
+- **Drop the ANTON `STABILIZATION_<X>_COMMANDS` define** on the Hoops splice:
+  `stabilization_heol.c`, `oneloop_findi.c`, `oneloop_fmfc.c` all write
+  `actuators_pprz[i]` unconditionally; the `cmd[act_to_commands[i]]` map is
+  `#ifdef STABILIZATION_<X>_COMMANDS`-guarded and only needed for the
+  `<commands><axis name="FR">` mixing style ANTON uses. Hoops' `actuators_pprz[]`
+  command_laws need no map.
+- **`logger_mfc_csv` is MFC-only.** `logger_mfc_csv.c` unconditionally
+  `#include`s `stabilization_mfc.h` and reads its symbols, so it will not link on
+  FINDI/FMFC/HEOL. `LOGGER_MFC_CSV_USE_GUIDANCE=0` only drops the guidance half.
+  Use `flight_recorder` (binary pprzlog) + `nps_scope_state` instead.
+- **FINDI/FMFC declare NO `<module name="stabilization"/>` or `guidance`** — the
+  `oneloop_*` module provides both (guidance hooks latch only). HEOL is a normal
+  split stack (`stabilization type heol` + `guidance type heol`).
+- **conf_mfc.xml is the fleet XML for all MFC-family aircraft** (pprz.sh and
+  sim.sh both default `CONF` to it now); conf_enac.xml does not list them.
+- **`telemetry/mfc_flight_test.xml` is safe for any variant** — messages with no
+  registered provider (STAB_MFC/GUIDANCE_MFC on a non-MFC build) are simply not
+  sent; the modern telemetry system registers at runtime, no link error.
+- **Headless sim arming quirk (not a defect):** `./sim.sh Hoops_111_* --no-build
+  --nav "Start Engine,Takeoff,+15,Standby"` runs every nav block but
+  `/uav/MODE/motors_on` stays 0 — the aircraft never leaves the ground. Verified
+  to reproduce identically on the flight-proven **Hoops_111_MFC**, so it is a
+  sim-harness GPS-fix/arming timing issue, independent of these new airframes.
