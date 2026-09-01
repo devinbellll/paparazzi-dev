@@ -1736,3 +1736,16 @@
   `/uav/MODE/motors_on` stays 0 — the aircraft never leaves the ground. Verified
   to reproduce identically on the flight-proven **Hoops_111_MFC**, so it is a
   sim-harness GPS-fix/arming timing issue, independent of these new airframes.
+
+## Key Learnings additions (2026-09-01 — session 5, onboard CSV logging for FINDI/FMFC/HEOL)
+
+- **logger_mfc_csv is MFC-stack-only** (hard `#include "stabilization_mfc.h"` + reads mfc_roll/mfc_gx). For the other stacks it is REPLACED, not extended:
+  - `logger_flat_csv` (conf/modules/logger_flat_csv.xml, sw/airborne/modules/loggers/logger_flat_csv.{c,h}) — FINDI + FMFC. One schema for both; FMFC-only columns (`/uav/FMFC/*`) are always emitted, written 0 on a FINDI build, `/uav/FMFC/has_fmfc` flags it.
+  - `logger_heol_csv` (…/logger_heol_csv.{c,h}) — HEOL. Columns are the `HEOL_STAB/` + `MFC_GUIDANCE/` + `WLS_*` scope keys.
+  All three share logger_mfc_csv's proven machinery verbatim (fixed-point `*_ftoa` with NaN accounting, 224-byte chunked writer that re-emits the newline on a dropped chunk, ChibiOS-vs-NPS file handling, `attempts>10` open cap, decimation 5 → 100 Hz). Column names = the NPS-scope `/uav/...` keys 1:1, so a flight CSV opens in the same PlotJuggler layout and scores against the same tools/mfcdata contract as a SITL capture.
+- **FINDI/FMFC internal state is file-static** in oneloop_findi.c/oneloop_fmfc.c ("kept file scope so telemetry/scope can read them"). Exposed to the logger via `flat_log.h`: a `struct FlatLog` snapshot filled by `findi_flat_log_snapshot()` / `fmfc_flat_log_snapshot()` at the END of `_run()`, read through `flat_log_get()` (same symbol in both — only one links). Field names track the `FLAT/` scope keys. Chosen over ~18 externs per file (less churn, one symbol) — but note this is the OPPOSITE of the heol precedent (stabilization_heol.h just externs `heol_roll` etc. directly).
+- **`heol_u` / `heol_v` were global but not in the header** — added `extern` to stabilization_heol.h.
+- **FMFC_BRACKET_N = 3** (not 2) — the HEOL/MFC brackets are 3-channel. `fmfc_fi.mfc.estimator[3]`, `.du[3]`, `.epsilon[3]`, `.mfc.estimator_den[0]` (shared scalar).
+- **FINDI/FMFC telemetry**: `register_periodic_telemetry` for `GUIDANCE_MFC` (position-residual channel — clean map: sp=guidance ref, me=EST pos, err=sp-me, fk=0 FINDI / fmfc_F_fi FMFC, cmd=a_c, sp_traj=a_tilde/fi_star) and `STAB_ATTITUDE` (measured att/rate/ang-acc real, refs from the partially-mirrored w_ref/dw_c, u=alloc). Both are already in mfc_flight_test.xml's FlightRecorder process + `mfc` mode, so no telemetry-file edit — binary log + live GCS for free. Same message-reuse trick stabilization_heol.c/guidance_heol.c already use.
+- **HEOL SD logging already matched Hoops_111_MFC before this session** via flight_recorder (STAB_MFC/GUIDANCE_MFC/WLS_U/WLS_V from stabilization_heol.c + guidance_heol.c, logged by the FlightRecorder process). The CSV is the wide-format convenience on top.
+- **Follow-on**: add `SITL_6DOF_HOOPS_111_{FINDI,FMFC,HEOL}` (or a flight-6dof) branch to contract/signals.json so a real Hoops flight CSV resolves — the existing SITL_6DOF_ANTON_* branches bind `pos`/`y` to `/uav/TRUTH/*` which is sim-only.

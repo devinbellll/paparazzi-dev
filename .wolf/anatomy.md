@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-09-01T18:12:28.511Z
-> Files: 887 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-09-01T20:45:50.943Z
+> Files: 896 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../../home/agent/.claude/jobs/1e2207e5/tmp/
 
@@ -230,6 +230,14 @@
 ## HEOL rung-5 tooling (added 2026-08-22)
 
 - `heol_rung5_metrics.py` — Fixed-absolute-window SITL metrics for the HEOL guidance channels: per-phase position-error RMS x/y/z, peak error, percentage of samples on the ±0.3491 rad bank clamp, F_hat range. Prints a time-backstep count so a CSV corrupted by two concurrent sim containers is caught before it is read. (~700 tok)
+
+## Onboard wide-CSV loggers for FINDI / FMFC / HEOL (added 2026-09-01 session 5)
+
+- `sw/airborne/firmwares/rotorcraft/oneloop/flat_log.h` — `struct FlatLog` (one-tick snapshot of the FINDI/FMFC internal signal set, field names = the `FLAT/` scope keys) + `flat_log_get()`. Filled at the end of `oneloop_*_run()`. FMFC-only group zero on a FINDI build. (~600 tok)
+- `sw/airborne/modules/loggers/logger_flat_csv.{c,h}` + `conf/modules/logger_flat_csv.xml` — onboard wide-CSV logger for oneloop_findi / oneloop_fmfc. Twin of logger_mfc_csv (same ftoa/chunk/file machinery). Columns = canonical `/uav/...` scope keys (EST, SP, MODE, FLAT/*, FMFC/*). SD dir `FLAT/`, nps path `sim_logs/onboard`. 127 columns. (~2600 tok)
+- `sw/airborne/modules/loggers/logger_heol_csv.{c,h}` + `conf/modules/logger_heol_csv.xml` — same for the HEOL stack. Columns = `HEOL_STAB/*`, `MFC_GUIDANCE/*`, `WLS_*`, `ACT/*` + common. 112 columns. SD dir `HEOL/`. (~2400 tok)
+- oneloop_findi.c / oneloop_fmfc.c also gained a `#if PERIODIC_TELEMETRY` block: `send_guidance_*` (GUIDANCE_MFC) + `send_stab_*` (STAB_ATTITUDE), registered in init. Both messages are already in mfc_flight_test.xml's FlightRecorder process + `mfc` mode, so this gives the binary SD log + live GCS with no telemetry-file change.
+- stabilization_heol.h gained `extern float heol_u[]` / `heol_v[]` (were global but unheadered).
 
 ## Hoops_111 FMFC / FINDI / HEOL variants (added 2026-09-01)
 
@@ -1035,9 +1043,9 @@
 - `cobraV2.xml` (~2527 tok)
 - `crow_indoor.xml` (~2351 tok)
 - `goose.xml` (~2697 tok)
-- `hoops_111_findi.xml` (~2923 tok)
-- `hoops_111_fmfc.xml` (~3120 tok)
-- `hoops_111_heol.xml` (~3551 tok)
+- `hoops_111_findi.xml` (~3100 tok)
+- `hoops_111_fmfc.xml` (~3297 tok)
+- `hoops_111_heol.xml` (~3728 tok)
 - `hoops_111_indoor.xml` (~2156 tok)
 - `hoops_111_mfc.xml` (~4844 tok)
 - `maya_outdoor.xml` (~2343 tok)
@@ -1064,6 +1072,8 @@
 - `guidance_mfc.xml` (~2500 tok)
 - `guidance_rotorcraft.xml` (~888 tok)
 - `heol.xml` (~196 tok)
+- `logger_flat_csv.xml` (~825 tok)
+- `logger_heol_csv.xml` (~775 tok)
 - `nav_flat_traj.xml` (~210 tok)
 - `nps_scope_state.xml` (~240 tok)
 - `oneloop_mfc.xml` (~1908 tok)
@@ -1119,7 +1129,9 @@
 
 ## paparazzi/sw/airborne/firmwares/rotorcraft/oneloop/
 
-- `oneloop_fmfc.c` — Declares float (~11661 tok)
+- `flat_log.h` — Declares struct (~1130 tok)
+- `oneloop_findi.c` — Declares float (~10382 tok)
+- `oneloop_fmfc.c` — Declares float (~12962 tok)
 - `oneloop_mfc.c` (~17341 tok)
 - `oneloop_mfc.h` — Declares float (~1114 tok)
 
@@ -1133,6 +1145,7 @@
 - `mfc_core_mimo.h` — Declares float (~1929 tok)
 - `mfc_core.c` — Declares float (~2247 tok)
 - `mfc_core.h` — Declares for (~1802 tok)
+- `stabilization_heol.h` — PPRZ command to each actuator. (~862 tok)
 - `stabilization_indi.c` (~12056 tok)
 - `stabilization_indi.h` — PPRZ command to each actuator (~1045 tok)
 - `stabilization_mfc.c` (~13268 tok)
@@ -1144,6 +1157,10 @@
 
 ## paparazzi/sw/airborne/modules/loggers/
 
+- `logger_flat_csv.c` (~5730 tok)
+- `logger_flat_csv.h` (~355 tok)
+- `logger_heol_csv.c` (~5076 tok)
+- `logger_heol_csv.h` (~347 tok)
 
 ## paparazzi/sw/airborne/modules/nav/
 
