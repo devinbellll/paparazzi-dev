@@ -1749,3 +1749,85 @@
 - **FINDI/FMFC telemetry**: `register_periodic_telemetry` for `GUIDANCE_MFC` (position-residual channel — clean map: sp=guidance ref, me=EST pos, err=sp-me, fk=0 FINDI / fmfc_F_fi FMFC, cmd=a_c, sp_traj=a_tilde/fi_star) and `STAB_ATTITUDE` (measured att/rate/ang-acc real, refs from the partially-mirrored w_ref/dw_c, u=alloc). Both are already in mfc_flight_test.xml's FlightRecorder process + `mfc` mode, so no telemetry-file edit — binary log + live GCS for free. Same message-reuse trick stabilization_heol.c/guidance_heol.c already use.
 - **HEOL SD logging already matched Hoops_111_MFC before this session** via flight_recorder (STAB_MFC/GUIDANCE_MFC/WLS_U/WLS_V from stabilization_heol.c + guidance_heol.c, logged by the FlightRecorder process). The CSV is the wide-format convenience on top.
 - **Follow-on**: add `SITL_6DOF_HOOPS_111_{FINDI,FMFC,HEOL}` (or a flight-6dof) branch to contract/signals.json so a real Hoops flight CSV resolves — the existing SITL_6DOF_ANTON_* branches bind `pos`/`y` to `/uav/TRUTH/*` which is sim-only.
+
+## 2026-09-03 — sitl_estimator (Key Learnings)
+
+- **The NPS IMU calibration path is not the airframe's.** `imu_nps_init()`
+  registers under `IMU_NPS_ID` (23) while `hoops_111_fmfc.xml`'s
+  `IMU_ACCEL_CALIB`/`IMU_GYRO_CALIB` carry ABI id 24 (mag: 3). `imu_get_gyro()`
+  therefore allocates a *separate, uncalibrated* slot for the NPS sender, and the
+  NPS-derived scale/neutral apply instead. The flight calibration never reaches
+  the SITL estimator input. Do not carry it into any SITL-parity work.
+- **`nps_scope.c` logs `body_ecef_rotvel` as TRUTH/p,q,r, but `nps_sensor_gyro.c`
+  reads `body_inertial_rotvel`.** They differ by the earth-rate term. Anything
+  that replays the scope CSV into the sensor harness inherits that bias.
+- **GSL's `gsl_rng_alloc()` without `gsl_rng_set()` seeds with
+  `gsl_rng_default_seed` = 0, and mt19937 maps 0 onto 4357 internally.** So stock
+  NPS *is* reproducible run to run — it just has no seed control. Verified
+  against libgsl, not assumed.
+- **`sw/ext/ecl` compiles standalone** with `-std=c++14 -D__PAPARAZZI
+  -DECL_STANDALONE` and only `sw/ext/matrix` + `sw/include/std.h` on the path.
+  The exact file list to compile is in `conf/modules/ins_ekf2.xml`.
+- **`nps_sensors_utils.c` is the only NPS file that needs glib**, and it uses six
+  GSList functions. A ~60-line shim removes the dependency without touching it.
+- **Trap 2 is inert for `hoops_111_fmfc.xml`** — that airframe selects no
+  `NPS_SENSORS_PARAMS`, so both include orders reach the default header. The
+  provenance check still matters for any airframe that does select one.
+- **`struct LlaCoor_d` is `{lat, lon, alt}`.** Getting the order wrong is silent:
+  the NED<->ECEF round trip still closes, on the wrong datum. Always use
+  designated initialisers for pprz geodetic structs, and test signs against an
+  independent geodetic fact, not only against the inverse conversion.
+
+## Do-Not-Repeat (2026-09-03)
+
+- Do not claim a SITL replay is "1:1" from the `mfc_sim_*.csv` scope capture. It
+  quantises truth to %.4f/%.5f, omits ECEF/LLA/quaternion/pressure, logs the
+  wrong rate quantity, and starts several seconds into the run so the RNG draw
+  count cannot be aligned. A residual of `sqrt(2)*sigma` on a noisy channel means
+  "independent realisation", not "bug".
+
+## FMFC / FHEOL Tangent rework (2026-09-03)
+
+- **NPS is not bit-reproducible run to run, even though its RNG is.** Two runs of
+  the *same* `nps.elf` with the same `--nav` differ: 42421 of 43430 common
+  timestamps, max delta 1.3e5 on `m_c_*`. That does not contradict the GSL note
+  above -- the noise *draws* are seeded identically; the sim is not deterministic
+  because NPS runs in real time with the FDM on its own thread, so the number of
+  autopilot ticks between FDM steps varies with host load. Consequence for any
+  regression: **compare metrics inside a band, never traces sample by sample.**
+  A trace diff of two builds will show ~98% of rows differing and tell you
+  nothing. During this session a trace diff appeared to show a bit-exact match
+  and was wrong; the band comparison (RMS 0.2212 vs 0.2212, tilt 44.70 vs 44.70
+  across five runs) was the result that held up.
+- **A tick-to-tick (Nyquist) limit cycle hides in the mean.** `fi_c_z`
+  alternating -1.6/-15.1 N every sample averages to hover, so altitude, velocity
+  and the position references all look perfectly clean while the controller is
+  bang-banging. Cheap detector: mean |x[k]-x[k-1]| over mean |x[k]-x[k-2]| on a
+  command channel. Ratio near 1 is healthy; 712 is a two-cycle. Plot at full
+  rate or the decimation hides it -- at every 25th sample it reads as noise.
+- **Check every `FILT_CUTOFF` against `PERIODIC_FREQUENCY` before anything
+  else.** `anton_fheol.xml` and `anton_fmfc.xml` both ship `FILT_CUTOFF = 250`
+  with `PERIODIC_FREQUENCY = 500`, i.e. exactly Nyquist, where a 2nd-order
+  Butterworth attenuates nothing. Both files' own comments say "50 Hz here".
+  The reference (`flat_mfc_quad_params.m`) runs `fc_g = 50`. FHEOL was fixed;
+  **anton_fmfc.xml is still at 250 and is left for the author to decide.**
+- **A new `dl_setting var=` needs an `extern` in the module's `.h`, not just a
+  definition in the `.c`.** The OCaml generator emits `settings.h` referencing
+  the bare symbol, and the failure surfaces as a wall of
+  `'fmfc_fc_accel' undeclared` from `settings.h`, pointing at generated code
+  rather than at the header you forgot. This is the settings-generator trap this
+  session hit; no `Xml_error` was involved, and `xml.dom.minidom.parse` on the
+  module XML is a cheap pre-check that catches the malformed-XML class before a
+  build burns.
+- **`git stash push <path>` on a submodule file can strip an uncommitted fix you
+  did not make.** `oneloop_fheol.c` at HEAD does not compile -- it writes
+  `fheol_log.fheol_fi_star` while `struct FlatLog` has `fmfc_fi_star` -- and the
+  working tree carried the uncommitted rename. Stashing to get a "clean
+  baseline" therefore produced a tree that fails to build for an unrelated
+  reason. Build the baseline as `git show HEAD:<file>` piped through the known
+  fix into a scratch copy instead, and never assume HEAD builds.
+- **Never round-trip a working file through a scratch copy to test a baseline.**
+  Doing so during this session left both `oneloop_fmfc.c` and its backup at
+  0 bytes and cost a full re-application of the change. Use `git show HEAD:<f>`
+  for the baseline and `git checkout HEAD -- <f>` to come back; keep the working
+  file the only copy that is ever written.
