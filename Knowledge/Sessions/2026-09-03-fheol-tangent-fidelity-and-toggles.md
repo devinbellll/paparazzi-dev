@@ -83,8 +83,45 @@ The file's own comment already said "FILT_CUTOFF is 50 Hz here", and
 
 **`anton_fmfc.xml` still carries 250.0 with the same contradicting comment.**
 The Force_Setpoint stack tolerates it and still tracks the circle at RMS
-0.22 m, so it was left alone rather than changed under a brief that forbids
-tuning around a miss. **This is a decision for the author.**
+0.22 m, so it was left alone. **This is a decision for the author.**
+
+### Follow-up: 250 Hz is not a passthrough, it is a Nyquist oscillator
+
+The author's intent for 250 was "make this filter a passthrough", which is what
+the reference does — `LPF` (SID 5702), the `fc_g` filter on the estimator
+drive, is dangling in the Tangent subsystem. But `init_second_order_low_pass`
+builds `K = tan(pi*fc/Fs)`, so `fc = Fs/2` gives `K = tan(pi/2)` and the
+coefficients degenerate to `b = [1,2,1]`, `a = [2,1]` — a **double pole exactly
+at `z = -1`**. The zeros cancel it, so from a consistent state the signal does
+pass; but the homogeneous mode is `(A + B n)(-1)^n`, which grows linearly and
+flips sign every sample. One rounding error seeds it and nothing damps it.
+
+Measured on the difference equation, single 1e-7 perturbation:
+
+| sample | error, fc = 250 | error, fc = 50 |
+|---|---|---|
+| 6   | -2.0e-07  | +5.0e-02 |
+| 50  | -4.6e-06  | +1.2e-10 |
+| 200 | -1.96e-05 | ~0 |
+| 399 | +3.95e-05 | ~0 |
+
+So the fix is the **enable flag**, which is a real bypass, not a cutoff at
+Nyquist. `anton_fheol.xml` now states
+`USE_FC_ACCEL/RATE/POS/ZETA_E/ACT_OBS = FALSE` with the cutoffs left at 50 as
+the value a re-enabled filter would use, and `USE_FC_ACT_FI/ACT_M = TRUE`
+(the one filter the reference actually wires, `LPF2`). Commit `bb37ebe96`.
+
+Re-measured in that configuration: RMS **0.226 m**, tilt peak **45.0 deg**,
+`u_sat_frac` **0**, alternation ratio **0.72**. The loop is fine without that
+filtering — it was the degenerate filter, not the absence of one.
+
+### Clamp state, confirmed
+
+No clamp engages anywhere in the 91 s run. `|fi_c|` stays in 2.94 .. 15.68 N
+against the always-on positive floor of 1e-6 N; the only actuator rails are on
+the ground before arming and 105 samples during the takeoff climb, none while
+tracking. Peak tilt is 45 deg against `MAX_BANK = 30`, so enabling
+`USE_TILT_CLAMP` **would** clip this trajectory.
 
 ## Parts B and C
 
