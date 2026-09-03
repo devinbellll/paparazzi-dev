@@ -81,9 +81,8 @@ Detector: mean `|x[k]-x[k-1]|` over mean `|x[k]-x[k-2]|` on `fi_c_z`.
 The file's own comment already said "FILT_CUTOFF is 50 Hz here", and
 `flat_mfc_quad_params.m` runs `fc_g = 50`. Fixed to 50.
 
-**`anton_fmfc.xml` still carries 250.0 with the same contradicting comment.**
-The Force_Setpoint stack tolerates it and still tracks the circle at RMS
-0.22 m, so it was left alone. **This is a decision for the author.**
+**`anton_fmfc.xml` carried the same 250.0.** It was measurably firing there
+too, just not destructively — see below. Fixed the same way in `8b60bf90d`.
 
 ### Follow-up: 250 Hz is not a passthrough, it is a Nyquist oscillator
 
@@ -196,8 +195,11 @@ Well inside the 0.05 m / 2° band. `ANTON_FHEOL`, `ANTON_FMFC` and
 
 ## Left for the author
 
-1. **`anton_fmfc.xml` `FILT_CUTOFF = 250` at `PERIODIC_FREQUENCY = 500`** —
-   same latent Nyquist defect, same contradicting comment. Not changed.
+1. ~~`anton_fmfc.xml` `FILT_CUTOFF = 250`~~ — **fixed** in `8b60bf90d`, same
+   way as FHEOL. It was oscillating at ±0.76 N tick to tick (ratio 38.9 in
+   hover, 11.7 in the circle); after the fix, 0.71 / 0.72. Tracking is
+   unchanged inside the band (RMS 0.2205–0.2212 over three runs against 0.2212
+   before) and peak actuator command drops ~8%, from 3268 to ~3000.
 2. **Uncommitted doc reverts in the working tree, not from this session.**
    `conf/airframes/ENAC/quadrotor/anton_fheol.xml` and
    `conf/modules/oneloop_fheol.xml` both carry pending edits that revert their
@@ -215,3 +217,27 @@ Well inside the 0.05 m / 2° band. `ANTON_FHEOL`, `ANTON_FMFC` and
    was left for the author's next deliberate `Bump paparazzi:` commit. The two
    commits from this session, `8d3850f8e` and `0e049b769`, are safe in the
    submodule's own history.
+
+
+## Addendum: the same defect on ANTON_FMFC
+
+`anton_fmfc.xml` carried `FILT_CUTOFF = 250` at `PERIODIC_FREQUENCY = 500` as
+well, and it was **not** benign there either — it just never grew enough to
+destabilise the Force_Setpoint loop:
+
+| window | before | after |
+|---|---|---|
+| hover, t = 16..22 | 38.93 | 0.71 |
+| circle, t = 38..42 | 11.65 | 0.72 |
+
+±0.76 N of tick-to-tick oscillation in hover, against the ±7 N (ratio 712) that
+tumbled the Tangent loop. Fixed the same way — cutoffs at 50 as the value a
+re-enabled filter would use, `USE_FC_ACCEL/RATE/POS/ZETA_E/ACT_OBS = FALSE` for
+a true bypass, `USE_FC_ACT_FI/ACT_M = TRUE`. Three runs after: RMS
+0.2205/0.2208/0.2212 m, tilt 44.90/44.91/44.70°, no saturation, and peak
+actuator command down from 3268 to ~3000 — consistent with removing an
+oscillation rather than with a gain change. Commit `8b60bf90d`.
+
+**Both airframes are now clean of the Fs/2 cutoff.** Worth grepping any new
+airframe for `FILT_CUTOFF` against its `PERIODIC_FREQUENCY` before first flight;
+this one is invisible in the mean and does not announce itself.
