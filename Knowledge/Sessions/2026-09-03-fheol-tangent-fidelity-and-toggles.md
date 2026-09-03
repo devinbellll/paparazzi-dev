@@ -241,3 +241,61 @@ oscillation rather than with a gain change. Commit `8b60bf90d`.
 **Both airframes are now clean of the Fs/2 cutoff.** Worth grepping any new
 airframe for `FILT_CUTOFF` against its `PERIODIC_FREQUENCY` before first flight;
 this one is invisible in the mean and does not announce itself.
+
+## Addendum: filters enabled, and Hoops_111_FHEOL
+
+### Filters turned back on (`5b2c2c3b5`)
+
+`USE_FC_ACCEL / RATE / POS / ZETA_E / ACT_OBS` set TRUE on `anton_fheol.xml`
+and `anton_fmfc.xml`, cutoffs unchanged at 50 Hz. This reverses the passthrough
+setting from `bb37ebe96` / `8b60bf90d`. Both configurations track, and they sit
+within run-to-run spread of each other:
+
+| aircraft | filters on | bypassed |
+|---|---|---|
+| ANTON_FHEOL | RMS 0.2295 m, tilt 45.04° | 0.226 m, 45.0° |
+| ANTON_FMFC | RMS 0.2234 m, tilt 45.00° | 0.2205 m, 44.9° |
+
+No alternation either way (ratio 0.54). The filters are not what makes or
+breaks this loop — the degenerate 250 Hz filter was. Comment blocks in both
+airframes were rewritten to describe the enabled state; leaving them would have
+repeated exactly the code/prose contradiction flagged in the doc reverts.
+
+### Hoops_111_FHEOL (`b08e1ed79`)
+
+New airframe, `ac_id 181`, registered in `conf_mfc.xml` and given two control
+panel sessions (`Flight Hoops_111 FHEOL`, NatNet rigid body 111 → 181, and
+`FHEOL VM SIM`). Both `nps` and `ap` targets build.
+
+**Hover is clean** (t = 25..45 s, settled): z −2.001 m with 13 mm spread,
+93 mm horizontal drift, 0.31° tilt, zero saturation.
+
+**The 4 m/s circle does not meet ANTON's numbers**, but neither does its FMFC
+sibling on the same vehicle, gains and trajectory:
+
+| aircraft | RMS [m] | tilt [°] | u_sat_frac |
+|---|---|---|---|
+| Hoops_111_FHEOL | 0.5044 | 54.85 | 0.0125 |
+| Hoops_111_FMFC | 0.4795 | 53.66 | 0 |
+
+So it is the Hoops gain set being marginal at 4 m/s, not a Tangent defect.
+FHEOL is ~5% worse on RMS, 1.2° more tilt, and unlike FMFC it touches the
+actuator rails for 1.25% of the window.
+
+**Gain provenance, twice removed.** These are FINDI GA values carried to FMFC
+and now to FHEOL, measured on neither, with every GA bound set on the
+Force_Setpoint loop before the Tangent rework. Nothing in this airframe is a
+tuned point on this structure. **Hover first tomorrow; do not open with the
+4 m/s circle.**
+
+### One more NPS trap
+
+A failed build plus `sim.sh --no-build` silently runs the stale `.elf` and
+reports plausible numbers for the wrong aircraft. It happened here: an
+ANTON_FHEOL build died on the `gen_aircraft.ml` assertion and the run that
+followed reproduced an earlier ANTON_FMFC result exactly (0.2212 / 44.70 /
+max u 2988). Caught only because the figures were byte-identical to a previous
+run. **Always confirm the build printed `==> Done` before trusting a run**, and
+treat a repeated metric across supposedly different aircraft as a red flag.
+The `gen_aircraft.ml` assertion is a failed `mv` of the temp makefile that
+leaves a half-built aircraft dir; `./pprz.sh clean <AC> nps` clears it.
